@@ -40,7 +40,10 @@
 
 .field private static final MAX_NODES:I = 0x1f4
 
-.field public static final POOL_SIZE:I = 0x5
+.field public static final POOL_SIZE:I = 0xa
+
+    # [方案A] 基准协议（由选中节点推导）
+    .field public static BASE_PROTOCOL:Ljava/lang/String;
 
 .field private static final PROBE_URL:Ljava/lang/String; = "http://www.gstatic.com/generate_204"
 
@@ -353,6 +356,286 @@
     return-void
 .end method
 
+.method public static final baseRegion()Ljava/lang/String;
+    .locals 3
+
+    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
+
+    invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getSelectedGroupItems()Ljava/util/Map;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Map;->values()Ljava/util/Collection;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Collection;->iterator()Ljava/util/Iterator;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v1
+
+    if-eqz v1, :br_none
+
+    invoke-interface {v0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Ljava/lang/String;
+
+    invoke-virtual {v0}, Ljava/lang/String;->length()I
+
+    move-result v1
+
+    if-eqz v1, :br_none
+
+    sget-object v1, Lio/nekohasekai/sfa/bg/NeoRegion;->INSTANCE:Lio/nekohasekai/sfa/bg/NeoRegion;
+
+    invoke-virtual {v1, v0}, Lio/nekohasekai/sfa/bg/NeoRegion;->regionOf(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v2
+
+    return-object v2
+
+    :br_none
+    const-string v2, ""
+
+    return-object v2
+.end method
+
+.method public static final setBaseProtocol(Ljava/util/List;)V
+    .locals 5
+
+    const-string v0, ""
+
+    sput-object v0, Lio/nekohasekai/sfa/bg/BalancerInjector;->BASE_PROTOCOL:Ljava/lang/String;
+
+    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
+
+    invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getSelectedGroupItems()Ljava/util/Map;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Map;->values()Ljava/util/Collection;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Collection;->iterator()Ljava/util/Iterator;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v1
+
+    if-eqz v1, :sp_end
+
+    invoke-interface {v0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v1
+
+    check-cast v1, Ljava/lang/String;
+
+    invoke-interface {p0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+
+    move-result-object v2
+
+    :sp_loop
+    invoke-interface {v2}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v3
+
+    if-eqz v3, :sp_end
+
+    invoke-interface {v2}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v3
+
+    move-object v4, v3
+    check-cast v4, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;
+
+    invoke-virtual {v4}, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;->getTag()Ljava/lang/String;
+
+    move-result-object v4
+
+    invoke-static {v4, v1}, Loc3;->d(Ljava/lang/Object;Ljava/lang/Object;)Z
+
+    move-result v4
+
+    if-eqz v4, :sp_loop
+
+    move-object v4, v3
+    check-cast v4, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;
+
+    invoke-virtual {v4}, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;->getType()Ljava/lang/String;
+
+    move-result-object v4
+
+    sput-object v4, Lio/nekohasekai/sfa/bg/BalancerInjector;->BASE_PROTOCOL:Ljava/lang/String;
+
+    :sp_end
+    return-void
+.end method
+
+.method public static final weightNodes(Ljava/util/List;)Ljava/util/List;
+    .locals 11
+
+    # ===== 第一遍：求池内最快(v7)与最慢(v8)延迟 =====
+    # 关键：aget-wide 会同时占用 v9/v10 两个寄存器；
+    #       min/max 存在 v7/v8，与宽寄存器分离 —— 避免 VerifyError
+    const v7, 0x7fffffff
+
+    const/4 v8, 0x0
+
+    invoke-interface {p0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+
+    move-result-object v1
+
+    :wn_p1
+    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v2
+
+    if-eqz v2, :wn_p1done
+
+    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v2
+
+    check-cast v2, Ljava/lang/String;
+
+    sget-object v4, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;
+
+    invoke-virtual {v4, v2}, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->get(Ljava/lang/String;)[J
+
+    move-result-object v4
+
+    if-eqz v4, :wn_p1
+
+    array-length v5, v4
+
+    if-lez v5, :wn_p1
+
+    const/4 v5, 0x0
+
+    aget-wide v9, v4, v5
+
+    long-to-int v6, v9
+
+    if-lez v6, :wn_p1
+
+    if-ge v6, v7, :wn_p1_minok
+
+    move v7, v6
+
+    :wn_p1_minok
+    if-le v6, v8, :wn_p1
+
+    move v8, v6
+
+    goto :wn_p1
+
+    :wn_p1done
+    # ===== 第二遍：按实际延迟相对分档 =====
+    #   最快 -> 4 份；最慢 -> 1 份；中间按 (d-min)/(max-min) 线性插值
+    #   全部延迟相同 -> 统一 4 份
+    new-instance v0, Ljava/util/ArrayList;
+
+    invoke-direct {v0}, Ljava/util/ArrayList;-><init>()V
+
+    invoke-interface {p0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+
+    move-result-object v1
+
+    :wn_loop
+    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v2
+
+    if-eqz v2, :wn_end
+
+    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v2
+
+    check-cast v2, Ljava/lang/String;
+
+    const/4 v3, 0x1
+
+    sget-object v4, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;
+
+    invoke-virtual {v4, v2}, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->get(Ljava/lang/String;)[J
+
+    move-result-object v4
+
+    if-eqz v4, :wn_add
+
+    array-length v5, v4
+
+    if-lez v5, :wn_add
+
+    const/4 v5, 0x0
+
+    aget-wide v9, v4, v5
+
+    long-to-int v6, v9
+
+    if-lez v6, :wn_add
+
+    if-eq v8, v7, :wn_flat
+
+    sub-int v5, v8, v7
+
+    sub-int v6, v6, v7
+
+    mul-int/lit8 v6, v6, 0x3
+
+    div-int v6, v6, v5
+
+    const/4 v3, 0x4
+
+    sub-int v3, v3, v6
+
+    goto :wn_clamp
+
+    :wn_flat
+    const/4 v3, 0x4
+
+    :wn_clamp
+    const/4 v5, 0x1
+
+    if-ge v3, v5, :wn_clamp_hi
+
+    const/4 v3, 0x1
+
+    :wn_clamp_hi
+    const/4 v5, 0x4
+
+    if-le v3, v5, :wn_add
+
+    const/4 v3, 0x4
+
+    :wn_add
+    const/4 v5, 0x0
+
+    :wn_dup
+    if-ge v5, v3, :wn_next
+
+    invoke-virtual {v0, v2}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+
+    add-int/lit8 v5, v5, 0x1
+
+    goto :wn_dup
+
+    :wn_next
+    goto :wn_loop
+
+    :wn_end
+    return-object v0
+.end method
+
 .method private final buildBalancer(Ljava/util/List;)Lorg/json/JSONObject;
     .locals 2
     .annotation system Ldalvik/annotation/Signature;
@@ -496,7 +779,7 @@
 
     .line 66
     .line 67
-    const/4 v0, 0x5
+    const/16 v0, 0xa
 
     .line 68
     invoke-virtual {p0, p1, v0}, Lorg/json/JSONObject;->put(Ljava/lang/String;I)Lorg/json/JSONObject;
@@ -2012,7 +2295,8 @@
 
     .line 20
     .line 21
-    invoke-virtual {v3}, Lio/nekohasekai/sfa/database/Settings;->getConcurrentRegion()Ljava/lang/String;
+    # [方案A] 基准地区 = 用户选中节点所属地区（封装在 baseRegion，避免污染本方法字节码）
+    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->baseRegion()Ljava/lang/String;
 
     .line 22
     .line 23
@@ -2026,6 +2310,9 @@
     .line 27
     .line 28
     move-result-object v4
+
+    # [方案A] 依据选中节点设定基准协议
+    invoke-static {v4}, Lio/nekohasekai/sfa/bg/BalancerInjector;->setBaseProtocol(Ljava/util/List;)V
 
     .line 29
     invoke-virtual {v3}, Ljava/lang/String;->length()I
@@ -2123,6 +2410,33 @@
     .line 73
     if-eqz v8, :cond_2
 
+    # [方案A] 同协议筛选
+    sget-object v8, Lio/nekohasekai/sfa/bg/BalancerInjector;->BASE_PROTOCOL:Ljava/lang/String;
+
+    if-eqz v8, :cond_protoA
+
+    invoke-virtual {v8}, Ljava/lang/String;->length()I
+
+    move-result v8
+
+    if-eqz v8, :cond_protoA
+
+    move-object v8, v7
+    check-cast v8, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;
+
+    invoke-virtual {v8}, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;->getType()Ljava/lang/String;
+
+    move-result-object v8
+
+    sget-object v9, Lio/nekohasekai/sfa/bg/BalancerInjector;->BASE_PROTOCOL:Ljava/lang/String;
+
+    invoke-static {v8, v9}, Loc3;->d(Ljava/lang/Object;Ljava/lang/Object;)Z
+
+    move-result v8
+
+    if-eqz v8, :cond_2
+
+    :cond_protoA
     .line 74
     .line 75
     invoke-virtual {v5, v7}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
@@ -2893,6 +3207,11 @@
 
     .line 464
     :cond_d
+    # [权重并发] 按实测延迟加权（快节点多份）
+    invoke-static {v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->weightNodes(Ljava/util/List;)Ljava/util/List;
+
+    move-result-object v2
+
     invoke-direct {p0, v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->buildBalancer(Ljava/util/List;)Lorg/json/JSONObject;
 
     .line 465

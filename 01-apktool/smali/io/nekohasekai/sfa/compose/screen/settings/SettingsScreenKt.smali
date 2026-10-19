@@ -7885,7 +7885,7 @@
     const/4 v10, 0x0
 
     .line 530
-    invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
+    # [已删除] 并发地区 UI 入口 —— 用户要求保障自主，不做地区限制
 
     .line 531
     .line 532
@@ -10419,37 +10419,12 @@
 .end method
 
 .method private static final SettingsScreen$lambda$5(Leg4;)Z
-    .locals 0
-    .annotation system Ldalvik/annotation/Signature;
-        value = {
-            "(",
-            "Leg4;",
-            ")Z"
-        }
-    .end annotation
+    .locals 1
 
-    .line 1
-    invoke-interface {p0}, Lvj6;->getValue()Ljava/lang/Object;
+    # [已修改] 并发地区弹窗触发开关，恒为 false —— 用户要求不做地区限制
+    const/4 v0, 0x0
 
-    .line 2
-    .line 3
-    .line 4
-    move-result-object p0
-
-    .line 5
-    check-cast p0, Ljava/lang/Boolean;
-
-    .line 6
-    .line 7
-    invoke-virtual {p0}, Ljava/lang/Boolean;->booleanValue()Z
-
-    .line 8
-    .line 9
-    .line 10
-    move-result p0
-
-    .line 11
-    return p0
+    return v0
 .end method
 
 .method private static final SettingsScreen$lambda$6(Leg4;Z)V

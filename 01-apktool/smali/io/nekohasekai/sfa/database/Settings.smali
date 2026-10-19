@@ -5546,37 +5546,11 @@
 .end method
 
 .method public final getConcurrentRegion()Ljava/lang/String;
-    .locals 3
+    .locals 1
 
-    .line 1
-    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->concurrentRegion$delegate:Lio/nekohasekai/sfa/ktx/PreferenceProxy;
+    const-string v0, ""
 
-    .line 2
-    .line 3
-    sget-object v1, Lio/nekohasekai/sfa/database/Settings;->$$delegatedProperties:[Lbh3;
-
-    .line 4
-    .line 5
-    const/4 v2, 0x5
-
-    .line 6
-    aget-object v1, v1, v2
-
-    .line 7
-    .line 8
-    invoke-virtual {v0, p0, v1}, Lio/nekohasekai/sfa/ktx/PreferenceProxy;->getValue(Ljava/lang/Object;Lbh3;)Ljava/lang/Object;
-
-    .line 9
-    .line 10
-    .line 11
-    move-result-object p0
-
-    .line 12
-    check-cast p0, Ljava/lang/String;
-
-    .line 13
-    .line 14
-    return-object p0
+    return-object v0
 .end method
 
 .method public final getDashboardDisabledItems()Ljava/util/Set;

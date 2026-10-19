@@ -138,10 +138,82 @@ $asc = 'C:\Users\somew\neo_asc'
 
 ## 九、签名与装机说明【重要】
 
-**重建包与原包签名不同**，Android 不允许覆盖安装：
+### 9.1 自校验机制（本项目最大坑）
 
-- 直接装 → `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
-- 必须先 `adb uninstall com.xiaosaik.neo`（**会清掉 App 数据/配置**）再装
-- 或把原版 keystore（`release.keystore`，此前在旧工程的 `_work\签名密钥备份`）找回来重签
+`Application.onCreate()` **第一件事**就是调 `IntegrityCheck.verify()`，**失败即 `Process.killProcess(myPid())` 自杀**（smali 实证）：
 
-测试用 keystore 已生成：`03-dist\neo-test.keystore`（口令 `123456`，别名 `neotest`），**仅测试用，勿用于正式发布**。
+```
+sget-object v0, Lio/nekohasekai/sfa/vendor/IntegrityCheck;->INSTANCE
+invoke-virtual {v0, p0}, IntegrityCheck;->verify(Landroid/content/Context;)Z
+if-nez v0, :cond_0
+invoke-static {}, Landroid/os/Process;->myPid()I
+invoke-static {p0}, Landroid/os/Process;->killProcess(I)V   ← 自杀
+```
+
+`verify()` 逻辑：取 `PackageInfo.signingInfo.getApkContentsSigners()[0].toByteArray()` → `SHA-256` → 与内置 `REF[]` 比对。
+
+**`REF[]` 是 XOR 0x5A 混淆的证书 SHA-256**（本项目已程序化验证）：
+
+| 项 | 值 |
+|---|---|
+| `REF[]` 原文 | `e4 ff 1d a1 b0 e1 ba 7a … de de de`（32 项） |
+| `REF[i] XOR 0x5A` | **`bea547fbeabbe0206061957bd5fb3f5181cde5d6c961488949cb8d079f848484`** |
+| 原包证书 SHA-256 | `bea547fb…848484` ✅ **完全吻合** |
+
+### 9.2 打补丁方案（已在 `01-apktool` 中实施）
+
+把 `REF[]` 换成**新签名证书**的指纹（同样 XOR 0x5A），自校验机制**依然生效**，只是认新证书。
+
+本工程已改为测试证书指纹：
+
+```
+fbb22d03218a707dfd9860a66c8f7006124471634896fc5d2207f94918eaa3a3  (证书 SHA-256)
+  ↓ XOR 0x5A
+a1 e8 77 59 7b d0 2a 27 a7 c2 3a fc 36 d5 2a 5c 48 1e 2b 39 12 cc a6 07 78 5d a3 13 42 b0 f9 f9  (REF[])
+```
+
+**若要换自己的 keystore**，须重算 `REF[]`：
+```powershell
+$hex = （你的证书 SHA-256，小写无分隔）
+$bytes = for($i=0;$i -lt 64;$i+=2){ [Convert]::ToInt32($hex.Substring($i,2),16) }
+($bytes | ForEach-Object { '0x{0:x}' -f ($_ -bxor 0x5a) })   # 填入 IntegrityCheck.smali 的 .array-data
+```
+
+### 9.3 MIUI/HyperOS 安装限制
+
+Redmi (HyperOS 14) 上 `adb install` 报 **`INSTALL_FAILED_USER_RESTRICTED`**（USB 安装需人工确认）。
+**绕过**：设备已 root，用 root 直接装：
+```powershell
+adb push <apk> /data/local/tmp/x.apk
+adb shell "su -c 'pm install -r /data/local/tmp/x.apk'"
+```
+另：shell 用户注入触摸事件会报 `INJECT_EVENTS permission` → 同样加 `su -c 'input tap x y'`。
+
+### 9.4 测试 keystore
+
+`03-dist\neo-test.keystore`（口令 `123456`，别名 `neotest`）——**仅测试用，勿用于正式发布**。
+
+## 十、端到端验证结果【2026-10-19 15:34 实测】
+
+**判定全部通过：**
+
+| 判据 | 结果 | 证据 |
+|---|---|---|
+| App 启动不崩 | ✅ | PID **27681 全程不变**（崩溃循环会不断换 PID） |
+| FATAL / integrity fail | ✅ **0 条** | logcat 全量扫描 |
+| 四个 tab 可切换 | ✅ | 四页截图 **MD5 互异**：`84ACF778`/`E765003F`/`BD035CF3`/`758AFD11` |
+| 首页渲染 | ✅ | 圆环"未连接"+ 上传/下载卡 + 实时流量方块热力图 + 底部四导航 |
+| 节点页 | ✅ | "还没有节点，请先到「订阅」页添加并刷新订阅"（符合未配订阅状态） |
+| 设置页 | ✅ | 通用/进阶/关于 三组完整，含内核·配置覆盖·订阅诊断日志·并发地区·会话日志 |
+| 内核 so 落地 | ✅ | `/data/app/.../lib/arm64/libbox.so` = **80,879,176 B** 原样 |
+
+### 对照实验：`sing-box unknown` 不是补丁缺陷【事实】
+
+设置页底部显示 `v0.1.18 · sing-box unknown`。**装回原版 APK 做对照 → 原版同样显示 `sing-box unknown`**。
+→ 该字段为**原版固有行为**（未连内核时不显示版本号），**与本次重建/补丁无关**。
+
+### 装机状态
+
+- **补丁版已装在手机上**（`versionName 0.1.18` / `versionCode 19`，lastUpdateTime `15:34:36`）
+- `com.xiaosaik.neo.pro` 全程**未被触碰**
+

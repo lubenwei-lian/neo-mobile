@@ -117,10 +117,31 @@ $asc = 'C:\Users\somew\neo_asc'
 
 | 环节 | 状态 | 证据 |
 |---|---|---|
-| 拉包 | ✅ | SHA256 已核 |
+| 拉包 | ✅ | SHA256 `D858270D…D201E` 已核 |
 | apktool 反编译 | ✅ | 10,853 smali + 833 res |
-| jadx 反编译 | ✅ | 9,543 java |
-| **apktool 重打包** | ✅ | 34.45 MB |
+| jadx 反编译 | ✅ | 9,543 java（应用自身 895） |
+| **apktool 重打包** | ✅ | 34.45 MB，条目 **1456 = 原包 1456** |
 | zipalign | ✅ | OK |
-| apksigner 签名 | ✅ | V3 签名，DN `CN=neo, OU=dev, O=xiaosaik, C=CN` |
-| **装机验证** | ⏳ | **待用户授权**（需先卸载原版或处理签名冲突） |
+| apksigner 签名 | ✅ | V3，DN `CN=neo, OU=dev, O=xiaosaik, C=CN` |
+| 构建脚本独立复跑 | ✅ | `tools\build.ps1` 全程 10.4 秒通过 |
+| **装机验证** | ⏳ | **待授权**（签名不同，需先卸载原版） |
+
+### 等价性对照（重建包 vs 原包）
+
+| 维度 | 原包 | 重建包 | 结论 |
+|---|---|---|---|
+| APK 条目数 | **1,456** | **1,456** | ✅ 完全一致 |
+| dex 数量 | 2 | 2 | ✅ 一致 |
+| `lib\arm64-v8a\libbox.so` | 80,879,176 B | 80,879,176 B | ✅ 原样带入 |
+| 文件大小 | 35,538,570 B | 36,118,711 B | +580 KB（重新压缩） |
+| 签名证书 SHA-256 | `bea547fb…848484` | `fbb22d03…eaa3a3` | ⚠️ **不同**（原私钥不在包内） |
+
+## 九、签名与装机说明【重要】
+
+**重建包与原包签名不同**，Android 不允许覆盖安装：
+
+- 直接装 → `INSTALL_FAILED_UPDATE_INCOMPATIBLE`
+- 必须先 `adb uninstall com.xiaosaik.neo`（**会清掉 App 数据/配置**）再装
+- 或把原版 keystore（`release.keystore`，此前在旧工程的 `_work\签名密钥备份`）找回来重签
+
+测试用 keystore 已生成：`03-dist\neo-test.keystore`（口令 `123456`，别名 `neotest`），**仅测试用，勿用于正式发布**。

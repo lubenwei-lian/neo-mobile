@@ -1,0 +1,630 @@
+.class public final Lah2;
+.super Landroid/graphics/drawable/Drawable$ConstantState;
+.source "r8-map-id-ac831dc897b0aa80d84e1d271d2d367153f2db9b9878671e4801f016bdd47138"
+
+
+# instance fields
+.field public a:Landroid/graphics/drawable/Drawable$ConstantState;
+
+.field public b:I
+
+.field public c:Z
+
+.field public d:I
+
+.field public e:Z
+
+.field public f:I
+
+.field public g:I
+
+.field public h:I
+
+.field public i:I
+
+.field public j:F
+
+.field public k:I
+
+.field public l:F
+
+.field public m:I
+
+.field public n:F
+
+.field public o:I
+
+.field public p:F
+
+.field public q:I
+
+.field public r:F
+
+.field public s:I
+
+.field public t:Lj76;
+
+.field public u:I
+
+.field public v:I
+
+.field public final w:Landroid/graphics/Rect;
+
+.field public x:[I
+
+
+# direct methods
+.method public constructor <init>(Lah2;)V
+    .locals 8
+
+    .line 1
+    invoke-direct {p0}, Landroid/graphics/drawable/Drawable$ConstantState;-><init>()V
+
+    .line 2
+    .line 3
+    .line 4
+    const/4 v0, 0x0
+
+    .line 5
+    iput v0, p0, Lah2;->b:I
+
+    .line 6
+    .line 7
+    iput-boolean v0, p0, Lah2;->c:Z
+
+    .line 8
+    .line 9
+    const/high16 v1, -0x80000000
+
+    .line 10
+    .line 11
+    iput v1, p0, Lah2;->d:I
+
+    .line 12
+    .line 13
+    iput-boolean v0, p0, Lah2;->e:Z
+
+    .line 14
+    .line 15
+    iput v1, p0, Lah2;->f:I
+
+    .line 16
+    .line 17
+    iput v1, p0, Lah2;->g:I
+
+    .line 18
+    .line 19
+    iput v1, p0, Lah2;->h:I
+
+    .line 20
+    .line 21
+    iput v1, p0, Lah2;->i:I
+
+    .line 22
+    .line 23
+    const/high16 v2, 0x7fc00000    # Float.NaN
+
+    .line 24
+    .line 25
+    iput v2, p0, Lah2;->j:F
+
+    .line 26
+    .line 27
+    iput v1, p0, Lah2;->k:I
+
+    .line 28
+    .line 29
+    iput v2, p0, Lah2;->l:F
+
+    .line 30
+    .line 31
+    iput v1, p0, Lah2;->m:I
+
+    .line 32
+    .line 33
+    iput v2, p0, Lah2;->n:F
+
+    .line 34
+    .line 35
+    iput v1, p0, Lah2;->o:I
+
+    .line 36
+    .line 37
+    iput v2, p0, Lah2;->p:F
+
+    .line 38
+    .line 39
+    iput v1, p0, Lah2;->q:I
+
+    .line 40
+    .line 41
+    iput v2, p0, Lah2;->r:F
+
+    .line 42
+    .line 43
+    iput v1, p0, Lah2;->s:I
+
+    .line 44
+    .line 45
+    const/4 v2, 0x0
+
+    .line 46
+    iput-object v2, p0, Lah2;->t:Lj76;
+
+    .line 47
+    .line 48
+    iput v1, p0, Lah2;->u:I
+
+    .line 49
+    .line 50
+    iput v1, p0, Lah2;->v:I
+
+    .line 51
+    .line 52
+    iput-object v2, p0, Lah2;->w:Landroid/graphics/Rect;
+
+    .line 53
+    .line 54
+    sget-object v1, Lcom/google/android/material/focus/FocusRingDrawable;->n0:[I
+
+    .line 55
+    .line 56
+    iput-object v1, p0, Lah2;->x:[I
+
+    .line 57
+    .line 58
+    if-eqz p1, :cond_4
+
+    .line 59
+    .line 60
+    iget-object v1, p1, Lah2;->a:Landroid/graphics/drawable/Drawable$ConstantState;
+
+    .line 61
+    .line 62
+    iput-object v1, p0, Lah2;->a:Landroid/graphics/drawable/Drawable$ConstantState;
+
+    .line 63
+    .line 64
+    iget v1, p1, Lah2;->b:I
+
+    .line 65
+    .line 66
+    iput v1, p0, Lah2;->b:I
+
+    .line 67
+    .line 68
+    iget-boolean v1, p1, Lah2;->c:Z
+
+    .line 69
+    .line 70
+    iput-boolean v1, p0, Lah2;->c:Z
+
+    .line 71
+    .line 72
+    iget v1, p1, Lah2;->d:I
+
+    .line 73
+    .line 74
+    iput v1, p0, Lah2;->d:I
+
+    .line 75
+    .line 76
+    iget-boolean v1, p1, Lah2;->e:Z
+
+    .line 77
+    .line 78
+    iput-boolean v1, p0, Lah2;->e:Z
+
+    .line 79
+    .line 80
+    iget v1, p1, Lah2;->f:I
+
+    .line 81
+    .line 82
+    iput v1, p0, Lah2;->f:I
+
+    .line 83
+    .line 84
+    iget v1, p1, Lah2;->g:I
+
+    .line 85
+    .line 86
+    iput v1, p0, Lah2;->g:I
+
+    .line 87
+    .line 88
+    iget v1, p1, Lah2;->h:I
+
+    .line 89
+    .line 90
+    iput v1, p0, Lah2;->h:I
+
+    .line 91
+    .line 92
+    iget v1, p1, Lah2;->i:I
+
+    .line 93
+    .line 94
+    iput v1, p0, Lah2;->i:I
+
+    .line 95
+    .line 96
+    iget v1, p1, Lah2;->j:F
+
+    .line 97
+    .line 98
+    iput v1, p0, Lah2;->j:F
+
+    .line 99
+    .line 100
+    iget v1, p1, Lah2;->k:I
+
+    .line 101
+    .line 102
+    iput v1, p0, Lah2;->k:I
+
+    .line 103
+    .line 104
+    iget v1, p1, Lah2;->l:F
+
+    .line 105
+    .line 106
+    iput v1, p0, Lah2;->l:F
+
+    .line 107
+    .line 108
+    iget v1, p1, Lah2;->m:I
+
+    .line 109
+    .line 110
+    iput v1, p0, Lah2;->m:I
+
+    .line 111
+    .line 112
+    iget v1, p1, Lah2;->n:F
+
+    .line 113
+    .line 114
+    iput v1, p0, Lah2;->n:F
+
+    .line 115
+    .line 116
+    iget v1, p1, Lah2;->o:I
+
+    .line 117
+    .line 118
+    iput v1, p0, Lah2;->o:I
+
+    .line 119
+    .line 120
+    iget v1, p1, Lah2;->p:F
+
+    .line 121
+    .line 122
+    iput v1, p0, Lah2;->p:F
+
+    .line 123
+    .line 124
+    iget v1, p1, Lah2;->q:I
+
+    .line 125
+    .line 126
+    iput v1, p0, Lah2;->q:I
+
+    .line 127
+    .line 128
+    iget v1, p1, Lah2;->r:F
+
+    .line 129
+    .line 130
+    iput v1, p0, Lah2;->r:F
+
+    .line 131
+    .line 132
+    iget v1, p1, Lah2;->s:I
+
+    .line 133
+    .line 134
+    iput v1, p0, Lah2;->s:I
+
+    .line 135
+    .line 136
+    iget v1, p1, Lah2;->u:I
+
+    .line 137
+    .line 138
+    iput v1, p0, Lah2;->u:I
+
+    .line 139
+    .line 140
+    iget v1, p1, Lah2;->v:I
+
+    .line 141
+    .line 142
+    iput v1, p0, Lah2;->v:I
+
+    .line 143
+    .line 144
+    iget-object v1, p1, Lah2;->t:Lj76;
+
+    .line 145
+    .line 146
+    instance-of v3, v1, Ll76;
+
+    .line 147
+    .line 148
+    if-eqz v3, :cond_0
+
+    .line 149
+    .line 150
+    check-cast v1, Ll76;
+
+    .line 151
+    .line 152
+    invoke-virtual {v1}, Ll76;->i()Lk76;
+
+    .line 153
+    .line 154
+    .line 155
+    move-result-object v0
+
+    .line 156
+    invoke-virtual {v0}, Lk76;->a()Ll76;
+
+    .line 157
+    .line 158
+    .line 159
+    move-result-object v0
+
+    .line 160
+    iput-object v0, p0, Lah2;->t:Lj76;
+
+    .line 161
+    .line 162
+    goto :goto_1
+
+    .line 163
+    :cond_0
+    instance-of v3, v1, Lak6;
+
+    .line 164
+    .line 165
+    if-eqz v3, :cond_2
+
+    .line 166
+    .line 167
+    check-cast v1, Lak6;
+
+    .line 168
+    .line 169
+    new-instance v3, Lp61;
+
+    .line 170
+    .line 171
+    invoke-direct {v3}, Lp61;-><init>()V
+
+    .line 172
+    .line 173
+    .line 174
+    iget v4, v1, Lak6;->a:I
+
+    .line 175
+    .line 176
+    iput v4, v3, Lp61;->Y:I
+
+    .line 177
+    .line 178
+    iget-object v5, v1, Lak6;->b:Ll76;
+
+    .line 179
+    .line 180
+    iput-object v5, v3, Lp61;->Z:Ljava/lang/Object;
+
+    .line 181
+    .line 182
+    iget-object v5, v1, Lak6;->c:[[I
+
+    .line 183
+    .line 184
+    array-length v6, v5
+
+    .line 185
+    new-array v6, v6, [[I
+
+    .line 186
+    .line 187
+    iput-object v6, v3, Lp61;->a0:Ljava/lang/Object;
+
+    .line 188
+    .line 189
+    iget-object v1, v1, Lak6;->d:[Ll76;
+
+    .line 190
+    .line 191
+    array-length v7, v1
+
+    .line 192
+    new-array v7, v7, [Ll76;
+
+    .line 193
+    .line 194
+    iput-object v7, v3, Lp61;->b0:Ljava/lang/Object;
+
+    .line 195
+    .line 196
+    invoke-static {v5, v0, v6, v0, v4}, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V
+
+    .line 197
+    .line 198
+    .line 199
+    iget-object v4, v3, Lp61;->b0:Ljava/lang/Object;
+
+    .line 200
+    .line 201
+    check-cast v4, [Ll76;
+
+    .line 202
+    .line 203
+    iget v5, v3, Lp61;->Y:I
+
+    .line 204
+    .line 205
+    invoke-static {v1, v0, v4, v0, v5}, Ljava/lang/System;->arraycopy(Ljava/lang/Object;ILjava/lang/Object;II)V
+
+    .line 206
+    .line 207
+    .line 208
+    iget v0, v3, Lp61;->Y:I
+
+    .line 209
+    .line 210
+    if-nez v0, :cond_1
+
+    .line 211
+    .line 212
+    goto :goto_0
+
+    .line 213
+    :cond_1
+    new-instance v2, Lak6;
+
+    .line 214
+    .line 215
+    invoke-direct {v2, v3}, Lak6;-><init>(Lp61;)V
+
+    .line 216
+    .line 217
+    .line 218
+    :goto_0
+    iput-object v2, p0, Lah2;->t:Lj76;
+
+    .line 219
+    .line 220
+    goto :goto_1
+
+    .line 221
+    :cond_2
+    iput-object v1, p0, Lah2;->t:Lj76;
+
+    .line 222
+    .line 223
+    :goto_1
+    iget-object v0, p1, Lah2;->w:Landroid/graphics/Rect;
+
+    .line 224
+    .line 225
+    if-eqz v0, :cond_3
+
+    .line 226
+    .line 227
+    new-instance v0, Landroid/graphics/Rect;
+
+    .line 228
+    .line 229
+    iget-object v1, p1, Lah2;->w:Landroid/graphics/Rect;
+
+    .line 230
+    .line 231
+    invoke-direct {v0, v1}, Landroid/graphics/Rect;-><init>(Landroid/graphics/Rect;)V
+
+    .line 232
+    .line 233
+    .line 234
+    iput-object v0, p0, Lah2;->w:Landroid/graphics/Rect;
+
+    .line 235
+    .line 236
+    :cond_3
+    iget-object p1, p1, Lah2;->x:[I
+
+    .line 237
+    .line 238
+    array-length v0, p1
+
+    .line 239
+    invoke-static {p1, v0}, Ljava/util/Arrays;->copyOf([II)[I
+
+    .line 240
+    .line 241
+    .line 242
+    move-result-object p1
+
+    .line 243
+    iput-object p1, p0, Lah2;->x:[I
+
+    .line 244
+    .line 245
+    :cond_4
+    return-void
+.end method
+
+
+# virtual methods
+.method public final getChangingConfigurations()I
+    .locals 1
+
+    .line 1
+    iget-object v0, p0, Lah2;->a:Landroid/graphics/drawable/Drawable$ConstantState;
+
+    .line 2
+    .line 3
+    if-eqz v0, :cond_0
+
+    .line 4
+    .line 5
+    invoke-virtual {v0}, Landroid/graphics/drawable/Drawable$ConstantState;->getChangingConfigurations()I
+
+    .line 6
+    .line 7
+    .line 8
+    move-result v0
+
+    .line 9
+    goto :goto_0
+
+    .line 10
+    :cond_0
+    const/4 v0, 0x0
+
+    .line 11
+    :goto_0
+    iget p0, p0, Lah2;->b:I
+
+    .line 12
+    .line 13
+    or-int/2addr p0, v0
+
+    .line 14
+    return p0
+.end method
+
+.method public final newDrawable()Landroid/graphics/drawable/Drawable;
+    .locals 2
+
+    .line 1
+    new-instance v0, Lcom/google/android/material/focus/FocusRingDrawable;
+
+    .line 2
+    .line 3
+    const/4 v1, 0x0
+
+    .line 4
+    invoke-direct {v0, p0, v1}, Lcom/google/android/material/focus/FocusRingDrawable;-><init>(Lah2;Landroid/content/res/Resources;)V
+
+    .line 5
+    .line 6
+    .line 7
+    return-object v0
+.end method
+
+.method public final newDrawable(Landroid/content/res/Resources;)Landroid/graphics/drawable/Drawable;
+    .locals 1
+
+    .line 8
+    new-instance v0, Lcom/google/android/material/focus/FocusRingDrawable;
+
+    .line 9
+    invoke-direct {v0, p0, p1}, Lcom/google/android/material/focus/FocusRingDrawable;-><init>(Lah2;Landroid/content/res/Resources;)V
+
+    return-object v0
+.end method

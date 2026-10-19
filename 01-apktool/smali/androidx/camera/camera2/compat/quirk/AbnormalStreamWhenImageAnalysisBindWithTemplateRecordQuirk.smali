@@ -1,0 +1,23 @@
+.class public final Landroidx/camera/camera2/compat/quirk/AbnormalStreamWhenImageAnalysisBindWithTemplateRecordQuirk;
+.super Ljava/lang/Object;
+.source "r8-map-id-ac831dc897b0aa80d84e1d271d2d367153f2db9b9878671e4801f016bdd47138"
+
+# interfaces
+.implements Landroidx/camera/camera2/compat/quirk/CaptureIntentPreviewQuirk;
+
+
+# virtual methods
+.method public final a()Z
+    .locals 0
+
+    .line 1
+    invoke-static {}, Lfi5;->u()Z
+
+    .line 2
+    .line 3
+    .line 4
+    move-result p0
+
+    .line 5
+    return p0
+.end method

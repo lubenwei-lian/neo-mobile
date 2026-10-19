@@ -79,7 +79,7 @@
 
     move-result v1
 
-    if-gez v1, :h_norm_done
+    if-ltz v1, :h_norm_done
 
     const/4 v2, 0x0
 

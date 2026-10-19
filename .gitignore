@@ -1,0 +1,24 @@
+# 构建产物（可再生产）
+03-dist/*.apk
+03-dist/*.idsig
+03-dist/*.keystore
+01-apktool/build/
+01-apktool/dist/
+
+# 临时/中间产物
+_work/
+*.log
+*.tmp
+
+# 大体积内核二进制（可从 00-apk 重新抽出，且体积 77MB+）
+# 如需纳入版本，删掉下面这行
+04-kernel/*.so
+
+# 反编译 Java（可从 00-apk 用 jadx 再生，9,543 文件）
+# 如需纳入版本，删掉下面这行
+02-java/
+
+# 系统
+Thumbs.db
+desktop.ini
+.DS_Store

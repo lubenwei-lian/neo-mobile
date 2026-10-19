@@ -636,6 +636,67 @@
     return-object v0
 .end method
 
+.method public static final dedupByExit(Ljava/util/List;)Ljava/util/List;
+    .locals 9
+
+    # 真并发去重：同一真实出口 IP 的节点只保留最快的 1 个
+    new-instance v0, Ljava/util/ArrayList;
+
+    invoke-direct {v0}, Ljava/util/ArrayList;-><init>()V
+
+    new-instance v1, Ljava/util/HashSet;
+
+    invoke-direct {v1}, Ljava/util/HashSet;-><init>()V
+
+    invoke-interface {p0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+
+    move-result-object v2
+
+    :de_loop
+    invoke-interface {v2}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v3
+
+    if-eqz v3, :de_end
+
+    invoke-interface {v2}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v3
+
+    check-cast v3, Ljava/lang/String;
+
+    sget-object v4, Lio/nekohasekai/sfa/bg/NodeExitCache;->INSTANCE:Lio/nekohasekai/sfa/bg/NodeExitCache;
+
+    invoke-virtual {v4, v3}, Lio/nekohasekai/sfa/bg/NodeExitCache;->get(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v4
+
+    # 无出口数据 -> 保留（信息不足，不误杀）
+    if-eqz v4, :de_keep
+
+    invoke-virtual {v4}, Ljava/lang/String;->length()I
+
+    move-result v5
+
+    if-nez v5, :de_keep
+
+    # 出口已出现过 -> 跳过
+    invoke-virtual {v1, v4}, Ljava/util/HashSet;->add(Ljava/lang/Object;)Z
+
+    move-result v5
+
+    if-eqz v5, :de_end_skip
+
+    :de_keep
+    invoke-virtual {v0, v3}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+
+    :de_end_skip
+    goto :de_loop
+
+    :de_end
+    return-object v0
+.end method
+
 .method private final buildBalancer(Ljava/util/List;)Lorg/json/JSONObject;
     .locals 2
     .annotation system Ldalvik/annotation/Signature;
@@ -3207,6 +3268,14 @@
 
     .line 464
     :cond_d
+    # [出口探测] 异步探测池内节点真实出口 IP（本轮先用缓存，探测结果下轮生效）
+    invoke-static {v2}, Lio/nekohasekai/sfa/bg/NodeExitProbe;->probeAsync(Ljava/util/List;)V
+
+    # [真并发] 按真实出口 IP 去重（同一出口只留 1 个，避免假并发）
+    invoke-static {v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->dedupByExit(Ljava/util/List;)Ljava/util/List;
+
+    move-result-object v2
+
     # [权重并发] 按实测延迟加权（快节点多份）
     invoke-static {v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->weightNodes(Ljava/util/List;)Ljava/util/List;
 
@@ -3315,7 +3384,7 @@
     .line 515
     .line 516
     .line 517
-    const-string v2, "\uff08\u6c60\u5927\u5c0f=5\uff0c\u5730\u533a="
+    const-string v2, "\uff08\u6c60\u5927\u5c0f=10\uff0c\u5730\u533a="
 
     .line 518
     .line 519

@@ -2904,7 +2904,7 @@
 
     .line 122
     .line 123
-    if-gez v4, :cond_4
+    if-ltz v4, :cond_4
 
     .line 124
     .line 125

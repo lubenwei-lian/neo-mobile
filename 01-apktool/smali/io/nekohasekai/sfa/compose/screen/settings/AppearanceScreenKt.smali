@@ -6447,7 +6447,7 @@
     return-object p0
 .end method
 
-.method private static final ToggleRow(Ljava/lang/String;Ljava/lang/String;ZZLzl2;Lrt0;II)V
+.method public static final ToggleRow(Ljava/lang/String;Ljava/lang/String;ZZLzl2;Lrt0;II)V
     .locals 34
     .annotation system Ldalvik/annotation/Signature;
         value = {

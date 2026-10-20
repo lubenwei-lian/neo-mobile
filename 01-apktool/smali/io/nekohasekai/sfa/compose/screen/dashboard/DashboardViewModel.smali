@@ -3152,7 +3152,8 @@
     move-result-object p1
 
     .line 193
-    const/4 v0, 0x5
+    # [池大小 8] 与 BalancerInjector.POOL_SIZE / pool_size 对齐（原为 5）。
+    const/16 v0, 0x8
 
     .line 194
     invoke-static {p1, v0}, Lvn0;->J0(Ljava/lang/Iterable;I)Ljava/util/List;

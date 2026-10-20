@@ -7686,35 +7686,10 @@
     .line 519
     .line 520
     :cond_8
-    # [并发模式开关] 用独立回调类，点击即切换并落盘。
+    # [并发模式开关] 旧的纯点击行已由下方 ToggleRow 取代（保留 v11 赋值以维持原控制流）。
     new-instance v11, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;
 
     invoke-direct {v11}, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;-><init>()V
-
-    .line 521
-
-    .line 522
-    .line 523
-    const/16 v13, 0x61b0
-
-    .line 524
-    .line 525
-    const/16 v14, 0x8
-
-    .line 526
-    .line 527
-    const-string v8, "\u5e76\u53d1\u6a21\u5f0f"
-
-    .line 528
-    .line 529
-    const/4 v10, 0x0
-
-    .line 530
-    # [并发模式开关] 点击切换：开 = 连接即进并发池（同地区同协议，池 8）；关 = 单节点模式。
-    # 副标题置空，避免残留旧的「不限」文案
-    const/4 v9, 0x0
-
-    invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
 
     .line 531
     .line 532
@@ -7937,6 +7912,27 @@
 
     .line 641
     invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
+
+    # [并发模式开关] 复用 v7..v14 槽位（v12 保持 composer 不动），调 AppearanceScreenKt.ToggleRow 渲染真 Switch。
+    const-string v7, "\u5e76\u53d1\u6a21\u5f0f"
+
+    const-string v8, "\u5f00\u542f\u540e\u8fde\u63a5\u5373\u4f7f\u7528\u5e76\u53d1\u6c60\uff1b\u5173\u95ed\u5219\u53ea\u8d70\u5355\u4e2a\u8282\u70b9"
+
+    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->concurrentEnabled()Z
+
+    move-result v9
+
+    const/4 v10, 0x0
+
+    new-instance v11, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;
+
+    invoke-direct {v11}, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;-><init>()V
+
+    const/16 v13, 0x6036
+
+    const/16 v14, 0x8
+
+    invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/AppearanceScreenKt;->ToggleRow(Ljava/lang/String;Ljava/lang/String;ZZLzl2;Lrt0;II)V
 
     .line 642
     .line 643

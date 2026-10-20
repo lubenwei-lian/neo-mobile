@@ -224,6 +224,7 @@
 
     .line 5
     .line 6
+
     monitor-enter p0
 
     .line 7
@@ -506,6 +507,9 @@
     monitor-exit p0
 
     .line 136
+    # [持久化] 测速结果落盘，供重启后加权使用
+    invoke-static {}, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->persist()V
+
     return-void
 
     .line 137
@@ -514,6 +518,100 @@
 
     .line 138
     throw p1
+.end method
+
+.method public static final persist()V
+    .locals 10
+
+    # 收集 entries -> HashMap<String,Integer>，交给 DelayCacheStore.save（内部已 try/catch）
+    new-instance v0, Ljava/util/HashMap;
+
+    invoke-direct {v0}, Ljava/util/HashMap;-><init>()V
+
+    sget-object v1, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->lock:Ljava/lang/Object;
+
+    monitor-enter v1
+
+    :try_start_0
+    sget-object v2, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->entries:Ljava/util/HashMap;
+
+    invoke-virtual {v2}, Ljava/util/HashMap;->entrySet()Ljava/util/Set;
+
+    move-result-object v2
+
+    invoke-interface {v2}, Ljava/util/Set;->iterator()Ljava/util/Iterator;
+
+    move-result-object v2
+
+    :ps_loop
+    invoke-interface {v2}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v3
+
+    if-eqz v3, :ps_done
+
+    invoke-interface {v2}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v3
+
+    check-cast v3, Ljava/util/Map$Entry;
+
+    invoke-interface {v3}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
+
+    move-result-object v4
+
+    check-cast v4, [J
+
+    if-eqz v4, :ps_loop
+
+    array-length v5, v4
+
+    if-lez v5, :ps_loop
+
+    const/4 v5, 0x0
+
+    aget-wide v5, v4, v5
+
+    long-to-int v5, v5
+
+    if-lez v5, :ps_loop
+
+    invoke-interface {v3}, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
+
+    move-result-object v3
+
+    check-cast v3, Ljava/lang/String;
+
+    invoke-static {v5}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+
+    move-result-object v5
+
+    invoke-virtual {v0, v3, v5}, Ljava/util/HashMap;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+
+    goto :ps_loop
+
+    :ps_done
+    :try_end_0
+    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+
+    monitor-exit v1
+
+    sget-object v1, Lio/nekohasekai/sfa/Application;->Companion:Lio/nekohasekai/sfa/Application$Companion;
+
+    invoke-virtual {v1}, Lio/nekohasekai/sfa/Application$Companion;->getApplication()Lio/nekohasekai/sfa/Application;
+
+    move-result-object v1
+
+    invoke-static {v1, v0}, Lio/nekohasekai/sfa/bg/DelayCacheStore;->save(Landroid/content/Context;Ljava/util/Map;)V
+
+    return-void
+
+    :catchall_0
+    move-exception v0
+
+    monitor-exit v1
+
+    return-void
 .end method
 
 .method public final record(Ljava/lang/String;I)V

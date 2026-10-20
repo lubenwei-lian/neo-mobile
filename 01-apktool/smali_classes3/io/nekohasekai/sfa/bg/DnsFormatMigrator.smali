@@ -339,7 +339,7 @@
     .locals 1
 
     .line 109
-    if-eqz p2, :cond_2
+    if-eqz p2, :cond_1
 
     invoke-virtual {p2}, Ljava/lang/String;->isEmpty()Z
 
@@ -349,48 +349,26 @@
 
     goto :goto_1
 
-    .line 112
+    .line 113
     :cond_0
-    const-string v0, "inet4_range"
-
-    invoke-virtual {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result v0
-
-    if-nez v0, :cond_1
-
-    const-string v0, "inet6_range"
-
-    invoke-virtual {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    move-result v0
-
-    if-nez v0, :cond_1
-
-    const-string v0, "server"
-
-    invoke-virtual {v0, p1}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-
-    .line 116
-    :cond_1
     :try_start_0
     invoke-virtual {p0, p1, p2}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
     :try_end_0
     .catch Lorg/json/JSONException; {:try_start_0 .. :try_end_0} :catch_0
 
-    .line 118
+    .line 115
     goto :goto_0
 
-    .line 117
+    .line 114
     :catch_0
     move-exception p0
 
-    .line 119
+    .line 116
     :goto_0
     return-void
 
     .line 110
-    :cond_2
+    :cond_1
     :goto_1
     return-void
 .end method

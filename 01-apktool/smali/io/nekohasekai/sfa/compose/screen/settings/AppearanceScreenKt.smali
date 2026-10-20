@@ -5306,19 +5306,6 @@
 
     .line 65
     .line 66
-    new-instance v3, Lly4;
-
-    .line 67
-    .line 68
-    const-string v4, "light"
-
-    .line 69
-    .line 70
-    const-string v5, "\u6d45\u8272"
-
-    .line 71
-    .line 72
-    invoke-direct {v3, v4, v5}, Lly4;-><init>(Ljava/lang/Object;Ljava/lang/Object;)V
 
     .line 73
     .line 74
@@ -5357,7 +5344,6 @@
     .line 91
     .line 92
     .line 93
-    # [已删除] 「浅色」选项 —— 用户要求删除，只保留 暗色/跟随系统（2026-10-20）
     filled-new-array {v4, v5}, [Lly4;
 
     .line 94

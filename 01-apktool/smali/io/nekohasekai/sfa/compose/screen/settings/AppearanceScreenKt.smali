@@ -5357,7 +5357,8 @@
     .line 91
     .line 92
     .line 93
-    filled-new-array {v3, v4, v5}, [Lly4;
+    # [已删除] 「浅色」选项 —— 用户要求删除，只保留 暗色/跟随系统（2026-10-20）
+    filled-new-array {v4, v5}, [Lly4;
 
     .line 94
     .line 95

@@ -5322,7 +5322,7 @@
     move-object v9, v1
 
     .line 473
-    # [已删除] 「语言」UI 行 —— 用户要求删除（2026-10-20）
+    # [保留] 「语言」行的参数准备代码 —— 与后续行共用寄存器/Compose 分组，删除会触发 VerifyError（2026-10-20 实测）
 
     .line 474
     .line 475
@@ -7011,91 +7011,6 @@
     .line 58
     .line 59
     :cond_2
-    check-cast p3, Lxl2;
-
-    .line 60
-    .line 61
-    const/16 p0, 0xf
-
-    .line 62
-    .line 63
-    const/4 p2, 0x0
-
-    .line 64
-    invoke-static {p1, v1, p2, p3, p0}, Ls71;->g(Lub4;ZLjava/lang/String;Lxl2;I)Lub4;
-
-    .line 65
-    .line 66
-    .line 67
-    move-result-object p0
-
-    .line 68
-    sget-wide v2, Ldo0;->j:J
-
-    .line 69
-    .line 70
-    const-wide/16 v6, 0x0
-
-    .line 71
-    .line 72
-    const/16 v9, 0x1fe
-
-    .line 73
-    .line 74
-    const-wide/16 v4, 0x0
-
-    .line 75
-    .line 76
-    invoke-static/range {v2 .. v9}, Lik3;->h(JJJLrn2;I)Ldv3;
-
-    .line 77
-    .line 78
-    .line 79
-    move-result-object v7
-
-    .line 80
-    sget-object p1, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;
-
-    .line 81
-    .line 82
-    invoke-virtual {p1}, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;->getLambda$360351478$sing_box_neo_0_1_18_otherRelease()Lnm2;
-
-    .line 83
-    .line 84
-    .line 85
-    move-result-object v2
-
-    .line 86
-    invoke-virtual {p1}, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;->getLambda$-323006350$sing_box_neo_0_1_18_otherRelease()Lnm2;
-
-    .line 87
-    .line 88
-    .line 89
-    move-result-object v5
-
-    .line 90
-    const/16 v9, 0x6006
-
-    .line 91
-    .line 92
-    const/16 v10, 0x1ac
-
-    .line 93
-    .line 94
-    const/4 v4, 0x0
-
-    .line 95
-    const/4 v6, 0x0
-
-    .line 96
-    move-object v3, p0
-
-    .line 97
-    # [已删除] 「Ghostty 配置」UI 行 —— 用户要求删除（2026-10-20）
-
-    .line 98
-    .line 99
-    .line 100
     goto :goto_1
 
     .line 101
@@ -8492,58 +8407,6 @@
     invoke-virtual {v10, v9}, Lrn2;->p(Z)V
 
     move-object/from16 v16, v10
-
-    .line 60
-    sget-wide v10, Ldo0;->j:J
-
-    const-wide/16 v14, 0x0
-
-    const/16 v17, 0x1fe
-
-    const-wide/16 v12, 0x0
-
-    .line 61
-    invoke-static/range {v10 .. v17}, Lik3;->h(JJJLrn2;I)Ldv3;
-
-    move-result-object v15
-
-    move-object/from16 v10, v16
-
-    sget-object v5, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;
-
-    invoke-virtual {v5}, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;->getLambda$-1646427156$sing_box_neo_0_1_18_otherRelease()Lnm2;
-
-    move-result-object v11
-
-    .line 62
-    new-instance v12, Luo;
-
-    move-object/from16 v13, p8
-
-    invoke-direct {v12, v2, v13, v9}, Luo;-><init>(ZLeg4;I)V
-
-    const v13, 0x25c9b309
-
-    invoke-static {v13, v12, v10}, Lvg7;->t(ILjm2;Lrt0;)Lcr0;
-
-    move-result-object v12
-
-    invoke-virtual {v5}, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$AppSettingsScreenKt;->getLambda$1394109800$sing_box_neo_0_1_18_otherRelease()Lnm2;
-
-    move-result-object v13
-
-    const/16 v17, 0x6c06
-
-    const/16 v18, 0x1a4
-
-    const/4 v14, 0x0
-
-    move-object v10, v11
-
-    move-object v11, v3
-
-    .line 63
-    # [已删除] 「更新轨道」UI 行 —— 用户要求删除（2026-10-20）
 
     move-object/from16 v10, v16
 

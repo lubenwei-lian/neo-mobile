@@ -92,15 +92,12 @@
     if-lez v5, :loop
 
     :go_probe
-    sput-object v2, Lio/nekohasekai/sfa/bg/NodeExitProbe;->CURRENT_TAG:Ljava/lang/String;
 
     new-instance v5, Ljava/util/concurrent/CountDownLatch;
 
     const/4 v6, 0x1
 
     invoke-direct {v5, v6}, Ljava/util/concurrent/CountDownLatch;-><init>(I)V
-
-    sput-object v5, Lio/nekohasekai/sfa/bg/NodeExitProbe;->CURRENT_LATCH:Ljava/util/concurrent/CountDownLatch;
 
     # 通过运行中的内核，对该节点发起 STUN
     sget-object v6, Lio/nekohasekai/sfa/utils/CommandTarget;->INSTANCE:Lio/nekohasekai/sfa/utils/CommandTarget;
@@ -115,7 +112,7 @@
 
     new-instance v9, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;
 
-    invoke-direct {v9}, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;-><init>()V
+    invoke-direct {v9, v2, v5}, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;-><init>(Ljava/lang/String;Ljava/util/concurrent/CountDownLatch;)V
 
     invoke-virtual {v7, v8, v2, v9}, Lio/nekohasekai/libbox/CommandClient;->startSTUNTest(Ljava/lang/String;Ljava/lang/String;Lio/nekohasekai/libbox/STUNTestHandler;)Lio/nekohasekai/libbox/STUNTestSession;
 
@@ -133,10 +130,6 @@
     invoke-virtual {v10}, Lio/nekohasekai/libbox/STUNTestSession;->close()V
 
     :after_close
-    const/4 v6, 0x0
-
-    sput-object v6, Lio/nekohasekai/sfa/bg/NodeExitProbe;->CURRENT_LATCH:Ljava/util/concurrent/CountDownLatch;
-
     goto :loop
 
     :done

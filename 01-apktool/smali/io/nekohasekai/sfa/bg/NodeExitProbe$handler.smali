@@ -1,13 +1,24 @@
 .class public final Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;
 .super Ljava/lang/Object;
+
+
 .implements Lio/nekohasekai/libbox/STUNTestHandler;
 
 
+# instance fields
+.field private final tag:Ljava/lang/String;
+.field private final latch:Ljava/util/concurrent/CountDownLatch;
+
+
 # direct methods
-.method public constructor <init>()V
+.method public constructor <init>(Ljava/lang/String;Ljava/util/concurrent/CountDownLatch;)V
     .locals 0
 
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+
+    iput-object p1, p0, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;->tag:Ljava/lang/String;
+
+    iput-object p2, p0, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;->latch:Ljava/util/concurrent/CountDownLatch;
 
     return-void
 .end method
@@ -27,7 +38,7 @@
 
     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    sget-object v2, Lio/nekohasekai/sfa/bg/NodeExitProbe;->CURRENT_TAG:Ljava/lang/String;
+    iget-object v2, p0, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;->tag:Ljava/lang/String;
 
     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
@@ -43,7 +54,7 @@
 
     invoke-virtual {v0, v1}, Lio/nekohasekai/sfa/bg/DiagLogger;->pubgRules(Ljava/lang/String;)V
 
-    sget-object v0, Lio/nekohasekai/sfa/bg/NodeExitProbe;->CURRENT_LATCH:Ljava/util/concurrent/CountDownLatch;
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;->latch:Ljava/util/concurrent/CountDownLatch;
 
     if-eqz v0, :h_err_done
 
@@ -111,7 +122,7 @@
     :h_norm_done
     # ===== 归一化结束 =====
 
-    sget-object v1, Lio/nekohasekai/sfa/bg/NodeExitProbe;->CURRENT_TAG:Ljava/lang/String;
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;->tag:Ljava/lang/String;
 
     if-eqz v1, :h_res_cd
 
@@ -145,7 +156,7 @@
     invoke-virtual {v2, v3}, Lio/nekohasekai/sfa/bg/DiagLogger;->pubgRules(Ljava/lang/String;)V
 
     :h_res_cd
-    sget-object v3, Lio/nekohasekai/sfa/bg/NodeExitProbe;->CURRENT_LATCH:Ljava/util/concurrent/CountDownLatch;
+    iget-object v3, p0, Lio/nekohasekai/sfa/bg/NodeExitProbe$handler;->latch:Ljava/util/concurrent/CountDownLatch;
 
     if-eqz v3, :h_res_done
 

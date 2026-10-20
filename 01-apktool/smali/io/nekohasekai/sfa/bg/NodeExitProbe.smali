@@ -9,9 +9,7 @@
 
 .field private static final STUN_SERVER:Ljava/lang/String; = "stun.l.google.com:19302"
 
-.field public static CURRENT_TAG:Ljava/lang/String;
 
-.field public static CURRENT_LATCH:Ljava/util/concurrent/CountDownLatch;
 
 
 # direct methods

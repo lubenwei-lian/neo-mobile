@@ -483,9 +483,17 @@
 
     .line 140
     invoke-virtual {v0, v5}, Lio/nekohasekai/sfa/database/TypedProfile;->setRemoteURL(Ljava/lang/String;)V
+    # [新增] 订阅 URL 变更 -> 失效该 profile 的流量缓存（避免显示旧订阅数据）
+    iget-object v8, v1, Lio/nekohasekai/sfa/compose/screen/profile/EditProfileViewModel$saveChanges$1;->$profile:Lio/nekohasekai/sfa/database/Profile;
 
-    .line 141
-    .line 142
+    invoke-virtual {v8}, Lio/nekohasekai/sfa/database/Profile;->getId()J
+
+    move-result-wide v9
+
+    sget-object v8, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;
+
+    invoke-virtual/range {v8 .. v10}, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->invalidate(J)V
+
     .line 143
     iget-object v0, v1, Lio/nekohasekai/sfa/compose/screen/profile/EditProfileViewModel$saveChanges$1;->$state:Lio/nekohasekai/sfa/compose/screen/profile/EditProfileUiState;
 

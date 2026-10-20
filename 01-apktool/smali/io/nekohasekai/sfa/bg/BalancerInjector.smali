@@ -42,6 +42,9 @@
 
 .field public static final POOL_SIZE:I = 0x8
 
+    # 加权后的实际成员数（供日志显示）
+.field private static WEIGHTED_COUNT:I
+
     # [方案A] 基准协议（由选中节点推导）
     .field public static BASE_PROTOCOL:Ljava/lang/String;
 
@@ -652,8 +655,87 @@
     return-object v0
 .end method
 
+.method public static final restoreDelaysIfNeeded()V
+    .locals 8
+
+    # 已有数据则不回填（碰到任意一条有值即认为已回填过）
+    :try_start_0
+    sget-object v0, Lio/nekohasekai/sfa/Application;->Companion:Lio/nekohasekai/sfa/Application$Companion;
+
+    invoke-virtual {v0}, Lio/nekohasekai/sfa/Application$Companion;->getApplication()Lio/nekohasekai/sfa/Application;
+
+    move-result-object v0
+
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/DelayCacheStore;->load(Landroid/content/Context;)Ljava/util/HashMap;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/util/HashMap;->isEmpty()Z
+
+    move-result v1
+
+    if-nez v1, :rd_done
+
+    invoke-virtual {v0}, Ljava/util/HashMap;->entrySet()Ljava/util/Set;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Set;->iterator()Ljava/util/Iterator;
+
+    move-result-object v0
+
+    :rd_loop
+    invoke-interface {v0}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v1
+
+    if-eqz v1, :rd_done
+
+    invoke-interface {v0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v1
+
+    check-cast v1, Ljava/util/Map$Entry;
+
+    invoke-interface {v1}, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
+
+    move-result-object v2
+
+    check-cast v2, Ljava/lang/String;
+
+    invoke-interface {v1}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
+
+    move-result-object v1
+
+    check-cast v1, Ljava/lang/Integer;
+
+    invoke-virtual {v1}, Ljava/lang/Integer;->intValue()I
+
+    move-result v1
+
+    sget-object v3, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;
+
+    invoke-virtual {v3, v2, v1}, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->record(Ljava/lang/String;I)V
+
+    goto :rd_loop
+
+    :rd_done
+    :try_end_0
+    return-void
+
+    :catchall_0
+    move-exception v0
+
+    return-void
+    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+.end method
+
 .method public static final weightNodes(Ljava/util/List;)Ljava/util/List;
-    .locals 11
+    .locals 14
+
+    # [持久化回填] NodeDelayCache 是纯内存的，重启后为空 -> 加权退化为均分。
+    # 这里在加权前先从 node_delays.json 回填一次（已有数据则跳过）。
+    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->restoreDelaysIfNeeded()V
 
     # ===== 第一遍：求池内最快(v7)与最慢(v8)延迟 =====
     # 关键：aget-wide 会同时占用 v9/v10 两个寄存器；
@@ -806,7 +888,7 @@
     goto :wn_loop
 
     :wn_end
-    return-object v0
+        return-object v0
 .end method
 
 .method public static final dedupByExit(Ljava/util/List;)Ljava/util/List;
@@ -3564,7 +3646,16 @@
     # [权重并发] 按实测延迟加权（快节点多份）
     invoke-static {v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->weightNodes(Ljava/util/List;)Ljava/util/List;
 
-    move-result-object v2
+    move-result-object v7
+
+    # 记录加权后的成员数，供日志使用
+    invoke-interface {v7}, Ljava/util/List;->size()I
+
+    move-result v8
+
+    sput v8, Lio/nekohasekai/sfa/bg/BalancerInjector;->WEIGHTED_COUNT:I
+
+    move-object v2, v7
 
     invoke-direct {p0, v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->buildBalancer(Ljava/util/List;)Lorg/json/JSONObject;
 
@@ -3605,12 +3696,12 @@
 
     .line 484
     .line 485
-    invoke-virtual {v4}, Ljava/util/ArrayList;->size()I
+    # 显示加权后的实际成员数（原为加权前的候选数）
+    sget v2, Lio/nekohasekai/sfa/bg/BalancerInjector;->WEIGHTED_COUNT:I
 
     .line 486
     .line 487
     .line 488
-    move-result v2
 
     .line 489
     invoke-virtual {v3}, Ljava/lang/String;->length()I

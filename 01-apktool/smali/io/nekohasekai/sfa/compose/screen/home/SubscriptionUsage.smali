@@ -2636,6 +2636,52 @@
     throw p1
 .end method
 
+.method public final invalidate(J)V
+    .locals 1
+
+    .line 1
+    sget-object p0, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->lock:Ljava/lang/Object;
+
+    .line 2
+    .line 3
+    monitor-enter p0
+
+    .line 4
+    :try_start_0
+    sget-object v0, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->entries:Ljava/util/HashMap;
+
+    .line 5
+    .line 6
+    invoke-static {p1, p2}, Ljava/lang/String;->valueOf(J)Ljava/lang/String;
+
+    .line 7
+    .line 8
+    .line 9
+    move-result-object p1
+
+    .line 10
+    invoke-virtual {v0, p1}, Ljava/util/HashMap;->remove(Ljava/lang/Object;)Ljava/lang/Object;
+    :try_end_0
+    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+
+    .line 11
+    .line 12
+    monitor-exit p0
+
+    .line 13
+    return-void
+
+    .line 14
+    :catchall_0
+    move-exception p1
+
+    .line 15
+    monitor-exit p0
+
+    .line 16
+    throw p1
+.end method
+
 .method public final probe(JLjava/lang/String;Ljava/lang/String;ZLi01;)Ljava/lang/Object;
     .locals 14
     .annotation system Ldalvik/annotation/Signature;

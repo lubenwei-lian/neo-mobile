@@ -201,8 +201,6 @@
     .line 16
     invoke-virtual {p1, v0, v1}, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->record(Ljava/lang/String;I)V
 
-    # [持久化] 每测完一个节点就落盘，重启后加权仍可用。
-    invoke-static {}, Lio/nekohasekai/sfa/compose/screen/nodes/NodeDelayCache;->persist()V
 
     .line 17
     .line 18

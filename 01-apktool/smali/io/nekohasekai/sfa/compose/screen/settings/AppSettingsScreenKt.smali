@@ -5322,7 +5322,7 @@
     move-object v9, v1
 
     .line 473
-    invoke-static/range {v8 .. v16}, Lkk3;->b(Lnm2;Lub4;Lnm2;Lnm2;Lnm2;Ldv3;Lrt0;II)V
+    # [已删除] 「语言」UI 行 —— 用户要求删除（2026-10-20）
 
     .line 474
     .line 475
@@ -7091,7 +7091,7 @@
     move-object v3, p0
 
     .line 97
-    invoke-static/range {v2 .. v10}, Lkk3;->b(Lnm2;Lub4;Lnm2;Lnm2;Lnm2;Ldv3;Lrt0;II)V
+    # [已删除] 「Ghostty 配置」UI 行 —— 用户要求删除（2026-10-20）
 
     .line 98
     .line 99
@@ -8543,7 +8543,7 @@
     move-object v11, v3
 
     .line 63
-    invoke-static/range {v10 .. v18}, Lkk3;->b(Lnm2;Lub4;Lnm2;Lnm2;Lnm2;Ldv3;Lrt0;II)V
+    # [已删除] 「更新轨道」UI 行 —— 用户要求删除（2026-10-20）
 
     move-object/from16 v10, v16
 

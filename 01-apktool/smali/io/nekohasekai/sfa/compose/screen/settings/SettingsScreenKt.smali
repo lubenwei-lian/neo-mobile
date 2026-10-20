@@ -5266,7 +5266,7 @@
     const/4 v8, 0x0
 
     .line 131
-    invoke-static/range {v5 .. v12}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
+    # [已删除] 「服务」UI 入口 —— 用户要求删除（2026-10-20）
 
     .line 132
     .line 133
@@ -7111,7 +7111,7 @@
     const/4 v10, 0x0
 
     .line 112
-    invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
+    # [已删除] 「配置覆盖」UI 入口 —— 用户要求删除（2026-10-20）
 
     .line 113
     .line 114

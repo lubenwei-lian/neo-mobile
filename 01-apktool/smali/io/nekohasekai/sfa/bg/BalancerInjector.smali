@@ -40,7 +40,7 @@
 
 .field private static final MAX_NODES:I = 0x1f4
 
-.field public static final POOL_SIZE:I = 0xa
+.field public static final POOL_SIZE:I = 0x8
 
     # [方案A] 基准协议（由选中节点推导）
     .field public static BASE_PROTOCOL:Ljava/lang/String;
@@ -356,6 +356,58 @@
     return-void
 .end method
 
+.method public static final concurrentEnabled()Z
+    .locals 3
+
+    :try_start_0
+    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
+
+    invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getDataStore()Lio/nekohasekai/sfa/database/preference/RoomPreferenceDataStore;
+
+    move-result-object v0
+
+    const-string v1, "concurrent_mode_enabled"
+
+    const/4 v2, 0x1
+
+    invoke-virtual {v0, v1, v2}, Lio/nekohasekai/sfa/database/preference/RoomPreferenceDataStore;->getBoolean(Ljava/lang/String;Z)Z
+
+    move-result v0
+:try_end_0
+    return v0
+
+    :catchall_0
+    move-exception v0
+
+    const/4 v0, 0x1
+
+    return v0
+    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+.end method
+
+.method public static final setConcurrentEnabled(Z)V
+    .locals 3
+
+    :try_start_0
+    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
+
+    invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getDataStore()Lio/nekohasekai/sfa/database/preference/RoomPreferenceDataStore;
+
+    move-result-object v0
+
+    const-string v1, "concurrent_mode_enabled"
+
+    invoke-virtual {v0, v1, p0}, Lio/nekohasekai/sfa/database/preference/RoomPreferenceDataStore;->putBoolean(Ljava/lang/String;Z)V
+:try_end_0
+    return-void
+
+    :catchall_0
+    move-exception v0
+
+    return-void
+    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+.end method
+
 .method public static final baseRegion()Ljava/lang/String;
     .locals 3
 
@@ -477,6 +529,127 @@
 
     :sp_end
     return-void
+.end method
+
+.method public static final autoRegion(Ljava/util/List;)Ljava/lang/String;
+    .locals 6
+
+    # [自动基准地区] 收集每个节点的 regionOf 结果，交给 AutoRegionHelper 取出现最多的地区。
+    new-instance v0, Ljava/util/ArrayList;
+
+    invoke-direct {v0}, Ljava/util/ArrayList;-><init>()V
+
+    const/4 v1, 0x0
+
+    invoke-interface {p0}, Ljava/util/List;->size()I
+
+    move-result v2
+
+    :ar_loop
+    if-ge v1, v2, :ar_done
+
+    invoke-interface {p0, v1}, Ljava/util/List;->get(I)Ljava/lang/Object;
+
+    move-result-object v3
+
+    check-cast v3, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;
+
+    invoke-virtual {v3}, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;->getTag()Ljava/lang/String;
+
+    move-result-object v3
+
+    sget-object v4, Lio/nekohasekai/sfa/bg/NeoRegion;->INSTANCE:Lio/nekohasekai/sfa/bg/NeoRegion;
+
+    invoke-virtual {v4, v3}, Lio/nekohasekai/sfa/bg/NeoRegion;->regionOf(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v3
+
+    invoke-virtual {v0, v3}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+
+    add-int/lit8 v1, v1, 0x1
+
+    goto :ar_loop
+
+    :ar_done
+    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->baseRegion()Ljava/lang/String;
+
+    move-result-object v1
+
+    invoke-static {v0, v1}, Lio/nekohasekai/sfa/bg/AutoRegionHelper;->pickMost(Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v0
+
+    return-object v0
+.end method
+
+.method public static final autoProtocol(Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+    .locals 6
+
+    # [自动基准协议] 收集「已选地区内」节点的协议类型，交给 AutoProtocolHelper 取出现最多的。
+    new-instance v0, Ljava/util/ArrayList;
+
+    invoke-direct {v0}, Ljava/util/ArrayList;-><init>()V
+
+    const/4 v1, 0x0
+
+    invoke-interface {p0}, Ljava/util/List;->size()I
+
+    move-result v2
+
+    :ap_loop
+    if-ge v1, v2, :ap_done
+
+    invoke-interface {p0, v1}, Ljava/util/List;->get(I)Ljava/lang/Object;
+
+    move-result-object v3
+
+    check-cast v3, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;
+
+    # 只在地区内统计，保证池内同地区 + 同协议
+    if-eqz p1, :ap_add
+
+    invoke-virtual {p1}, Ljava/lang/String;->length()I
+
+    move-result v4
+
+    if-nez v4, :ap_add
+
+    invoke-virtual {v3}, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;->getTag()Ljava/lang/String;
+
+    move-result-object v4
+
+    sget-object v5, Lio/nekohasekai/sfa/bg/NeoRegion;->INSTANCE:Lio/nekohasekai/sfa/bg/NeoRegion;
+
+    invoke-virtual {v5, v4}, Lio/nekohasekai/sfa/bg/NeoRegion;->regionOf(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v4
+
+    invoke-static {v4, p1}, Loc3;->d(Ljava/lang/Object;Ljava/lang/Object;)Z
+
+    move-result v4
+
+    if-nez v4, :ap_next
+
+    :ap_add
+    invoke-virtual {v3}, Lio/nekohasekai/sfa/bg/BalancerInjector$Candidate;->getType()Ljava/lang/String;
+
+    move-result-object v4
+
+    invoke-virtual {v0, v4}, Ljava/util/ArrayList;->add(Ljava/lang/Object;)Z
+
+    :ap_next
+    add-int/lit8 v1, v1, 0x1
+
+    goto :ap_loop
+
+    :ap_done
+    sget-object v1, Lio/nekohasekai/sfa/bg/BalancerInjector;->BASE_PROTOCOL:Ljava/lang/String;
+
+    invoke-static {v0, v1}, Lio/nekohasekai/sfa/bg/AutoProtocolHelper;->pickMost(Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v0
+
+    return-object v0
 .end method
 
 .method public static final weightNodes(Ljava/util/List;)Ljava/util/List;
@@ -884,7 +1057,7 @@
 
     .line 66
     .line 67
-    const/16 v0, 0xa
+    const/16 v0, 0x8
 
     .line 68
     invoke-virtual {p0, p1, v0}, Lorg/json/JSONObject;->put(Ljava/lang/String;I)Lorg/json/JSONObject;
@@ -1008,7 +1181,7 @@
 .end method
 
 .method private final collectNodes(Lorg/json/JSONArray;)Ljava/util/List;
-    .locals 8
+    .locals 10
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "(",
@@ -1183,6 +1356,52 @@
     .line 81
     .line 82
     move-result-object v5
+
+    # [假节点过滤] server 指向本机回环的「提示节点」（如「剩余流量」「套餐到期」）不是真代理。
+    const-string v8, "127.0.0.1"
+
+    invoke-virtual {v5, v8}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v9
+
+    if-eqz v9, :cn_nl1
+
+    goto :goto_2
+
+    :cn_nl1
+    const-string v8, "0.0.0.0"
+
+    invoke-virtual {v5, v8}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v9
+
+    if-eqz v9, :cn_nl2
+
+    goto :goto_2
+
+    :cn_nl2
+    const-string v8, "localhost"
+
+    invoke-virtual {v5, v8}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v9
+
+    if-eqz v9, :cn_nl3
+
+    goto :goto_2
+
+    :cn_nl3
+    const-string v8, "::1"
+
+    invoke-virtual {v5, v8}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+
+    move-result v9
+
+    if-eqz v9, :cn_nl_ok
+
+    goto :goto_2
+
+    :cn_nl_ok
 
     .line 83
     invoke-virtual {v5}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
@@ -2360,6 +2579,22 @@
     .locals 13
 
     .line 1
+    # [并发模式开关] 关闭时完全跳过注入，原配置原样返回（单节点模式）。
+    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->concurrentEnabled()Z
+
+    move-result v0
+
+    if-nez v0, :cm_on
+
+    sget-object v0, Lio/nekohasekai/sfa/bg/DiagLogger;->INSTANCE:Lio/nekohasekai/sfa/bg/DiagLogger;
+
+    const-string v1, "\u5e76\u53d1\u6a21\u5f0f\u5df2\u5173\u95ed\uff0c\u4fdd\u6301\u5355\u8282\u70b9\u6a21\u5f0f"
+
+    invoke-virtual {v0, v1}, Lio/nekohasekai/sfa/bg/DiagLogger;->pubgRules(Ljava/lang/String;)V
+
+    return-object p1
+
+    :cm_on
     const-string v0, "outbounds"
 
     .line 2
@@ -2396,18 +2631,6 @@
     .line 18
     .line 19
     :cond_0
-    sget-object v3, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
-
-    .line 20
-    .line 21
-    # [方案A] 基准地区 = 用户选中节点所属地区（封装在 baseRegion，避免污染本方法字节码）
-    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->baseRegion()Ljava/lang/String;
-
-    .line 22
-    .line 23
-    .line 24
-    move-result-object v3
-
     .line 25
     invoke-direct {p0, v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->collectNodes(Lorg/json/JSONArray;)Ljava/util/List;
 
@@ -2416,8 +2639,26 @@
     .line 28
     move-result-object v4
 
-    # [方案A] 依据选中节点设定基准协议
+    # [自动基准地区] 用户显式选中优先；未选中时取池内出现最多的地区（保证同地区风控生效）。
+    invoke-static {v4}, Lio/nekohasekai/sfa/bg/BalancerInjector;->autoRegion(Ljava/util/List;)Ljava/lang/String;
+
+    .line 22
+    .line 23
+    .line 24
+    move-result-object v3
+
+    # [方案A] 依据选中节点设定基准协议（用户显式选中时生效）
     invoke-static {v4}, Lio/nekohasekai/sfa/bg/BalancerInjector;->setBaseProtocol(Ljava/util/List;)V
+
+    # [自动基准协议] 地区内协议类型取出现最多的一个，保证池内同协议。
+    invoke-static {v4, v3}, Lio/nekohasekai/sfa/bg/BalancerInjector;->autoProtocol(Ljava/util/List;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v5
+
+    sput-object v5, Lio/nekohasekai/sfa/bg/BalancerInjector;->BASE_PROTOCOL:Ljava/lang/String;
+
+    .line 20
+    .line 21
 
     .line 29
     invoke-virtual {v3}, Ljava/lang/String;->length()I
@@ -3191,9 +3432,9 @@
     .line 404
     move-result v11
 
+    # [自主选择] 原订阅的 selector/urltest 组一律保留，用户才能继续自由选节点；
+    # 本方法注入的 ⚡并发 靠随后 hashSet 的 tag 去重跳过，不会重复。
     .line 405
-    if-nez v11, :cond_b
-
     .line 406
     .line 407
     invoke-virtual {v5, v10}, Lorg/json/JSONArray;->put(Ljava/lang/Object;)Lorg/json/JSONArray;
@@ -3428,7 +3669,7 @@
     .line 515
     .line 516
     .line 517
-    const-string v2, "\uff08\u6c60\u5927\u5c0f=10\uff0c\u5730\u533a="
+    const-string v2, "\uff08\u6c60\u5927\u5c0f=8\uff0c\u5730\u533a="
 
     .line 518
     .line 519

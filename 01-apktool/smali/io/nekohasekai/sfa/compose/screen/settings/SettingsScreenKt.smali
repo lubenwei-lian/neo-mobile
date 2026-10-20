@@ -7686,10 +7686,12 @@
     .line 519
     .line 520
     :cond_8
-    move-object v11, v4
+    # [并发模式开关] 用独立回调类，点击即切换并落盘。
+    new-instance v11, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;
+
+    invoke-direct {v11}, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;-><init>()V
 
     .line 521
-    check-cast v11, Lxl2;
 
     .line 522
     .line 523
@@ -7701,14 +7703,18 @@
 
     .line 526
     .line 527
-    const-string v8, "\u5e76\u53d1\u5730\u533a"
+    const-string v8, "\u5e76\u53d1\u6a21\u5f0f"
 
     .line 528
     .line 529
     const/4 v10, 0x0
 
     .line 530
-    # [已删除] 并发地区 UI 入口 —— 用户要求保障自主，不做地区限制
+    # [并发模式开关] 点击切换：开 = 连接即进并发池（同地区同协议，池 8）；关 = 单节点模式。
+    # 副标题置空，避免残留旧的「不限」文案
+    const/4 v9, 0x0
+
+    invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
 
     .line 531
     .line 532

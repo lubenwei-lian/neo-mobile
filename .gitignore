@@ -1,5 +1,7 @@
 # 构建产物（可再生产）
 03-dist/*.apk
+03-dist/*/
+03-dist/归档-*/
 03-dist/*.idsig
 03-dist/*.keystore
 01-apktool/build/

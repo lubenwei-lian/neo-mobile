@@ -2990,11 +2990,8 @@
 
     .line 114
     :cond_6
-    sget-object p1, Lio/nekohasekai/sfa/bg/BalancerInjector;->INSTANCE:Lio/nekohasekai/sfa/bg/BalancerInjector;
-
-    .line 115
-    .line 116
-    invoke-virtual {p1}, Lio/nekohasekai/sfa/bg/BalancerInjector;->getIDLE_TIMEOUT_MILLIS$sing_box_neo_0_1_18_otherRelease()J
+    # [S4 B2 2026-10-24] 空闲超时常量下沉 io.neoguard.KernelConfigHooks
+    invoke-static {}, Lio/neoguard/KernelConfigHooks;->idleTimeoutMillis()J
 
     .line 117
     .line 118

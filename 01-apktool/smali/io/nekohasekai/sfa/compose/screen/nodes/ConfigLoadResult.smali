@@ -77,6 +77,9 @@
     .line 22
     iput-object p4, p0, Lio/nekohasekai/sfa/compose/screen/nodes/ConfigLoadResult;->configContent:Ljava/lang/String;
 
+    # [S13 2026-10-24] 加载完成后自动跑一轮测速（每进程一次；StartupAutoTest 内部判空）
+    invoke-static {p0}, Lio/nekohasekai/sfa/compose/screen/nodes/StartupAutoTest;->trigger(Lio/nekohasekai/sfa/compose/screen/nodes/ConfigLoadResult;)V
+
     .line 23
     .line 24
     return-void

@@ -6,8 +6,9 @@
 #   2) 跨 dex 无重复类定义（重复类会导致旧类先被加载，改动静默失效）；
 #   3) classes4.dex 必须包含全部补丁类（SubGuard/FailoverGuard/NetworkWatcher 及内部类）；
 #   4) smali_classes3 文件数与 classes3.dex 类数一致（smali 工程与产物同步）；
-#   5) smali 里的 Lio/neoguard/ 挂钩数等于预期值；
-#   6) SubscriptionUsage 的 SubGuard.open 调用后必须有 check-cast（防 VerifyError）。
+#   5) smali 里的 Lio/neoguard/ 挂钩数等于预期值（AutoTest 辅助类自身引用不计）；
+#   6) SubscriptionUsage 的 SubGuard.open 调用后必须有 check-cast（防 VerifyError）；
+#   7) S13 启动默认测速：AutoTest 触发点存在、辅助类存在。
 param([string]$Apk)
 
 $ErrorActionPreference = 'Stop'
@@ -105,7 +106,7 @@ if ($byDex.ContainsKey('classes3.dex')) {
 # ---- 5. 挂钩数 ----
 $hookCount = 0
 $hookFiles = @{}
-foreach ($f in @(Get-ChildItem (Join-Path $PROJ '01-apktool\smali') -Recurse -Filter *.smali -File)) {
+foreach ($f in @(Get-ChildItem (Join-Path $PROJ '01-apktool\smali') -Recurse -Filter *.smali -File | Where-Object { $_.FullName -notmatch '\\io\\neoguard\\' })) {
     $txt = Get-Content -LiteralPath $f.FullName -Raw
     $m = [regex]::Matches($txt, 'Lio/neoguard/')
     if ($m.Count -gt 0) {
@@ -130,6 +131,25 @@ else {
         } else { $ok.Add("SubscriptionUsage: open 后有 check-cast") }
     }
 }
+
+# ---- 7. S13 启动默认测速 ----
+$nodesDir = Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\nodes'
+$s13classes = @('StartupAutoTest.smali','StartupAutoTest$Scope.smali','StartupAutoTest$Launch.smali','StartupAutoTest$Sink.smali')
+foreach ($c in $s13classes) {
+    if (-not (Test-Path -LiteralPath (Join-Path $nodesDir $c))) { $fail.Add("S13: 缺少 $c") }
+}
+$clrFile = Join-Path $nodesDir 'ConfigLoadResult.smali'
+if (Test-Path -LiteralPath $clrFile) {
+    $txt = Get-Content -LiteralPath $clrFile -Raw
+    if ($txt -notmatch 'StartupAutoTest;->trigger') { $fail.Add('S13: ConfigLoadResult 构造后没有 StartupAutoTest.trigger 触发点') }
+    else { $ok.Add('S13: ConfigLoadResult 已挂钩 StartupAutoTest.trigger') }
+} else { $fail.Add('S13: 找不到 ConfigLoadResult.smali') }
+$launchFile = Join-Path $nodesDir 'StartupAutoTest$Launch.smali'
+if (Test-Path -LiteralPath $launchFile) {
+    $txt = Get-Content -LiteralPath $launchFile -Raw
+    if ($txt -notmatch 'if-eq v0, v1, :resume') { $fail.Add('S13: Launch 协程状态机缺 if-eq 恢复分支（会 crash: resume before invoke）') }
+    else { $ok.Add('S13: Launch 协程状态机恢复分支正常') }
+} else { $fail.Add('S13: 找不到 StartupAutoTest$Launch.smali') }
 
 # ---- 输出 ----
 Write-Host ("校验 APK: " + $Apk)

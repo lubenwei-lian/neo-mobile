@@ -25,7 +25,8 @@ import java.util.List;
 public final class FailoverGuard {
 
     private static final String TAG = "NeoFailover";
-    private static final String TEST_URL = "http://www.gstatic.com/generate_204";
+    // S6：改用 https，配合 networkSecurityConfig 只放行本机回环的明文 HTTP
+    private static final String TEST_URL = "https://www.gstatic.com/generate_204";
     private static final int INTERVAL_MS = 20000;
     private static final int FAIL_THRESHOLD = 3;
     private static final long COOLDOWN_MS = 90000L;

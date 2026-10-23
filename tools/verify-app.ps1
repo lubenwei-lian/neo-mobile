@@ -23,7 +23,7 @@ $EXPECTED_CLASSES4 = @(
     'Lio/neoguard/NetworkWatcher$1;',
     'Lio/neoguard/SubGuard;'
 )
-$EXPECTED_HOOKS = 6
+$EXPECTED_HOOKS = 8
 
 if (-not $Apk) { $Apk = Join-Path $PROJ '03-dist\neo-latest.apk' }
 if (-not (Test-Path -LiteralPath $Apk)) { throw "APK 不存在: $Apk" }
@@ -162,6 +162,8 @@ if (Test-Path -LiteralPath $dex4) {
     $disasm = (& $DEXDUMP -d $dex4 2>&1) -join "`n"
     if ($disasm -notmatch 'readConfigPorts') { $fail.Add('S6: classes4.dex 缺 SubGuard.readConfigPorts（端口发现未打进产物）') }
     else { $ok.Add('S6: classes4.dex 含 SubGuard.readConfigPorts（方法级校验）') }
+    if ($disasm -notmatch 'clearProfileUsage') { $fail.Add('S3: classes4.dex 缺 SubscriptionUsageHooks.clearProfileUsage') } else { $ok.Add('S3: 订阅缓存清理已下沉 Java（clearProfileUsage）') }
+    if ($disasm -notmatch 'clearIfUrlChanged') { $fail.Add('S3: classes4.dex 缺 SubscriptionUsageHooks.clearIfUrlChanged') } else { $ok.Add('S3: URL 变更判定已下沉 Java（clearIfUrlChanged）') }
     if ($disasm -notmatch 'https://www\.gstatic\.com/generate_204') { $fail.Add('S6: FailoverGuard TEST_URL 未改为 https') }
     else { $ok.Add('S6: FailoverGuard TEST_URL 为 https（配合明文限制）') }
 } else { $fail.Add('S6: classes4.dex 未解出，无法做方法级校验') }

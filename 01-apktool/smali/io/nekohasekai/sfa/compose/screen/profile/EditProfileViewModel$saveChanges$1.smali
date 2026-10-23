@@ -489,27 +489,14 @@
 
     .line 140
     invoke-virtual {v0, v5}, Lio/nekohasekai/sfa/database/TypedProfile;->setRemoteURL(Ljava/lang/String;)V
-    # [修复 2026-10-22] 只有 remoteURL 真的变了才清流量缓存（v6=旧 URL，v5=新 URL）
-    invoke-static {v6, v5}, Loc3;->d(Ljava/lang/Object;Ljava/lang/Object;)Z
-
-    move-result v7
-
-    if-nez v7, :inv_do
-
-    goto :inv_done
-
-    :inv_do
+    # [S3 2026-10-24] 仅当 remoteURL 变化时清流量缓存：逻辑已下沉到 io.neoguard.SubscriptionUsageHooks
     iget-object v8, v1, Lio/nekohasekai/sfa/compose/screen/profile/EditProfileViewModel$saveChanges$1;->$profile:Lio/nekohasekai/sfa/database/Profile;
 
     invoke-virtual {v8}, Lio/nekohasekai/sfa/database/Profile;->getId()J
 
     move-result-wide v9
 
-    sget-object v8, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;
-
-    invoke-virtual/range {v8 .. v10}, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->invalidate(J)V
-
-    :inv_done
+    invoke-static {v9, v10, v6, v5}, Lio/neoguard/SubscriptionUsageHooks;->clearIfUrlChanged(JLjava/lang/String;Ljava/lang/String;)V
 
     .line 143
     iget-object v0, v1, Lio/nekohasekai/sfa/compose/screen/profile/EditProfileViewModel$saveChanges$1;->$state:Lio/nekohasekai/sfa/compose/screen/profile/EditProfileUiState;

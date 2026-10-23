@@ -874,8 +874,7 @@
     .line 51
     .line 52
     :catchall_2
-    throw p1
-.end method
+    throw p1.end method
 
 .method public normalizeSubscriptionContent(Ljava/lang/String;)Ljava/lang/String;
     .locals 1
@@ -1388,65 +1387,28 @@
 .end method
 
 .method public subscriptionUserAgentChain(Ljava/lang/String;)Ljava/util/List;
-    .locals 0
-    .annotation system Ldalvik/annotation/Signature;
-        value = {
-            "(",
-            "Ljava/lang/String;",
-            ")",
-            "Ljava/util/List<",
-            "Ljava/lang/String;",
-            ">;"
-        }
-    .end annotation
+    .locals 3
 
     .line 1
-    invoke-virtual {p1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+    const-string v0, "sing-box/1.14.3"
 
     .line 2
+    const-string v1, "ClashforWindows/0.20.39"
+
     .line 3
+    filled-new-array {v0, v1}, [Ljava/lang/String;
+
     .line 4
-    invoke-virtual {p0}, Lio/nekohasekai/sfa/kernel/SingBoxKernel;->version()Ljava/lang/String;
+    move-result-object v2
 
     .line 5
+    invoke-static {v2}, Ly9;->E([Ljava/lang/Object;)Ljava/util/List;
+
     .line 6
+    move-result-object v0
+
     .line 7
-    move-result-object p0
-
-    .line 8
-    const-string p1, "sing-box/"
-
-    .line 9
-    .line 10
-    invoke-static {p1, p0}, Lqx;->f(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
-
-    .line 11
-    .line 12
-    .line 13
-    move-result-object p0
-
-    .line 14
-    const-string p1, "ClashforWindows/0.20.39"
-
-    .line 15
-    .line 16
-    filled-new-array {p0, p1}, [Ljava/lang/String;
-
-    .line 17
-    .line 18
-    .line 19
-    move-result-object p0
-
-    .line 20
-    invoke-static {p0}, Ly9;->E([Ljava/lang/Object;)Ljava/util/List;
-
-    .line 21
-    .line 22
-    .line 23
-    move-result-object p0
-
-    .line 24
-    return-object p0
+    return-object v0
 .end method
 
 .method public supportsRemoteControl()Z
@@ -1888,18 +1850,8 @@
     .locals 0
 
     .line 1
-    invoke-static {}, Lio/nekohasekai/libbox/Libbox;->version()Ljava/lang/String;
+    const-string p0, "1.14.3"
 
     .line 2
-    .line 3
-    .line 4
-    move-result-object p0
-
-    .line 5
-    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    .line 6
-    .line 7
-    .line 8
     return-object p0
 .end method

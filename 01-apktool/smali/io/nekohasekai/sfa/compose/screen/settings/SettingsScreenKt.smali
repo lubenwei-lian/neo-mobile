@@ -7913,26 +7913,7 @@
     .line 641
     invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
 
-    # [并发模式开关] 复用 v7..v14 槽位（v12 保持 composer 不动），调 AppearanceScreenKt.ToggleRow 渲染真 Switch。
-    const-string v7, "\u5e76\u53d1\u6a21\u5f0f"
-
-    const-string v8, "\u5f00\u542f\u540e\u8fde\u63a5\u5373\u4f7f\u7528\u5e76\u53d1\u6c60\uff1b\u5173\u95ed\u5219\u53ea\u8d70\u5355\u4e2a\u8282\u70b9"
-
-    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->concurrentEnabled()Z
-
-    move-result v9
-
-    const/4 v10, 0x0
-
-    new-instance v11, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;
-
-    invoke-direct {v11}, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;-><init>()V
-
-    const/16 v13, 0x6036
-
-    const/16 v14, 0x8
-
-    invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/AppearanceScreenKt;->ToggleRow(Ljava/lang/String;Ljava/lang/String;ZZLzl2;Lrt0;II)V
+    # [2026-10-23 删除并发模式] 原 ToggleRow 调用已移除（固定单节点，与电脑版对齐）。
 
     .line 642
     .line 643

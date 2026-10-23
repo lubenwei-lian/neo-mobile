@@ -17,8 +17,8 @@ _work/
 04-kernel/*.so
 
 # 反编译 Java（可从 00-apk 用 jadx 再生，9,543 文件）
-# 如需纳入版本，删掉下面这行
-02-java/
+# 只忽略反编译产物；02-java/patches（自写补丁源码）与 stubs 必须进版本控制
+02-java/sources/
 
 # 系统
 Thumbs.db

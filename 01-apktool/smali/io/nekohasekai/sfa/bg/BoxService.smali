@@ -2154,6 +2154,9 @@
     .line 560
     invoke-virtual {p1}, Lio/nekohasekai/sfa/bg/CoreRestartGuard;->onStartSuccess()V
 
+    .line 1241
+    invoke-static {}, Lio/neoguard/FailoverGuard;->start()V
+
     .line 561
     .line 562
     .line 563
@@ -2932,6 +2935,9 @@
     .line 100
     invoke-virtual {p3}, Lio/nekohasekai/sfa/bg/CoreRestartGuard;->onSessionEnded()V
 
+    .line 1242
+    invoke-static {}, Lio/neoguard/FailoverGuard;->stop()V
+
     .line 101
     .line 102
     .line 103
@@ -3289,6 +3295,9 @@
     .line 57
     .line 58
     invoke-virtual {v0}, Lio/nekohasekai/sfa/bg/CoreRestartGuard;->onSessionEnded()V
+
+    .line 1242
+    invoke-static {}, Lio/neoguard/FailoverGuard;->stop()V
 
     .line 59
     .line 60

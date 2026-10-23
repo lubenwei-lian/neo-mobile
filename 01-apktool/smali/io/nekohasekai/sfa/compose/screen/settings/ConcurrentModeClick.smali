@@ -29,6 +29,9 @@
     # 落盘
     invoke-static {v0}, Lio/nekohasekai/sfa/bg/BalancerInjector;->setConcurrentEnabled(Z)V
 
+    # [2026-10-22 产品化] 同步写进 Compose 状态：设置页开关立即翻转（失败只记日志）
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/SwitchState;->write(Z)V
+
     # 诊断日志
     sget-object v1, Lio/nekohasekai/sfa/bg/DiagLogger;->INSTANCE:Lio/nekohasekai/sfa/bg/DiagLogger;
 

@@ -314,6 +314,12 @@
 
     .line 121
     :try_start_4
+    invoke-static {v2}, Lio/neoguard/SubGuard;->prepare(Ljava/lang/String;)Ljava/lang/String;
+
+    .line 1241
+    move-result-object v2
+
+    .line 1242
     invoke-virtual {v1}, Lio/nekohasekai/sfa/Application$Companion;->getKernel()Lio/nekohasekai/sfa/kernel/NeoKernel;
 
     .line 122

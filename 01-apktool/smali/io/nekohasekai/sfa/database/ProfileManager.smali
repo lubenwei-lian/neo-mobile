@@ -510,7 +510,7 @@
 .end method
 
 .method public final delete(Lio/nekohasekai/sfa/database/Profile;Li01;)Ljava/lang/Object;
-    .locals 0
+    .locals 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "(",
@@ -545,6 +545,17 @@
     .line 11
     .line 12
     move-result p0
+
+    # [修复 2026-10-22] 删订阅时清掉它的流量缓存。
+    # 新订阅 id 用 SELECT MAX(id)+1，删掉最大 id 后再新建会复用同一 id，
+    # 若不清理，新订阅在 30 分钟内会显示已删订阅的流量数据。
+    invoke-virtual {p1}, Lio/nekohasekai/sfa/database/Profile;->getId()J
+
+    move-result-wide v1
+
+    sget-object v0, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;
+
+    invoke-virtual/range {v0 .. v2}, Lio/nekohasekai/sfa/compose/screen/home/SubscriptionUsage;->invalidate(J)V
 
     .line 13
     new-instance p1, Ljava/lang/Integer;

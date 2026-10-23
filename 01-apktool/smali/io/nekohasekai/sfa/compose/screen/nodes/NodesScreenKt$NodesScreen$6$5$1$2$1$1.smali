@@ -206,45 +206,8 @@
     const/4 v4, 0x0
 
     .line 31
-    # [需求3 修复 2026-10-21] 原判断 if (组type == "balancer") 才进并发分支。
-    #
-    # 实测发现：并发模式下 kernelGroupFor() 经常返回 null（它要求
-    # 「组 tag == mainGroupTag」，而并发模式只剩 balancer，主组 tag 推导不出来），
-    # 于是 v3=false → 直接跳到 cond_1 → 「已连接且组非空」也不成立 → 静默什么都不做。
-    # 这正是「点哪个节点都没反应、还是走原来的地区」的真根因。
-    #
-    # 改为：并发模式开启时，点击节点一律交给 ConcurrentNodePicker 处理，
-    # 不再依赖 kernelGroupFor 能否匹配到组。
-    invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->concurrentEnabled()Z
-
-    move-result v3
-
-    if-eqz v3, :cond_1
-
-    # v0 = 被点击的节点 tag（L147 从 $entry.getTag() 取来，此处仍有效）
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->selectNode(Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v0
-
-    # selectNode 返回空串表示「节流丢弃的重放点击」，不弹 Toast 直接返回
-    invoke-virtual {v0}, Ljava/lang/String;->length()I
-
-    move-result v3
-
-    if-nez v3, :toast_show
-
-    return-void
-
-    :toast_show
-    iget-object p0, p0, Lio/nekohasekai/sfa/compose/screen/nodes/NodesScreenKt$NodesScreen$6$5$1$2$1$1;->$context:Landroid/content/Context;
-
-    invoke-static {p0, v0, v4}, Landroid/widget/Toast;->makeText(Landroid/content/Context;Ljava/lang/CharSequence;I)Landroid/widget/Toast;
-
-    move-result-object p0
-
-    invoke-virtual {p0}, Landroid/widget/Toast;->show()V
-
-    return-void
+    # [S4 2026-10-24 B1] 并发模式分支（BalancerInjector.concurrentEnabled / ConcurrentNodePicker / Toast）已删除：
+    #   并发功能已确认死路径（ensure 门闩恒 false），节点点击只走下面正常选择逻辑。
 
     .line 45
     :cond_1

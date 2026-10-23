@@ -16,50 +16,8 @@
 
 
 # direct methods
-.method static bridge synthetic -$$Nest$sfgetRUNNING_NODES()Ljava/util/concurrent/atomic/AtomicBoolean;
-    .locals 1
-
-    sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_NODES:Ljava/util/concurrent/atomic/AtomicBoolean;
-
-    return-object v0
-.end method
-
-.method static bridge synthetic -$$Nest$sfgetRUNNING_POOL()Ljava/util/concurrent/atomic/AtomicBoolean;
-    .locals 1
-
-    sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_POOL:Ljava/util/concurrent/atomic/AtomicBoolean;
-
-    return-object v0
-.end method
-
-.method static bridge synthetic -$$Nest$sfgetSTUN_SERVERS()[Ljava/lang/String;
-    .locals 1
-
-    sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->STUN_SERVERS:[Ljava/lang/String;
-
-    return-object v0
-.end method
-
-.method static bridge synthetic -$$Nest$smipOf(Ljava/lang/String;)Ljava/lang/String;
-    .locals 0
-
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/ExitInsight;->ipOf(Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object p0
-
-    return-object p0
-.end method
-
-.method static bridge synthetic -$$Nest$smlog(Ljava/lang/String;)V
-    .locals 0
-
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
-
-    return-void
-.end method
-
 .method static constructor <clinit>()V
-    .locals 3
+    .registers 3
 
     .line 48
     const-string v0, "stun.l.google.com:19302"
@@ -94,25 +52,74 @@
 .end method
 
 .method private constructor <init>()V
-    .locals 0
+    .registers 1
 
     .line 65
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
+    .line 66
     return-void
 .end method
 
-.method private static ipOf(Ljava/lang/String;)Ljava/lang/String;
-    .locals 2
+.method static synthetic access$000(Ljava/lang/String;)V
+    .registers 1
 
-    if-nez p0, :cond_0
+    .line 42
+    invoke-static {p0}, Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
+
+    return-void
+.end method
+
+.method static synthetic access$100()Ljava/util/concurrent/atomic/AtomicBoolean;
+    .registers 1
+
+    .line 42
+    sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_POOL:Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    return-object v0
+.end method
+
+.method static synthetic access$200()[Ljava/lang/String;
+    .registers 1
+
+    .line 42
+    sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->STUN_SERVERS:[Ljava/lang/String;
+
+    return-object v0
+.end method
+
+.method static synthetic access$300(Ljava/lang/String;)Ljava/lang/String;
+    .registers 1
+
+    .line 42
+    invoke-static {p0}, Lio/nekohasekai/sfa/bg/ExitInsight;->ipOf(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object p0
+
+    return-object p0
+.end method
+
+.method static synthetic access$400()Ljava/util/concurrent/atomic/AtomicBoolean;
+    .registers 1
+
+    .line 42
+    sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_NODES:Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    return-object v0
+.end method
+
+.method private static ipOf(Ljava/lang/String;)Ljava/lang/String;
+    .registers 3
+
+    .line 281
+    if-nez p0, :cond_4
 
     const/4 p0, 0x0
 
     return-object p0
 
     .line 282
-    :cond_0
+    :cond_4
     invoke-virtual {p0}, Ljava/lang/String;->trim()Ljava/lang/String;
 
     move-result-object p0
@@ -124,42 +131,46 @@
 
     move-result v0
 
-    if-eqz v0, :cond_1
-
-    const/16 v0, 0x5d
+    if-eqz v0, :cond_1f
 
     .line 284
+    const/16 v0, 0x5d
+
     invoke-virtual {p0, v0}, Ljava/lang/String;->indexOf(I)I
 
     move-result v0
 
+    .line 285
     const/4 v1, 0x1
 
-    if-le v0, v1, :cond_2
+    if-le v0, v1, :cond_1e
 
-    .line 285
     invoke-virtual {p0, v1, v0}, Ljava/lang/String;->substring(II)Ljava/lang/String;
 
     move-result-object p0
 
     return-object p0
 
-    :cond_1
-    const/16 v0, 0x3a
+    .line 286
+    :cond_1e
+    return-object p0
 
     .line 288
+    :cond_1f
+    const/16 v0, 0x3a
+
     invoke-virtual {p0, v0}, Ljava/lang/String;->lastIndexOf(I)I
 
     move-result v1
 
-    if-lez v1, :cond_2
-
     .line 289
+    if-lez v1, :cond_33
+
     invoke-virtual {p0, v0}, Ljava/lang/String;->indexOf(I)I
 
     move-result v0
 
-    if-ne v0, v1, :cond_2
+    if-ne v0, v1, :cond_33
 
     const/4 v0, 0x0
 
@@ -167,27 +178,38 @@
 
     move-result-object p0
 
-    :cond_2
+    return-object p0
+
+    .line 290
+    :cond_33
     return-object p0
 .end method
 
 .method private static log(Ljava/lang/String;)V
-    .locals 1
+    .registers 2
 
     .line 385
     :try_start_0
     sget-object v0, Lio/nekohasekai/sfa/bg/DiagLogger;->INSTANCE:Lio/nekohasekai/sfa/bg/DiagLogger;
 
     invoke-virtual {v0, p0}, Lio/nekohasekai/sfa/bg/DiagLogger;->pubgRules(Ljava/lang/String;)V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_5
+    .catchall {:try_start_0 .. :try_end_5} :catchall_6
 
-    :catchall_0
+    .line 387
+    goto :goto_7
+
+    .line 386
+    :catchall_6
+    move-exception p0
+
+    .line 388
+    :goto_7
     return-void
 .end method
 
 .method public static probeNodesAsync(Ljava/util/List;I)V
-    .locals 4
+    .registers 6
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "(",
@@ -197,19 +219,19 @@
         }
     .end annotation
 
-    if-eqz p0, :cond_2
-
     .line 298
+    if-eqz p0, :cond_51
+
     invoke-interface {p0}, Ljava/util/List;->isEmpty()Z
 
     move-result v0
 
-    if-eqz v0, :cond_0
+    if-eqz v0, :cond_9
 
-    goto :goto_0
+    goto :goto_51
 
     .line 299
-    :cond_0
+    :cond_9
     sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_NODES:Ljava/util/concurrent/atomic/AtomicBoolean;
 
     const/4 v1, 0x0
@@ -220,17 +242,18 @@
 
     move-result v0
 
-    if-nez v0, :cond_1
+    if-nez v0, :cond_19
 
     .line 300
     const-string p0, "\u8282\u70b9\u51fa\u53e3\u63a2\u6d4b\uff1a\u4e0a\u4e00\u8f6e\u8fd8\u6ca1\u8dd1\u5b8c\uff0c\u8df3\u8fc7\u672c\u8f6e\uff08\u9632\u4efb\u52a1\u53e0\u52a0\uff09"
 
     invoke-static {p0}, Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
 
+    .line 301
     return-void
 
     .line 304
-    :cond_1
+    :cond_19
     new-instance v0, Ljava/lang/Thread;
 
     new-instance v3, Lio/nekohasekai/sfa/bg/ExitInsight$3;
@@ -245,14 +268,16 @@
     invoke-virtual {v0, v2}, Ljava/lang/Thread;->setDaemon(Z)V
 
     .line 376
-    :try_start_0
+    :try_start_28
     invoke-virtual {v0}, Ljava/lang/Thread;->start()V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_2b
+    .catchall {:try_start_28 .. :try_end_2b} :catchall_2c
 
-    return-void
+    .line 380
+    goto :goto_50
 
-    :catchall_0
+    .line 377
+    :catchall_2c
     move-exception p0
 
     .line 378
@@ -261,6 +286,16 @@
     invoke-virtual {p1, v1}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
     .line 379
+    new-instance p1, Ljava/lang/StringBuilder;
+
+    invoke-direct {p1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v0, "\u8282\u70b9\u51fa\u53e3\u63a2\u6d4b\uff1a\u8d77\u7ebf\u7a0b\u5931\u8d25 "
+
+    invoke-virtual {p1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p1
+
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     move-result-object p0
@@ -269,27 +304,28 @@
 
     move-result-object p0
 
-    new-instance p1, Ljava/lang/StringBuilder;
-
-    const-string v0, "\u8282\u70b9\u51fa\u53e3\u63a2\u6d4b\uff1a\u8d77\u7ebf\u7a0b\u5931\u8d25 "
-
-    invoke-direct {p1, v0}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
     invoke-virtual {p1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {p1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object p0
+
+    invoke-virtual {p0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p0
 
     invoke-static {p0}, Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
 
-    :cond_2
-    :goto_0
+    .line 381
+    :goto_50
+    return-void
+
+    .line 298
+    :cond_51
+    :goto_51
     return-void
 .end method
 
 .method public static samplePoolAsync()V
-    .locals 5
+    .registers 5
 
     .line 180
     sget-object v0, Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_POOL:Ljava/util/concurrent/atomic/AtomicBoolean;
@@ -302,17 +338,18 @@
 
     move-result v0
 
-    if-nez v0, :cond_0
+    if-nez v0, :cond_10
 
     .line 181
     const-string v0, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u4e0a\u4e00\u8f6e\u8fd8\u6ca1\u8dd1\u5b8c\uff0c\u8df3\u8fc7\u672c\u8f6e\uff08\u9632\u4efb\u52a1\u53e0\u52a0\uff09"
 
     invoke-static {v0}, Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
 
+    .line 182
     return-void
 
     .line 184
-    :cond_0
+    :cond_10
     new-instance v0, Ljava/lang/Thread;
 
     new-instance v3, Lio/nekohasekai/sfa/bg/ExitInsight$1;
@@ -327,14 +364,16 @@
     invoke-virtual {v0, v2}, Ljava/lang/Thread;->setDaemon(Z)V
 
     .line 208
-    :try_start_0
+    :try_start_1f
     invoke-virtual {v0}, Ljava/lang/Thread;->start()V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_22
+    .catchall {:try_start_1f .. :try_end_22} :catchall_23
 
-    return-void
+    .line 212
+    goto :goto_47
 
-    :catchall_0
+    .line 209
+    :catchall_23
     move-exception v0
 
     .line 210
@@ -343,6 +382,16 @@
     invoke-virtual {v2, v1}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
     .line 211
+    new-instance v1, Ljava/lang/StringBuilder;
+
+    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v2, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u8d77\u7ebf\u7a0b\u5931\u8d25 "
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
     invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     move-result-object v0
@@ -351,34 +400,33 @@
 
     move-result-object v0
 
-    new-instance v1, Ljava/lang/StringBuilder;
-
-    const-string v2, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u8d77\u7ebf\u7a0b\u5931\u8d25 "
-
-    invoke-direct {v1, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
     invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object v0
 
     invoke-static {v0}, Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
 
+    .line 213
+    :goto_47
     return-void
 .end method
 
 .method public static samplePoolDistribution(I)Ljava/lang/String;
-    .locals 15
+    .registers 15
 
+    .line 76
     const/16 v0, 0xa
 
-    if-gtz p0, :cond_0
+    if-gtz p0, :cond_5
 
     move p0, v0
 
     .line 78
-    :cond_0
+    :cond_5
     new-instance v1, Ljava/util/LinkedHashMap;
 
     invoke-direct {v1}, Ljava/util/LinkedHashMap;-><init>()V
@@ -388,6 +436,13 @@
 
     invoke-direct {v2}, Ljava/util/LinkedHashMap;-><init>()V
 
+    .line 80
+    nop
+
+    .line 83
+    nop
+
+    .line 85
     const/4 v3, 0x0
 
     const/4 v4, 0x0
@@ -398,10 +453,10 @@
 
     move v6, v5
 
-    :goto_0
+    :goto_16
     const/4 v8, 0x1
 
-    if-ge v5, p0, :cond_5
+    if-ge v5, p0, :cond_56
 
     .line 86
     invoke-static {}, Lio/nekohasekai/sfa/bg/NodeExitInfo;->probeCurrentExit()Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;
@@ -411,11 +466,12 @@
     .line 87
     iget-object v10, v9, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->ip:Ljava/lang/String;
 
-    if-nez v10, :cond_1
+    if-nez v10, :cond_22
 
-    goto :goto_3
+    goto :goto_53
 
-    :cond_1
+    .line 88
+    :cond_22
     add-int/lit8 v6, v6, 0x1
 
     .line 89
@@ -426,36 +482,36 @@
 
     move-result v10
 
-    if-eqz v10, :cond_2
+    if-eqz v10, :cond_2f
 
     iget-object v10, v9, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->countryCode:Ljava/lang/String;
 
-    goto :goto_1
+    goto :goto_31
 
-    :cond_2
+    :cond_2f
     const-string v10, "??"
 
     .line 92
-    :goto_1
+    :goto_31
     invoke-interface {v1, v10}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
 
     move-result-object v11
 
     check-cast v11, Ljava/lang/Integer;
 
-    if-nez v11, :cond_3
-
-    goto :goto_2
-
     .line 93
-    :cond_3
+    if-nez v11, :cond_3a
+
+    goto :goto_3f
+
+    :cond_3a
     invoke-virtual {v11}, Ljava/lang/Integer;->intValue()I
 
     move-result v11
 
     add-int/2addr v8, v11
 
-    :goto_2
+    :goto_3f
     invoke-static {v8}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
 
     move-result-object v8
@@ -469,26 +525,31 @@
 
     move-result v8
 
-    if-nez v8, :cond_4
+    if-nez v8, :cond_53
 
     .line 96
     iget-object v8, v9, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->ip:Ljava/lang/String;
 
     invoke-interface {v2, v8, v3}, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
 
-    :cond_4
-    :goto_3
+    .line 85
+    :cond_53
+    :goto_53
     add-int/lit8 v5, v5, 0x1
 
-    goto :goto_0
+    goto :goto_16
 
-    :cond_5
-    if-nez v6, :cond_6
+    .line 100
+    :cond_56
+    if-nez v6, :cond_59
 
     return-object v3
 
+    .line 103
+    :cond_59
+    nop
+
     .line 104
-    :cond_6
     invoke-interface {v2}, Ljava/util/Map;->entrySet()Ljava/util/Set;
 
     move-result-object v3
@@ -499,14 +560,14 @@
 
     move v5, v4
 
-    :goto_4
+    :goto_63
     invoke-interface {v3}, Ljava/util/Iterator;->hasNext()Z
 
     move-result v9
 
     const-string v10, "\u5f52\u5c5e\u672a\u77e5"
 
-    if-eqz v9, :cond_b
+    if-eqz v9, :cond_d9
 
     invoke-interface {v3}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
@@ -514,14 +575,15 @@
 
     check-cast v9, Ljava/util/Map$Entry;
 
+    .line 105
     add-int/lit8 v11, v5, 0x1
 
-    if-lt v5, v0, :cond_7
+    if-lt v5, v0, :cond_76
 
-    goto :goto_6
+    goto :goto_d9
 
     .line 106
-    :cond_7
+    :cond_76
     invoke-interface {v9}, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
 
     move-result-object v5
@@ -537,7 +599,7 @@
 
     move-result v12
 
-    if-eqz v12, :cond_a
+    if-eqz v12, :cond_d4
 
     .line 108
     iget-object v10, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->countryCode:Ljava/lang/String;
@@ -547,7 +609,7 @@
 
     const-string v13, "/"
 
-    if-eqz v12, :cond_8
+    if-eqz v12, :cond_ad
 
     iget-object v12, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->region:Ljava/lang/String;
 
@@ -555,39 +617,7 @@
 
     move-result v12
 
-    if-lez v12, :cond_8
-
-    iget-object v12, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->region:Ljava/lang/String;
-
-    new-instance v14, Ljava/lang/StringBuilder;
-
-    invoke-direct {v14}, Ljava/lang/StringBuilder;-><init>()V
-
-    invoke-virtual {v14, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v14, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v14, v12}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v14}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v10
-
-    .line 110
-    :cond_8
-    iget-object v12, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
-
-    if-eqz v12, :cond_9
-
-    iget-object v12, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
-
-    invoke-virtual {v12}, Ljava/lang/String;->length()I
-
-    move-result v12
-
-    if-lez v12, :cond_9
-
-    iget-object v5, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
+    if-lez v12, :cond_ad
 
     new-instance v12, Ljava/lang/StringBuilder;
 
@@ -595,186 +625,258 @@
 
     invoke-virtual {v12, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v12, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v10
 
-    invoke-virtual {v12, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v10, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v12}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v10
+
+    iget-object v12, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->region:Ljava/lang/String;
+
+    invoke-virtual {v10, v12}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v10
+
+    invoke-virtual {v10}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v10
+
+    .line 110
+    :cond_ad
+    iget-object v12, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
+
+    if-eqz v12, :cond_d0
+
+    iget-object v12, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
+
+    invoke-virtual {v12}, Ljava/lang/String;->length()I
+
+    move-result v12
+
+    if-lez v12, :cond_d0
+
+    new-instance v12, Ljava/lang/StringBuilder;
+
+    invoke-direct {v12}, Ljava/lang/StringBuilder;-><init>()V
+
+    invoke-virtual {v12, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v10
+
+    invoke-virtual {v10, v13}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v10
+
+    iget-object v5, v5, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
+
+    invoke-virtual {v10, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v5
+
+    invoke-virtual {v5}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object v10
 
     .line 111
-    :cond_9
+    :cond_d0
     invoke-interface {v9, v10}, Ljava/util/Map$Entry;->setValue(Ljava/lang/Object;)Ljava/lang/Object;
 
-    goto :goto_5
+    .line 112
+    goto :goto_d7
 
     .line 113
-    :cond_a
+    :cond_d4
     invoke-interface {v9, v10}, Ljava/util/Map$Entry;->setValue(Ljava/lang/Object;)Ljava/lang/Object;
 
-    :goto_5
+    .line 115
+    :goto_d7
     move v5, v11
 
-    goto :goto_4
+    goto :goto_63
 
-    :cond_b
-    :goto_6
-    if-eqz v7, :cond_c
+    .line 117
+    :cond_d9
+    :goto_d9
+    if-eqz v7, :cond_e4
 
     .line 118
     invoke-interface {v2, v7}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
 
-    move-result-object v0
+    move-result-object v3
 
-    check-cast v0, Ljava/lang/String;
+    check-cast v3, Ljava/lang/String;
 
-    invoke-static {v7, v0}, Lio/nekohasekai/sfa/bg/ExitCache;->set(Ljava/lang/String;Ljava/lang/String;)V
+    invoke-static {v7, v3}, Lio/nekohasekai/sfa/bg/ExitCache;->set(Ljava/lang/String;Ljava/lang/String;)V
 
     .line 122
-    :cond_c
-    new-instance v0, Ljava/util/LinkedHashMap;
+    :cond_e4
+    new-instance v3, Ljava/util/LinkedHashMap;
 
-    invoke-direct {v0}, Ljava/util/LinkedHashMap;-><init>()V
+    invoke-direct {v3}, Ljava/util/LinkedHashMap;-><init>()V
+
+    .line 123
+    nop
 
     .line 124
     invoke-interface {v2}, Ljava/util/Map;->entrySet()Ljava/util/Set;
 
-    move-result-object v3
+    move-result-object v5
 
-    invoke-interface {v3}, Ljava/util/Set;->iterator()Ljava/util/Iterator;
+    invoke-interface {v5}, Ljava/util/Set;->iterator()Ljava/util/Iterator;
 
-    move-result-object v3
+    move-result-object v5
 
-    move v5, v4
+    move v7, v4
 
-    :goto_7
-    invoke-interface {v3}, Ljava/util/Iterator;->hasNext()Z
+    :goto_f3
+    invoke-interface {v5}, Ljava/util/Iterator;->hasNext()Z
 
-    move-result v7
+    move-result v9
 
-    const/16 v9, 0x2f
+    const/16 v11, 0x2f
 
-    if-eqz v7, :cond_12
+    if-eqz v9, :cond_13e
 
-    invoke-interface {v3}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+    invoke-interface {v5}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
-    move-result-object v7
+    move-result-object v9
 
-    check-cast v7, Ljava/util/Map$Entry;
+    check-cast v9, Ljava/util/Map$Entry;
 
     .line 125
-    invoke-interface {v7}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
+    invoke-interface {v9}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
 
-    move-result-object v7
+    move-result-object v9
 
-    check-cast v7, Ljava/lang/String;
-
-    if-eqz v7, :cond_11
+    check-cast v9, Ljava/lang/String;
 
     .line 126
-    invoke-virtual {v10, v7}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    if-eqz v9, :cond_13b
 
-    move-result v11
+    invoke-virtual {v10, v9}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
 
-    if-eqz v11, :cond_d
+    move-result v12
 
-    goto :goto_a
+    if-eqz v12, :cond_110
+
+    goto :goto_13b
 
     .line 130
-    :cond_d
-    invoke-virtual {v7, v9}, Ljava/lang/String;->indexOf(I)I
+    :cond_110
+    invoke-virtual {v9, v11}, Ljava/lang/String;->indexOf(I)I
+
+    move-result v12
+
+    .line 131
+    if-gez v12, :cond_118
+
+    const/4 v11, -0x1
+
+    goto :goto_11e
+
+    :cond_118
+    add-int/lit8 v12, v12, 0x1
+
+    invoke-virtual {v9, v11, v12}, Ljava/lang/String;->indexOf(II)I
 
     move-result v11
 
-    if-gez v11, :cond_e
-
-    const/4 v9, -0x1
-
-    goto :goto_8
-
-    :cond_e
-    add-int/lit8 v11, v11, 0x1
-
-    .line 131
-    invoke-virtual {v7, v9, v11}, Ljava/lang/String;->indexOf(II)I
-
-    move-result v9
-
-    :goto_8
-    if-lez v9, :cond_f
-
     .line 132
-    invoke-virtual {v7, v4, v9}, Ljava/lang/String;->substring(II)Ljava/lang/String;
+    :goto_11e
+    if-lez v11, :cond_124
 
-    move-result-object v7
+    invoke-virtual {v9, v4, v11}, Ljava/lang/String;->substring(II)Ljava/lang/String;
+
+    move-result-object v9
 
     .line 133
-    :cond_f
-    invoke-interface {v0, v7}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
+    :cond_124
+    invoke-interface {v3, v9}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
 
-    move-result-object v9
+    move-result-object v11
 
-    check-cast v9, Ljava/lang/Integer;
-
-    if-nez v9, :cond_10
-
-    move v9, v8
-
-    goto :goto_9
+    check-cast v11, Ljava/lang/Integer;
 
     .line 134
-    :cond_10
-    invoke-virtual {v9}, Ljava/lang/Integer;->intValue()I
+    if-nez v11, :cond_12e
 
-    move-result v9
+    move v11, v8
 
-    add-int/2addr v9, v8
+    goto :goto_133
 
-    :goto_9
-    invoke-static {v9}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+    :cond_12e
+    invoke-virtual {v11}, Ljava/lang/Integer;->intValue()I
+
+    move-result v11
+
+    add-int/2addr v11, v8
+
+    :goto_133
+    invoke-static {v11}, Ljava/lang/Integer;->valueOf(I)Ljava/lang/Integer;
+
+    move-result-object v11
+
+    invoke-interface {v3, v9, v11}, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+
+    .line 135
+    goto :goto_f3
+
+    .line 127
+    :cond_13b
+    :goto_13b
+    add-int/lit8 v7, v7, 0x1
+
+    .line 128
+    goto :goto_f3
+
+    .line 137
+    :cond_13e
+    new-instance v5, Ljava/lang/StringBuilder;
+
+    invoke-direct {v5}, Ljava/lang/StringBuilder;-><init>()V
+
+    .line 138
+    const-string v9, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u6210\u529f "
+
+    invoke-virtual {v5, v9}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object v9
 
-    invoke-interface {v0, v7, v9}, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-virtual {v9, v6}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    goto :goto_7
+    move-result-object v6
 
-    :cond_11
-    :goto_a
-    add-int/lit8 v5, v5, 0x1
+    invoke-virtual {v6, v11}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    goto :goto_7
+    move-result-object v6
 
-    .line 137
-    :cond_12
-    new-instance v3, Ljava/lang/StringBuilder;
+    invoke-virtual {v6, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    const-string v7, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u6210\u529f "
-
-    invoke-direct {v3, v7}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    .line 138
-    invoke-virtual {v3, v6}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v3, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string p0, "\uff0c\u72ec\u7acb\u51fa\u53e3 IP "
+    move-result-object p0
 
     .line 139
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v6, "\uff0c\u72ec\u7acb\u51fa\u53e3 IP "
+
+    invoke-virtual {p0, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p0
 
     invoke-interface {v2}, Ljava/util/Map;->size()I
 
-    move-result p0
+    move-result v6
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    invoke-virtual {p0, v6}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    const-string p0, " \u4e2a\n  \u6309\u56fd\u5bb6\uff1a"
+    move-result-object p0
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v6, " \u4e2a\n"
+
+    invoke-virtual {p0, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    .line 140
+    const-string p0, "  \u6309\u56fd\u5bb6\uff1a"
+
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     .line 141
     invoke-interface {v1}, Ljava/util/Map;->entrySet()Ljava/util/Set;
@@ -785,16 +887,16 @@
 
     move-result-object p0
 
-    :goto_b
+    :goto_175
     invoke-interface {p0}, Ljava/util/Iterator;->hasNext()Z
 
     move-result v6
 
-    const/16 v7, 0x3d
+    const/16 v9, 0x3d
 
-    const/16 v9, 0x20
+    const/16 v10, 0x20
 
-    if-eqz v6, :cond_13
+    if-eqz v6, :cond_19f
 
     invoke-interface {p0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
@@ -803,49 +905,59 @@
     check-cast v6, Ljava/util/Map$Entry;
 
     .line 142
-    invoke-virtual {v3, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+    invoke-virtual {v5, v10}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    move-result-object v10
 
     invoke-interface {v6}, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
 
+    move-result-object v11
+
+    check-cast v11, Ljava/lang/String;
+
+    invoke-virtual {v10, v11}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v10
+
+    invoke-virtual {v10, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
     move-result-object v9
-
-    check-cast v9, Ljava/lang/String;
-
-    invoke-virtual {v3, v9}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v3, v7}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
     invoke-interface {v6}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
 
     move-result-object v6
 
-    invoke-virtual {v3, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+    invoke-virtual {v9, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
 
-    goto :goto_b
+    .line 143
+    goto :goto_175
 
     .line 144
-    :cond_13
-    const-string p0, "\n  \u6309\u5730\u533a\uff1a"
+    :cond_19f
+    invoke-virtual {v5, v0}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    .line 145
+    const-string p0, "  \u6309\u5730\u533a\uff1a"
+
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     .line 146
-    invoke-interface {v0}, Ljava/util/Map;->isEmpty()Z
+    invoke-interface {v3}, Ljava/util/Map;->isEmpty()Z
 
     move-result p0
 
-    if-eqz p0, :cond_14
+    if-eqz p0, :cond_1b3
 
     .line 147
     const-string p0, " \uff08\u5f52\u5c5e\u5168\u90e8\u672a\u77e5\uff09"
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    goto :goto_d
+    goto :goto_1e1
 
     .line 149
-    :cond_14
-    invoke-interface {v0}, Ljava/util/Map;->entrySet()Ljava/util/Set;
+    :cond_1b3
+    invoke-interface {v3}, Ljava/util/Map;->entrySet()Ljava/util/Set;
 
     move-result-object p0
 
@@ -853,12 +965,12 @@
 
     move-result-object p0
 
-    :goto_c
+    :goto_1bb
     invoke-interface {p0}, Ljava/util/Iterator;->hasNext()Z
 
     move-result v6
 
-    if-eqz v6, :cond_15
+    if-eqz v6, :cond_1e1
 
     invoke-interface {p0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
@@ -867,42 +979,57 @@
     check-cast v6, Ljava/util/Map$Entry;
 
     .line 150
-    invoke-virtual {v3, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+    invoke-virtual {v5, v10}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    move-result-object v11
 
     invoke-interface {v6}, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
 
-    move-result-object v10
+    move-result-object v12
 
-    check-cast v10, Ljava/lang/String;
+    check-cast v12, Ljava/lang/String;
 
-    invoke-virtual {v3, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v11, v12}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v3, v7}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+    move-result-object v11
+
+    invoke-virtual {v11, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+
+    move-result-object v11
 
     invoke-interface {v6}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
 
     move-result-object v6
 
-    invoke-virtual {v3, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
+    invoke-virtual {v11, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/Object;)Ljava/lang/StringBuilder;
 
-    goto :goto_c
-
-    :cond_15
-    :goto_d
-    if-lez v5, :cond_16
+    .line 151
+    goto :goto_1bb
 
     .line 153
+    :cond_1e1
+    :goto_1e1
+    if-lez v7, :cond_1ec
+
     const-string p0, "  \u5f52\u5c5e\u672a\u77e5="
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v3, v5}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    move-result-object p0
+
+    invoke-virtual {p0, v7}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
     .line 154
-    :cond_16
-    const-string p0, "\n  \u660e\u7ec6\uff1a"
+    :cond_1ec
+    invoke-virtual {v5, v0}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    .line 155
+    const-string p0, "  \u660e\u7ec6\uff1a"
+
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    .line 156
+    nop
 
     .line 157
     invoke-interface {v2}, Ljava/util/Map;->entrySet()Ljava/util/Set;
@@ -913,151 +1040,170 @@
 
     move-result-object p0
 
-    :goto_e
+    :goto_1fd
     invoke-interface {p0}, Ljava/util/Iterator;->hasNext()Z
 
-    move-result v2
+    move-result v0
 
-    if-eqz v2, :cond_18
+    if-eqz v0, :cond_234
 
     invoke-interface {p0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
-    move-result-object v2
+    move-result-object v0
 
-    check-cast v2, Ljava/util/Map$Entry;
+    check-cast v0, Ljava/util/Map$Entry;
 
-    add-int/lit8 v5, v4, 0x1
+    .line 158
+    add-int/lit8 v2, v4, 0x1
 
     const/16 v6, 0x8
 
-    if-lt v4, v6, :cond_17
+    if-lt v4, v6, :cond_215
 
-    .line 158
     const-string p0, " \u2026"
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    goto :goto_f
+    goto :goto_234
 
     .line 159
-    :cond_17
-    invoke-virtual {v3, v9}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
-
-    invoke-interface {v2}, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
+    :cond_215
+    invoke-virtual {v5, v10}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
     move-result-object v4
 
-    check-cast v4, Ljava/lang/String;
+    invoke-interface {v0}, Ljava/util/Map$Entry;->getKey()Ljava/lang/Object;
 
-    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v6
 
-    const/16 v4, 0x2192
+    check-cast v6, Ljava/lang/String;
 
-    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
+    invoke-virtual {v4, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-interface {v2}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
+    move-result-object v4
 
-    move-result-object v2
+    const/16 v6, 0x2192
 
-    check-cast v2, Ljava/lang/String;
+    invoke-virtual {v4, v6}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v3, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v4
 
-    move v4, v5
+    invoke-interface {v0}, Ljava/util/Map$Entry;->getValue()Ljava/lang/Object;
 
-    goto :goto_e
+    move-result-object v0
+
+    check-cast v0, Ljava/lang/String;
+
+    invoke-virtual {v4, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    .line 160
+    move v4, v2
+
+    goto :goto_1fd
 
     .line 163
-    :cond_18
-    :goto_f
-    invoke-interface {v0}, Ljava/util/Map;->size()I
+    :cond_234
+    :goto_234
+    invoke-interface {v3}, Ljava/util/Map;->size()I
 
     move-result p0
 
-    if-le p0, v8, :cond_19
+    if-le p0, v8, :cond_24e
 
     .line 164
     const-string p0, "\n  \u26a0 \u98ce\u9669\uff1a\u540c\u4e00\u6c60\u5b50\u6a2a\u8de8 "
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-interface {v0}, Ljava/util/Map;->size()I
+    move-result-object p0
 
-    move-result p0
+    invoke-interface {v3}, Ljava/util/Map;->size()I
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    move-result v0
 
-    const-string p0, " \u4e2a\u5730\u533a\uff0c\u51fa\u53e3 IP \u4f1a\u5728\u5730\u7406\u4e0a\u8df3\u52a8\uff0c\u53ef\u80fd\u89e6\u53d1\u98ce\u63a7"
+    invoke-virtual {p0, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object p0
 
     .line 165
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v0, " \u4e2a\u5730\u533a\uff0c\u51fa\u53e3 IP \u4f1a\u5728\u5730\u7406\u4e0a\u8df3\u52a8\uff0c\u53ef\u80fd\u89e6\u53d1\u98ce\u63a7"
 
-    goto :goto_10
+    invoke-virtual {p0, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    goto :goto_28b
 
     .line 166
-    :cond_19
-    invoke-interface {v0}, Ljava/util/Map;->size()I
+    :cond_24e
+    invoke-interface {v3}, Ljava/util/Map;->size()I
 
     move-result p0
 
-    if-ne p0, v8, :cond_1a
+    if-ne p0, v8, :cond_272
 
     .line 167
     const-string p0, "\n  \u2713 \u6c60\u5185\u5730\u533a\u4e00\u81f4\uff08"
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-interface {v0}, Ljava/util/Map;->keySet()Ljava/util/Set;
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object p0
 
-    invoke-interface {p0}, Ljava/util/Set;->iterator()Ljava/util/Iterator;
+    invoke-interface {v3}, Ljava/util/Map;->keySet()Ljava/util/Set;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Set;->iterator()Ljava/util/Iterator;
+
+    move-result-object v0
+
+    invoke-interface {v0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Ljava/lang/String;
+
+    invoke-virtual {p0, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object p0
-
-    invoke-interface {p0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
-
-    move-result-object p0
-
-    check-cast p0, Ljava/lang/String;
-
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string p0, "\uff09\uff0c\u51fa\u53e3\u4e0d\u4f1a\u8de8\u5730\u533a\u8df3"
 
     .line 168
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v0, "\uff09\uff0c\u51fa\u53e3\u4e0d\u4f1a\u8de8\u5730\u533a\u8df3"
 
-    goto :goto_10
+    invoke-virtual {p0, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    goto :goto_28b
 
     .line 169
-    :cond_1a
+    :cond_272
     invoke-interface {v1}, Ljava/util/Map;->size()I
 
     move-result p0
 
-    if-le p0, v8, :cond_1b
+    if-le p0, v8, :cond_28b
 
     .line 172
     const-string p0, "\n  \u26a0 \u98ce\u9669\uff1a\u5730\u533a\u5f52\u5c5e\u672a\u77e5\uff0c\u4f46\u56fd\u5bb6\u5206\u5e03\u5df2\u4e0d\u4e00\u81f4\uff08"
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v5, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object p0
 
     .line 173
     invoke-interface {v1}, Ljava/util/Map;->size()I
 
-    move-result p0
+    move-result v0
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    invoke-virtual {p0, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    const-string p0, " \u4e2a\u56fd\u5bb6\uff09\uff0c\u51fa\u53e3\u4ecd\u53ef\u80fd\u8de8\u533a\u8df3"
+    move-result-object p0
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v0, " \u4e2a\u56fd\u5bb6\uff09\uff0c\u51fa\u53e3\u4ecd\u53ef\u80fd\u8de8\u533a\u8df3"
+
+    invoke-virtual {p0, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     .line 175
-    :cond_1b
-    :goto_10
-    invoke-virtual {v3}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    :cond_28b
+    :goto_28b
+    invoke-virtual {v5}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p0
 
@@ -1065,18 +1211,19 @@
 .end method
 
 .method public static stunExit(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)Ljava/lang/String;
-    .locals 12
+    .registers 14
 
+    .line 223
     const/4 v0, 0x0
 
-    if-eqz p0, :cond_5
+    if-eqz p0, :cond_61
 
-    if-nez p1, :cond_0
+    if-nez p1, :cond_6
 
-    goto :goto_3
+    goto :goto_61
 
     .line 225
-    :cond_0
+    :cond_6
     sget-object v1, Lio/nekohasekai/sfa/bg/ExitInsight;->STUN_SERVERS:[Ljava/lang/String;
 
     array-length v2, v1
@@ -1085,14 +1232,14 @@
 
     move v4, v3
 
-    :goto_0
-    if-ge v4, v2, :cond_5
+    :goto_b
+    if-ge v4, v2, :cond_60
 
     aget-object v5, v1, v4
 
+    .line 226
     const/4 v6, 0x1
 
-    .line 226
     new-array v6, v6, [Z
 
     aput-boolean v3, v6, v3
@@ -1107,13 +1254,19 @@
 
     invoke-direct {v8, v6, v7}, Lio/nekohasekai/sfa/bg/ExitInsight$2;-><init>([Z[Ljava/lang/String;)V
 
+    .line 251
+    nop
+
     .line 253
-    :try_start_0
+    :try_start_1e
     invoke-virtual {p0, v5, p1, v8}, Lio/nekohasekai/libbox/CommandClient;->startSTUNTest(Ljava/lang/String;Ljava/lang/String;Lio/nekohasekai/libbox/STUNTestHandler;)Lio/nekohasekai/libbox/STUNTestSession;
 
     move-result-object v5
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_2
+    :try_end_22
+    .catchall {:try_start_1e .. :try_end_22} :catchall_5b
+
+    .line 256
+    nop
 
     .line 258
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
@@ -1125,96 +1278,125 @@
     add-long/2addr v8, v10
 
     .line 260
-    :goto_1
-    :try_start_1
+    :goto_2a
+    :try_start_2a
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
     move-result-wide v10
 
     cmp-long v10, v10, v8
 
-    if-gez v10, :cond_2
+    if-gez v10, :cond_43
 
     .line 261
     monitor-enter v6
-    :try_end_1
-    .catch Ljava/lang/InterruptedException; {:try_start_1 .. :try_end_1} :catch_0
+    :try_end_33
+    .catch Ljava/lang/InterruptedException; {:try_start_2a .. :try_end_33} :catch_44
 
     .line 262
-    :try_start_2
+    :try_start_33
     aget-boolean v10, v6, v3
 
-    if-eqz v10, :cond_1
+    if-eqz v10, :cond_39
 
     monitor-exit v6
 
-    goto :goto_2
+    goto :goto_43
 
     .line 263
-    :cond_1
+    :cond_39
     monitor-exit v6
-    :try_end_2
-    .catchall {:try_start_2 .. :try_end_2} :catchall_0
-
-    const-wide/16 v10, 0x96
+    :try_end_3a
+    .catchall {:try_start_33 .. :try_end_3a} :catchall_40
 
     .line 264
-    :try_start_3
+    const-wide/16 v10, 0x96
+
+    :try_start_3c
     invoke-static {v10, v11}, Ljava/lang/Thread;->sleep(J)V
-    :try_end_3
-    .catch Ljava/lang/InterruptedException; {:try_start_3 .. :try_end_3} :catch_0
+    :try_end_3f
+    .catch Ljava/lang/InterruptedException; {:try_start_3c .. :try_end_3f} :catch_44
 
-    goto :goto_1
-
-    :catchall_0
-    move-exception v8
+    goto :goto_2a
 
     .line 263
-    :try_start_4
+    :catchall_40
+    move-exception v8
+
+    :try_start_41
     monitor-exit v6
-    :try_end_4
-    .catchall {:try_start_4 .. :try_end_4} :catchall_0
+    :try_end_42
+    .catchall {:try_start_41 .. :try_end_42} :catchall_40
 
-    :try_start_5
+    :try_start_42
     throw v8
-    :try_end_5
-    .catch Ljava/lang/InterruptedException; {:try_start_5 .. :try_end_5} :catch_0
+    :try_end_43
+    .catch Ljava/lang/InterruptedException; {:try_start_42 .. :try_end_43} :catch_44
 
-    :catch_0
-    :cond_2
-    :goto_2
-    if-eqz v5, :cond_3
+    .line 267
+    :cond_43
+    :goto_43
+    goto :goto_45
+
+    .line 266
+    :catch_44
+    move-exception v6
+
+    .line 268
+    :goto_45
+    if-eqz v5, :cond_4c
 
     .line 270
-    :try_start_6
+    :try_start_47
     invoke-virtual {v5}, Lio/nekohasekai/libbox/STUNTestSession;->close()V
-    :try_end_6
-    .catchall {:try_start_6 .. :try_end_6} :catchall_1
+    :try_end_4a
+    .catchall {:try_start_47 .. :try_end_4a} :catchall_4b
+
+    .line 272
+    goto :goto_4c
+
+    .line 271
+    :catchall_4b
+    move-exception v5
 
     .line 274
-    :catchall_1
-    :cond_3
+    :cond_4c
+    :goto_4c
     aget-object v5, v7, v3
 
-    if-eqz v5, :cond_4
+    if-eqz v5, :cond_5d
+
+    aget-object v5, v7, v3
 
     invoke-virtual {v5}, Ljava/lang/String;->length()I
 
     move-result v5
 
-    if-lez v5, :cond_4
+    if-lez v5, :cond_5d
 
     aget-object p0, v7, v3
 
     return-object p0
 
-    :catchall_2
-    :cond_4
+    .line 254
+    :catchall_5b
+    move-exception v5
+
+    .line 255
+    nop
+
+    .line 225
+    :cond_5d
     add-int/lit8 v4, v4, 0x1
 
-    goto :goto_0
+    goto :goto_b
 
-    :cond_5
-    :goto_3
+    .line 276
+    :cond_60
+    return-object v0
+
+    .line 223
+    :cond_61
+    :goto_61
     return-object v0
 .end method

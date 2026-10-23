@@ -26,7 +26,7 @@
 
 # direct methods
 .method constructor <init>(Ljava/lang/String;JJZ)V
-    .locals 0
+    .registers 7
 
     .line 41
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -43,5 +43,6 @@
     .line 45
     iput-boolean p6, p0, Lio/nekohasekai/sfa/bg/ThroughputStore$Entry;->ok:Z
 
+    .line 46
     return-void
 .end method

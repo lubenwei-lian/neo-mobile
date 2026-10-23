@@ -30,7 +30,7 @@
 
 # direct methods
 .method public constructor <init>()V
-    .locals 0
+    .registers 1
 
     .line 106
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -41,71 +41,81 @@
 
 # virtual methods
 .method public label()Ljava/lang/String;
-    .locals 2
+    .registers 3
 
     .line 118
     iget-object v0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
 
-    if-eqz v0, :cond_2
+    if-eqz v0, :cond_38
+
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
 
     invoke-virtual {v0}, Ljava/lang/String;->length()I
 
     move-result v0
 
-    if-nez v0, :cond_0
+    if-nez v0, :cond_d
 
-    goto :goto_0
+    goto :goto_38
 
     .line 119
-    :cond_0
+    :cond_d
     iget-object v0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
 
-    if-eqz v0, :cond_1
+    if-eqz v0, :cond_35
+
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
 
     invoke-virtual {v0}, Ljava/lang/String;->length()I
 
     move-result v0
 
-    if-lez v0, :cond_1
+    if-lez v0, :cond_35
 
-    iget-object v0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
+    new-instance v0, Ljava/lang/StringBuilder;
 
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
 
-    new-instance v1, Ljava/lang/StringBuilder;
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
 
-    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    const-string v0, "/"
+    const-string v1, "/"
 
-    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
 
-    move-result-object p0
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    return-object p0
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v0
+
+    return-object v0
 
     .line 120
-    :cond_1
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
+    :cond_35
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
 
-    return-object p0
+    return-object v0
 
     .line 118
-    :cond_2
-    :goto_0
-    const-string p0, ""
+    :cond_38
+    :goto_38
+    const-string v0, ""
 
-    return-object p0
+    return-object v0
 .end method
 
 .method public shortText()Ljava/lang/String;
-    .locals 2
+    .registers 4
 
     .line 125
     new-instance v0, Ljava/lang/StringBuilder;
@@ -115,55 +125,65 @@
     .line 126
     iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
 
-    if-eqz v1, :cond_0
+    if-eqz v1, :cond_e
+
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     .line 127
-    :cond_0
+    :cond_e
     iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
 
-    if-eqz v1, :cond_1
+    if-eqz v1, :cond_25
+
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
 
     invoke-virtual {v1}, Ljava/lang/String;->length()I
 
     move-result v1
 
-    if-lez v1, :cond_1
+    if-lez v1, :cond_25
 
     const/16 v1, 0x20
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
+    move-result-object v1
 
-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    iget-object v2, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     .line 128
-    :cond_1
+    :cond_25
     iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->city:Ljava/lang/String;
 
-    if-eqz v1, :cond_2
+    if-eqz v1, :cond_3c
+
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->city:Ljava/lang/String;
 
     invoke-virtual {v1}, Ljava/lang/String;->length()I
 
     move-result v1
 
-    if-lez v1, :cond_2
+    if-lez v1, :cond_3c
 
     const/16 v1, 0x2f
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(C)Ljava/lang/StringBuilder;
 
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->city:Ljava/lang/String;
+    move-result-object v1
 
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    iget-object v2, p0, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->city:Ljava/lang/String;
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     .line 129
-    :cond_2
+    :cond_3c
     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    move-result-object p0
+    move-result-object v0
 
-    return-object p0
+    return-object v0
 .end method

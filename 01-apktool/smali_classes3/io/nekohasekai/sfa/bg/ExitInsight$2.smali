@@ -25,7 +25,7 @@
 
 # direct methods
 .method constructor <init>([Z[Ljava/lang/String;)V
-    .locals 0
+    .registers 3
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -45,7 +45,7 @@
 
 # virtual methods
 .method public onError(Ljava/lang/String;)V
-    .locals 2
+    .registers 5
 
     .line 233
     iget-object p1, p0, Lio/nekohasekai/sfa/bg/ExitInsight$2;->val$done:[Z
@@ -53,44 +53,47 @@
     monitor-enter p1
 
     .line 234
-    :try_start_0
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/ExitInsight$2;->val$done:[Z
+    :try_start_3
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/ExitInsight$2;->val$done:[Z
 
-    const/4 v0, 0x0
+    const/4 v1, 0x0
 
-    const/4 v1, 0x1
+    const/4 v2, 0x1
 
-    aput-boolean v1, p0, v0
+    aput-boolean v2, v0, v1
 
     .line 235
     monitor-exit p1
 
+    .line 236
     return-void
 
-    :catchall_0
-    move-exception p0
+    .line 235
+    :catchall_b
+    move-exception v0
 
     monitor-exit p1
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_d
+    .catchall {:try_start_3 .. :try_end_d} :catchall_b
 
-    throw p0
+    throw v0
 .end method
 
 .method public onProgress(Lio/nekohasekai/libbox/STUNTestProgress;)V
-    .locals 0
+    .registers 2
 
+    .line 240
     return-void
 .end method
 
 .method public onResult(Lio/nekohasekai/libbox/STUNTestResult;)V
-    .locals 2
-
-    const/4 v0, 0x0
-
-    if-eqz p1, :cond_0
+    .registers 5
 
     .line 244
+    const/4 v0, 0x0
+
+    if-eqz p1, :cond_b
+
     iget-object v1, p0, Lio/nekohasekai/sfa/bg/ExitInsight$2;->val$addr:[Ljava/lang/String;
 
     invoke-virtual {p1}, Lio/nekohasekai/libbox/STUNTestResult;->getExternalAddr()Ljava/lang/String;
@@ -100,30 +103,32 @@
     aput-object p1, v1, v0
 
     .line 245
-    :cond_0
+    :cond_b
     iget-object p1, p0, Lio/nekohasekai/sfa/bg/ExitInsight$2;->val$done:[Z
 
     monitor-enter p1
 
     .line 246
-    :try_start_0
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/ExitInsight$2;->val$done:[Z
+    :try_start_e
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/ExitInsight$2;->val$done:[Z
 
-    const/4 v1, 0x1
+    const/4 v2, 0x1
 
-    aput-boolean v1, p0, v0
+    aput-boolean v2, v1, v0
 
     .line 247
     monitor-exit p1
 
+    .line 248
     return-void
 
-    :catchall_0
-    move-exception p0
+    .line 247
+    :catchall_15
+    move-exception v0
 
     monitor-exit p1
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_17
+    .catchall {:try_start_e .. :try_end_17} :catchall_15
 
-    throw p0
+    throw v0
 .end method

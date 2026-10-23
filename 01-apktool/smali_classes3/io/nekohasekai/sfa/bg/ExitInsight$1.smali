@@ -19,7 +19,7 @@
 
 # direct methods
 .method constructor <init>()V
-    .locals 0
+    .registers 1
 
     .line 184
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -30,97 +30,105 @@
 
 # virtual methods
 .method public run()V
-    .locals 4
-
-    const/4 p0, 0x0
+    .registers 6
 
     .line 188
-    :try_start_0
-    const-string v0, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u7ebf\u7a0b\u5df2\u542f\u52a8\uff0c20s \u540e\u5f00\u59cb"
+    const/4 v0, 0x0
 
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/ExitInsight;->-$$Nest$smlog(Ljava/lang/String;)V
+    :try_start_1
+    const-string v1, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u7ebf\u7a0b\u5df2\u542f\u52a8\uff0c20s \u540e\u5f00\u59cb"
 
-    const-wide/16 v0, 0x4e20
+    # invokes: Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$000(Ljava/lang/String;)V
 
     .line 189
-    invoke-static {v0, v1}, Ljava/lang/Thread;->sleep(J)V
+    const-wide/16 v1, 0x4e20
+
+    invoke-static {v1, v2}, Ljava/lang/Thread;->sleep(J)V
 
     .line 190
-    const-string v0, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u5f00\u59cb\u91c7\u6837 10 \u6b21"
+    const-string v1, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u5f00\u59cb\u91c7\u6837 10 \u6b21"
 
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/ExitInsight;->-$$Nest$smlog(Ljava/lang/String;)V
-
-    const/16 v0, 0xa
+    # invokes: Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$000(Ljava/lang/String;)V
 
     .line 191
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/ExitInsight;->samplePoolDistribution(I)Ljava/lang/String;
+    const/16 v1, 0xa
 
-    move-result-object v0
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/ExitInsight;->samplePoolDistribution(I)Ljava/lang/String;
 
-    if-nez v0, :cond_1
+    move-result-object v1
+
+    .line 192
+    if-nez v1, :cond_25
 
     .line 193
-    const-string v0, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u5168\u90e8\u5931\u8d25\uff08trace \u4e0d\u53ef\u8fbe\uff09\uff0c\u672c\u6b21\u65e0\u7ed3\u8bba"
+    const-string v1, "\u6c60\u51fa\u53e3\u91c7\u6837\uff1a\u5168\u90e8\u5931\u8d25\uff08trace \u4e0d\u53ef\u8fbe\uff09\uff0c\u672c\u6b21\u65e0\u7ed3\u8bba"
 
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/ExitInsight;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    # invokes: Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$000(Ljava/lang/String;)V
+    :try_end_1d
+    .catchall {:try_start_1 .. :try_end_1d} :catchall_3f
 
     .line 202
-    :cond_0
-    :goto_0
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ExitInsight;->-$$Nest$sfgetRUNNING_POOL()Ljava/util/concurrent/atomic/AtomicBoolean;
+    # getter for: Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_POOL:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$100()Ljava/util/concurrent/atomic/AtomicBoolean;
 
-    move-result-object v0
+    move-result-object v1
 
-    invoke-virtual {v0, p0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v1, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
+    .line 194
     return-void
 
     .line 196
-    :cond_1
-    :try_start_1
-    const-string v1, "\n"
+    :cond_25
+    :try_start_25
+    const-string v2, "\n"
 
-    invoke-virtual {v0, v1}, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
+    invoke-virtual {v1, v2}, Ljava/lang/String;->split(Ljava/lang/String;)[Ljava/lang/String;
 
-    move-result-object v0
+    move-result-object v1
 
-    array-length v1, v0
+    array-length v2, v1
 
-    move v2, p0
+    move v3, v0
 
-    :goto_1
-    if-ge v2, v1, :cond_0
+    :goto_2d
+    if-ge v3, v2, :cond_37
 
-    aget-object v3, v0, v2
+    aget-object v4, v1, v3
 
     .line 197
-    invoke-static {v3}, Lio/nekohasekai/sfa/bg/ExitInsight;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_1
-    .catchall {:try_start_1 .. :try_end_1} :catchall_0
+    # invokes: Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
+    invoke-static {v4}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$000(Ljava/lang/String;)V
+    :try_end_34
+    .catchall {:try_start_25 .. :try_end_34} :catchall_3f
 
-    add-int/lit8 v2, v2, 0x1
+    .line 196
+    add-int/lit8 v3, v3, 0x1
 
-    goto :goto_1
+    goto :goto_2d
 
-    :catchall_0
-    move-exception v0
+    .line 202
+    :cond_37
+    :goto_37
+    # getter for: Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_POOL:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$100()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v1
+
+    invoke-virtual {v1, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+
+    .line 203
+    goto :goto_6d
+
+    .line 199
+    :catchall_3f
+    move-exception v1
 
     .line 200
-    :try_start_2
-    invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object v1
-
-    invoke-virtual {v1}, Ljava/lang/Class;->getName()Ljava/lang/String;
-
-    move-result-object v1
-
-    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
-
-    move-result-object v0
-
+    :try_start_40
     new-instance v2, Ljava/lang/StringBuilder;
 
     invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
@@ -129,34 +137,60 @@
 
     invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v2
 
-    const-string v1, " "
+    invoke-virtual {v1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v3
 
-    invoke-virtual {v2, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v3}, Ljava/lang/Class;->getName()Ljava/lang/String;
 
-    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v3
 
-    move-result-object v0
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/ExitInsight;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_2
-    .catchall {:try_start_2 .. :try_end_2} :catchall_1
+    move-result-object v2
 
-    goto :goto_0
+    const-string v3, " "
 
-    :catchall_1
-    move-exception v0
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 202
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ExitInsight;->-$$Nest$sfgetRUNNING_POOL()Ljava/util/concurrent/atomic/AtomicBoolean;
+    move-result-object v2
+
+    invoke-virtual {v1}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
 
     move-result-object v1
 
-    invoke-virtual {v1, p0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v1
+
+    # invokes: Lio/nekohasekai/sfa/bg/ExitInsight;->log(Ljava/lang/String;)V
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$000(Ljava/lang/String;)V
+    :try_end_6c
+    .catchall {:try_start_40 .. :try_end_6c} :catchall_6e
+
+    goto :goto_37
+
+    .line 204
+    :goto_6d
+    return-void
+
+    .line 202
+    :catchall_6e
+    move-exception v1
+
+    # getter for: Lio/nekohasekai/sfa/bg/ExitInsight;->RUNNING_POOL:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ExitInsight;->access$100()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v2
+
+    invoke-virtual {v2, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
     .line 203
-    throw v0
+    throw v1
 .end method

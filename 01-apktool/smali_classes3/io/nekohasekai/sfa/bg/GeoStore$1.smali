@@ -19,7 +19,7 @@
 
 # direct methods
 .method constructor <init>()V
-    .locals 0
+    .registers 1
 
     .line 79
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -30,83 +30,117 @@
 
 # virtual methods
 .method public run()V
-    .locals 4
-
-    const-string p0, "\u5730\u533a\u5feb\u7167\uff1a\u9884\u70ed "
-
-    const/4 v0, 0x0
+    .registers 5
 
     .line 83
-    :try_start_0
+    const/4 v0, 0x0
+
+    :try_start_1
     invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->load()Ljava/util/Map;
 
     move-result-object v1
 
     .line 85
-    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->-$$Nest$sfgetMEM()Ljava/util/Map;
+    # getter for: Lio/nekohasekai/sfa/bg/GeoStore;->MEM:Ljava/util/Map;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->access$000()Ljava/util/Map;
 
     move-result-object v2
 
-    if-nez v2, :cond_0
+    if-nez v2, :cond_e
 
-    invoke-static {v1}, Lio/nekohasekai/sfa/bg/GeoStore;->-$$Nest$sfputMEM(Ljava/util/Map;)V
+    # setter for: Lio/nekohasekai/sfa/bg/GeoStore;->MEM:Ljava/util/Map;
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/GeoStore;->access$002(Ljava/util/Map;)Ljava/util/Map;
 
     .line 86
-    :cond_0
+    :cond_e
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
     move-result-wide v1
 
-    invoke-static {v1, v2}, Lio/nekohasekai/sfa/bg/GeoStore;->-$$Nest$sfputMEM_AT(J)V
+    # setter for: Lio/nekohasekai/sfa/bg/GeoStore;->MEM_AT:J
+    invoke-static {v1, v2}, Lio/nekohasekai/sfa/bg/GeoStore;->access$102(J)J
+    :try_end_15
+    .catchall {:try_start_1 .. :try_end_15} :catchall_46
 
     .line 88
+    :try_start_15
     sget-object v1, Lio/nekohasekai/sfa/bg/DiagLogger;->INSTANCE:Lio/nekohasekai/sfa/bg/DiagLogger;
 
-    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->-$$Nest$sfgetMEM()Ljava/util/Map;
+    new-instance v2, Ljava/lang/StringBuilder;
+
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v3, "\u5730\u533a\u5feb\u7167\uff1a\u9884\u70ed "
+
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object v2
 
-    if-nez v2, :cond_1
+    # getter for: Lio/nekohasekai/sfa/bg/GeoStore;->MEM:Ljava/util/Map;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->access$000()Ljava/util/Map;
 
-    move v2, v0
+    move-result-object v3
 
-    goto :goto_0
+    if-nez v3, :cond_2a
 
-    :cond_1
-    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->-$$Nest$sfgetMEM()Ljava/util/Map;
+    move v3, v0
+
+    goto :goto_32
+
+    :cond_2a
+    # getter for: Lio/nekohasekai/sfa/bg/GeoStore;->MEM:Ljava/util/Map;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->access$000()Ljava/util/Map;
+
+    move-result-object v3
+
+    invoke-interface {v3}, Ljava/util/Map;->size()I
+
+    move-result v3
+
+    :goto_32
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
     move-result-object v2
 
-    invoke-interface {v2}, Ljava/util/Map;->size()I
+    const-string v3, " \u6761"
 
-    move-result v2
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    :goto_0
-    new-instance v3, Ljava/lang/StringBuilder;
+    move-result-object v2
 
-    invoke-direct {v3, p0}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    invoke-virtual {v3, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    move-result-object v2
 
-    const-string p0, " \u6761"
+    invoke-virtual {v1, v2}, Lio/nekohasekai/sfa/bg/DiagLogger;->pubgRules(Ljava/lang/String;)V
+    :try_end_43
+    .catchall {:try_start_15 .. :try_end_43} :catchall_44
 
-    invoke-virtual {v3, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    .line 90
+    goto :goto_47
 
-    invoke-virtual {v3}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    .line 89
+    :catchall_44
+    move-exception v1
 
-    move-result-object p0
+    goto :goto_47
 
-    invoke-virtual {v1, p0}, Lio/nekohasekai/sfa/bg/DiagLogger;->pubgRules(Ljava/lang/String;)V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    .line 91
+    :catchall_46
+    move-exception v1
 
     .line 93
-    :catchall_0
-    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->-$$Nest$sfgetWARMING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    :goto_47
+    # getter for: Lio/nekohasekai/sfa/bg/GeoStore;->WARMING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->access$200()Ljava/util/concurrent/atomic/AtomicBoolean;
 
-    move-result-object p0
+    move-result-object v1
 
-    invoke-virtual {p0, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v1, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
+    .line 94
+    nop
+
+    .line 95
     return-void
 .end method

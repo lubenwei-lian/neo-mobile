@@ -23,7 +23,7 @@
 
 # direct methods
 .method constructor <init>(Ljava/util/List;)V
-    .locals 0
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -41,12 +41,12 @@
 
 # virtual methods
 .method public run()V
-    .locals 4
-
-    const-wide/16 v0, 0x61a8
+    .registers 5
 
     .line 40
-    :try_start_0
+    const-wide/16 v0, 0x61a8
+
+    :try_start_2
     invoke-static {v0, v1}, Ljava/lang/Thread;->sleep(J)V
 
     .line 41
@@ -56,17 +56,20 @@
 
     move-result-object v0
 
-    if-nez v0, :cond_0
+    .line 42
+    if-nez v0, :cond_13
 
     .line 43
-    const-string p0, "[STUN] standaloneClient \u4e3a null"
+    const-string v0, "[STUN] standaloneClient \u4e3a null"
 
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/StunTagProbe;->-$$Nest$smlog(Ljava/lang/String;)V
+    # invokes: Lio/nekohasekai/sfa/bg/StunTagProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/StunTagProbe;->access$000(Ljava/lang/String;)V
 
+    .line 44
     return-void
 
     .line 46
-    :cond_0
+    :cond_13
     iget-object v1, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$1;->val$tags:Ljava/util/List;
 
     invoke-interface {v1}, Ljava/util/List;->size()I
@@ -79,10 +82,11 @@
 
     move-result v1
 
+    .line 47
     const/4 v2, 0x0
 
-    :goto_0
-    if-ge v2, v1, :cond_1
+    :goto_1f
+    if-ge v2, v1, :cond_2f
 
     .line 48
     iget-object v3, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$1;->val$tags:Ljava/util/List;
@@ -93,57 +97,75 @@
 
     check-cast v3, Ljava/lang/String;
 
-    invoke-static {v0, v3}, Lio/nekohasekai/sfa/bg/StunTagProbe;->-$$Nest$smprobeOne(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)V
+    # invokes: Lio/nekohasekai/sfa/bg/StunTagProbe;->probeOne(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)V
+    invoke-static {v0, v3}, Lio/nekohasekai/sfa/bg/StunTagProbe;->access$100(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)V
 
+    .line 47
     add-int/lit8 v2, v2, 0x1
 
-    goto :goto_0
+    goto :goto_1f
 
     .line 50
-    :cond_1
-    const-string p0, "[STUN] \u672c\u8f6e\u7ed3\u675f"
+    :cond_2f
+    const-string v0, "[STUN] \u672c\u8f6e\u7ed3\u675f"
 
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/StunTagProbe;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    # invokes: Lio/nekohasekai/sfa/bg/StunTagProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/StunTagProbe;->access$000(Ljava/lang/String;)V
+    :try_end_34
+    .catchall {:try_start_2 .. :try_end_34} :catchall_35
 
-    return-void
+    .line 53
+    goto :goto_62
 
-    :catchall_0
-    move-exception p0
+    .line 51
+    :catchall_35
+    move-exception v0
 
     .line 52
-    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Ljava/lang/Class;->getName()Ljava/lang/String;
-
-    move-result-object v0
-
-    invoke-virtual {p0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
-
-    move-result-object p0
-
     new-instance v1, Ljava/lang/StringBuilder;
+
+    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
 
     const-string v2, "[STUN] \u540e\u53f0\u5f02\u5e38 "
 
-    invoke-direct {v1, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+
+    move-result-object v2
+
+    invoke-virtual {v2}, Ljava/lang/Class;->getName()Ljava/lang/String;
+
+    move-result-object v2
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    const-string v2, " "
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
+
+    move-result-object v0
 
     invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v0, " "
+    move-result-object v0
 
-    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    # invokes: Lio/nekohasekai/sfa/bg/StunTagProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/StunTagProbe;->access$000(Ljava/lang/String;)V
 
-    move-result-object p0
-
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/StunTagProbe;->-$$Nest$smlog(Ljava/lang/String;)V
-
+    .line 54
+    :goto_62
     return-void
 .end method

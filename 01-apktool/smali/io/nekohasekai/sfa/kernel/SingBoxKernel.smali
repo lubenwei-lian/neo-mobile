@@ -1388,27 +1388,13 @@
 .end method
 
 .method public subscriptionUserAgentChain(Ljava/lang/String;)Ljava/util/List;
-    .locals 3
+    .locals 1
 
-    .line 1
-    const-string v0, "sing-box/1.14.3"
+    # [S3 2026-10-24] UA 链下沉到 io.neoguard.KernelHooks
+    invoke-static {}, Lio/neoguard/KernelHooks;->subscriptionUserAgentChain()Ljava/util/List;
 
-    .line 2
-    const-string v1, "ClashforWindows/0.20.39"
-
-    .line 3
-    filled-new-array {v0, v1}, [Ljava/lang/String;
-
-    .line 4
-    move-result-object v2
-
-    .line 5
-    invoke-static {v2}, Ly9;->E([Ljava/lang/Object;)Ljava/util/List;
-
-    .line 6
     move-result-object v0
 
-    .line 7
     return-object v0
 .end method
 
@@ -1848,11 +1834,12 @@
 .end method
 
 .method public version()Ljava/lang/String;
-    .locals 0
+    .locals 1
 
-    .line 1
-    const-string p0, "1.14.3"
+    # [S3 2026-10-24] 版本号下沉到 io.neoguard.KernelHooks
+    invoke-static {}, Lio/neoguard/KernelHooks;->version()Ljava/lang/String;
 
-    .line 2
-    return-object p0
+    move-result-object v0
+
+    return-object v0
 .end method

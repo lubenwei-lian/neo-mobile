@@ -52,10 +52,7 @@ public final class NodeDisplay {
 
             String out = display;
 
-            // 1) 并发池成员标记（只在真的在池里时出现）
-            if (tag != null && tag.length() > 0 && out.indexOf('⚡') < 0 && PoolCache.contains(tag)) {
-                out = "⚡ " + out;
-            }
+            // 1) [S4 2026-10-24] 并发池成员标记已删除（并发功能已移除，PoolCache 随之删除）。
 
             if (tag == null || tag.length() == 0) return out;
             if (out.indexOf("实测") >= 0) return out;

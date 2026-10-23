@@ -419,9 +419,7 @@
     .line 23
     move-result-object v0
 
-    # [2026-10-22 产品化] 把这轮解析出的并发池成员抄给节点页（节点行标 ⚡），
-    # 只读、不改变本次数据流；PoolCache 内部失败只记日志不影响主流程。
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/PoolCache;->setPool(Ljava/util/List;)V
+    # [S4 2026-10-24] 并发池功能已删除：不再抄 PoolCache。
 
     .line 24
     invoke-interface {v0}, Ljava/util/List;->size()I

@@ -2440,7 +2440,7 @@
 
     .line 223
     .line 224
-    const-string v1, "\u5e76\u53d1\u6c60\u6682\u65e0\u6570\u636e"
+    const-string v1, "\u6682\u65e0\u6570\u636e"
 
     .line 225
     .line 226
@@ -2448,7 +2448,7 @@
 
     .line 227
     :cond_6
-    const-string v1, "\u672a\u8fde\u63a5 \u00b7 \u8fde\u63a5\u540e\u663e\u793a\u5e76\u53d1\u6c60"
+    const-string v1, "\u672a\u8fde\u63a5"
 
     .line 228
     .line 229

@@ -24,7 +24,10 @@
     .locals 2
 
     .line 1
-    const-wide v0, 0xff4ade80L
+    # [S3 2026-10-24] 主题色下沉 io.neoguard.NeoUiHooks
+    invoke-static {}, Lio/neoguard/NeoUiHooks;->colorGreen()J
+
+    move-result-wide v0
 
     .line 2
     .line 3
@@ -43,7 +46,9 @@
 
     .line 11
     .line 12
-    const-wide v0, 0xfff59e0bL
+    invoke-static {}, Lio/neoguard/NeoUiHooks;->colorOrange()J
+
+    move-result-wide v0
 
     .line 13
     .line 14
@@ -62,7 +67,9 @@
 
     .line 22
     .line 23
-    const-wide v0, 0xff2a2f38L
+    invoke-static {}, Lio/neoguard/NeoUiHooks;->colorIdleRing()J
+
+    move-result-wide v0
 
     .line 24
     .line 25

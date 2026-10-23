@@ -23,7 +23,7 @@
 
 # direct methods
 .method constructor <init>(Ljava/util/List;)V
-    .locals 0
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -41,16 +41,19 @@
 
 # virtual methods
 .method public run()V
-    .locals 13
+    .registers 15
 
+    .line 164
+    nop
+
+    .line 166
     const-wide/32 v0, 0x1d4c0
 
     const/4 v2, 0x0
 
     const/4 v3, 0x0
 
-    .line 166
-    :try_start_0
+    :try_start_6
     invoke-static {v0, v1}, Ljava/lang/Thread;->sleep(J)V
 
     .line 168
@@ -60,38 +63,49 @@
 
     move-result-object v3
 
-    if-nez v3, :cond_1
+    .line 169
+    if-nez v3, :cond_25
 
     .line 170
-    const-string p0, "\u8282\u70b9\u5730\u533a\uff1aclient \u4e3a null\uff0c\u8df3\u8fc7"
+    const-string v0, "\u8282\u70b9\u5730\u533a\uff1aclient \u4e3a null\uff0c\u8df3\u8fc7"
 
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_1
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
+    :try_end_16
+    .catchall {:try_start_6 .. :try_end_16} :catchall_1cb
 
-    if-eqz v3, :cond_0
+    .line 229
+    if-eqz v3, :cond_1d
 
     .line 231
-    :goto_0
-    :try_start_1
+    :try_start_18
     invoke-virtual {v3}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
-    :try_end_1
-    .catchall {:try_start_1 .. :try_end_1} :catchall_0
+    :try_end_1b
+    .catchall {:try_start_18 .. :try_end_1b} :catchall_1c
+
+    .line 233
+    goto :goto_1d
+
+    .line 232
+    :catchall_1c
+    move-exception v0
 
     .line 235
-    :catchall_0
-    :cond_0
-    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$sfgetRUNNING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    :cond_1d
+    :goto_1d
+    # getter for: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->RUNNING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$200()Ljava/util/concurrent/atomic/AtomicBoolean;
 
-    move-result-object p0
+    move-result-object v0
 
-    invoke-virtual {p0, v2}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v0, v2}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
+    .line 171
     return-void
 
     .line 175
-    :cond_1
-    :try_start_2
+    :cond_25
+    :try_start_25
     invoke-static {}, Lio/nekohasekai/sfa/bg/GeoStore;->load()Ljava/util/Map;
 
     move-result-object v0
@@ -108,13 +122,12 @@
 
     move-result-object v4
 
-    :cond_2
-    :goto_1
+    :goto_34
     invoke-interface {v4}, Ljava/util/Iterator;->hasNext()Z
 
     move-result v5
 
-    if-eqz v5, :cond_3
+    if-eqz v5, :cond_51
 
     invoke-interface {v4}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
@@ -127,7 +140,7 @@
 
     move-result v6
 
-    if-nez v6, :cond_2
+    if-nez v6, :cond_50
 
     invoke-interface {v1}, Ljava/util/List;->size()I
 
@@ -135,28 +148,24 @@
 
     const/4 v7, 0x6
 
-    if-ge v6, v7, :cond_2
+    if-ge v6, v7, :cond_50
 
     .line 179
     invoke-interface {v1, v5}, Ljava/util/List;->add(Ljava/lang/Object;)Z
 
-    goto :goto_1
+    .line 181
+    :cond_50
+    goto :goto_34
 
     .line 183
-    :cond_3
+    :cond_51
     invoke-interface {v1}, Ljava/util/List;->isEmpty()Z
 
     move-result v0
 
-    if-eqz v0, :cond_4
+    if-eqz v0, :cond_88
 
     .line 184
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/NodeGeoProbe$2;->val$tags:Ljava/util/List;
-
-    invoke-interface {p0}, Ljava/util/List;->size()I
-
-    move-result p0
-
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -165,28 +174,65 @@
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    const-string p0, " \u4e2a\u8282\u70b9\u5747\u5df2\u6709\u5b9e\u6d4b\u7f13\u5b58\uff0c\u8df3\u8fc7"
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/NodeGeoProbe$2;->val$tags:Ljava/util/List;
 
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-interface {v1}, Ljava/util/List;->size()I
+
+    move-result v1
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    const-string v1, " \u4e2a\u8282\u70b9\u5747\u5df2\u6709\u5b9e\u6d4b\u7f13\u5b58\uff0c\u8df3\u8fc7"
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
 
     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    move-result-object p0
+    move-result-object v0
 
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
+    :try_end_79
+    .catchall {:try_start_25 .. :try_end_79} :catchall_1cb
 
-    if-eqz v3, :cond_0
+    .line 229
+    if-eqz v3, :cond_80
 
-    goto :goto_0
+    .line 231
+    :try_start_7b
+    invoke-virtual {v3}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
+    :try_end_7e
+    .catchall {:try_start_7b .. :try_end_7e} :catchall_7f
+
+    .line 233
+    goto :goto_80
+
+    .line 232
+    :catchall_7f
+    move-exception v0
+
+    .line 235
+    :cond_80
+    :goto_80
+    # getter for: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->RUNNING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$200()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v0
+
+    invoke-virtual {v0, v2}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+
+    .line 185
+    return-void
 
     .line 188
-    :cond_4
-    invoke-interface {v1}, Ljava/util/List;->size()I
-
-    move-result p0
-
+    :cond_88
+    :try_start_88
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
@@ -195,279 +241,368 @@
 
     invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    const-string p0, " \u4e2a\u8282\u70b9\uff08\u9996\u4e2a\u8282\u70b9\u53ef\u80fd\u8d85\u51fa 6s\uff09"
+    invoke-interface {v1}, Ljava/util/List;->size()I
 
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result v4
+
+    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    const-string v4, " \u4e2a\u8282\u70b9\uff08\u9996\u4e2a\u8282\u70b9\u53ef\u80fd\u8d85\u51fa "
+
+    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    const-wide/16 v4, 0x6
+
+    invoke-virtual {v0, v4, v5}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    const-string v4, "s\uff09"
+
+    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
 
     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    move-result-object p0
+    move-result-object v0
 
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
 
     .line 191
-    new-instance p0, Ljava/util/ArrayList;
+    new-instance v0, Ljava/util/ArrayList;
 
-    invoke-direct {p0}, Ljava/util/ArrayList;-><init>()V
+    invoke-direct {v0}, Ljava/util/ArrayList;-><init>()V
+
+    .line 192
+    nop
 
     .line 193
     invoke-interface {v1}, Ljava/util/List;->iterator()Ljava/util/Iterator;
 
-    move-result-object v0
+    move-result-object v4
 
-    move v4, v2
+    move v5, v2
 
-    :goto_2
-    invoke-interface {v0}, Ljava/util/Iterator;->hasNext()Z
+    :goto_bf
+    invoke-interface {v4}, Ljava/util/Iterator;->hasNext()Z
 
-    move-result v5
+    move-result v6
 
-    if-eqz v5, :cond_7
+    if-eqz v6, :cond_196
 
-    invoke-interface {v0}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+    invoke-interface {v4}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
-    move-result-object v5
+    move-result-object v6
 
-    check-cast v5, Ljava/lang/String;
+    check-cast v6, Ljava/lang/String;
 
     .line 194
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
-    move-result-wide v6
+    move-result-wide v7
 
     .line 195
-    invoke-static {v3, v5}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->stunExit(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v3, v6}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->stunExit(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)Ljava/lang/String;
 
-    move-result-object v8
+    move-result-object v9
 
     .line 196
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
-    move-result-wide v9
-    :try_end_2
-    .catchall {:try_start_2 .. :try_end_2} :catchall_1
+    move-result-wide v10
+    :try_end_d7
+    .catchall {:try_start_88 .. :try_end_d7} :catchall_1cb
 
-    sub-long/2addr v9, v6
+    sub-long/2addr v10, v7
 
     .line 198
-    const-string v6, "\u8282\u70b9\u5730\u533a\uff1a"
+    const-string v7, "\u8282\u70b9\u5730\u533a\uff1a"
 
-    if-nez v8, :cond_5
+    if-nez v9, :cond_101
 
     .line 199
-    :try_start_3
-    new-instance v7, Ljava/lang/StringBuilder;
-
-    invoke-direct {v7}, Ljava/lang/StringBuilder;-><init>()V
-
-    invoke-virtual {v7, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string v5, " \u2192 \u672a\u6d4b\u5230\uff08"
-
-    invoke-virtual {v7, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7, v9, v10}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
-
-    const-string v5, "ms\uff0c\u4fdd\u7559\u6309\u540d\u5b57\u663e\u793a\uff09"
-
-    invoke-virtual {v7, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object v5
-
-    invoke-static {v5}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
-
-    goto :goto_2
-
-    .line 203
-    :cond_5
-    invoke-static {v8}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smipOf(Ljava/lang/String;)Ljava/lang/String;
-
-    move-result-object v7
-
-    .line 204
-    invoke-static {v7}, Lio/nekohasekai/sfa/bg/NodeExitInfo;->geoLookup(Ljava/lang/String;)Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;
-
-    move-result-object v8
-
-    .line 205
-    invoke-virtual {v8}, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->hasCountry()Z
-
-    move-result v11
-
-    if-nez v11, :cond_6
-
-    .line 206
+    :try_start_dc
     new-instance v8, Ljava/lang/StringBuilder;
 
     invoke-direct {v8}, Ljava/lang/StringBuilder;-><init>()V
 
-    invoke-virtual {v8, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v8, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string v5, " \u2192 "
-
-    invoke-virtual {v8, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
     invoke-virtual {v8, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v5, "\uff0c\u5f52\u5c5e\u67e5\u8be2\u5931\u8d25\uff08"
+    move-result-object v7
 
-    invoke-virtual {v8, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v7, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v8, v9, v10}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+    move-result-object v6
 
-    const-string v5, "ms\uff09"
+    const-string v7, " \u2192 \u672a\u6d4b\u5230\uff08"
 
-    invoke-virtual {v8, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v8}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v6
 
-    move-result-object v5
+    invoke-virtual {v6, v10, v11}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
 
-    invoke-static {v5}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
+    move-result-object v6
 
-    goto :goto_2
+    const-string v7, "ms\uff0c\u4fdd\u7559\u6309\u540d\u5b57\u663e\u793a\uff09"
 
-    .line 210
-    :cond_6
-    new-instance v11, Lio/nekohasekai/sfa/bg/GeoStore$Entry;
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-direct {v11}, Lio/nekohasekai/sfa/bg/GeoStore$Entry;-><init>()V
+    move-result-object v6
 
-    .line 211
-    iput-object v5, v11, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->tag:Ljava/lang/String;
+    invoke-virtual {v6}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    .line 212
-    iget-object v12, v8, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->countryCode:Ljava/lang/String;
+    move-result-object v6
 
-    iput-object v12, v11, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v6}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
 
-    .line 213
-    iget-object v12, v8, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->region:Ljava/lang/String;
+    .line 200
+    goto :goto_bf
 
-    iput-object v12, v11, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
-
-    .line 214
-    iget-object v8, v8, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
-
-    iput-object v8, v11, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->city:Ljava/lang/String;
-
-    .line 215
-    iput-object v7, v11, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->ip:Ljava/lang/String;
-
-    .line 216
-    invoke-interface {p0, v11}, Ljava/util/List;->add(Ljava/lang/Object;)Z
-
-    add-int/lit8 v4, v4, 0x1
-
-    .line 219
-    invoke-virtual {v11}, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->shortText()Ljava/lang/String;
+    .line 203
+    :cond_101
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->ipOf(Ljava/lang/String;)Ljava/lang/String;
+    invoke-static {v9}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$100(Ljava/lang/String;)Ljava/lang/String;
 
     move-result-object v8
 
-    new-instance v11, Ljava/lang/StringBuilder;
+    .line 204
+    invoke-static {v8}, Lio/nekohasekai/sfa/bg/NodeExitInfo;->geoLookup(Ljava/lang/String;)Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;
 
-    invoke-direct {v11}, Ljava/lang/StringBuilder;-><init>()V
+    move-result-object v9
 
-    invoke-virtual {v11, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    .line 205
+    invoke-virtual {v9}, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->hasCountry()Z
 
-    invoke-virtual {v11, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result v12
 
-    const-string v5, " \u2192 \u5b9e\u6d4b "
+    if-nez v12, :cond_13e
 
-    invoke-virtual {v11, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    .line 206
+    new-instance v9, Ljava/lang/StringBuilder;
 
-    invoke-virtual {v11, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-direct {v9}, Ljava/lang/StringBuilder;-><init>()V
 
-    const-string v5, " ["
+    invoke-virtual {v9, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v11, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v7
 
-    invoke-virtual {v11, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v7, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v5, "] "
+    move-result-object v6
 
-    invoke-virtual {v11, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    const-string v7, " \u2192 "
 
-    invoke-virtual {v11, v9, v10}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v5, "ms"
+    move-result-object v6
 
-    invoke-virtual {v11, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v6, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v11}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v6
 
-    move-result-object v5
+    const-string v7, "\uff0c\u5f52\u5c5e\u67e5\u8be2\u5931\u8d25\uff08"
 
-    invoke-static {v5}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    goto/16 :goto_2
+    move-result-object v6
+
+    invoke-virtual {v6, v10, v11}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    const-string v7, "ms\uff09"
+
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    invoke-virtual {v6}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v6
+
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v6}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
+
+    .line 207
+    goto :goto_bf
+
+    .line 210
+    :cond_13e
+    new-instance v12, Lio/nekohasekai/sfa/bg/GeoStore$Entry;
+
+    invoke-direct {v12}, Lio/nekohasekai/sfa/bg/GeoStore$Entry;-><init>()V
+
+    .line 211
+    iput-object v6, v12, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->tag:Ljava/lang/String;
+
+    .line 212
+    iget-object v13, v9, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->countryCode:Ljava/lang/String;
+
+    iput-object v13, v12, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->country:Ljava/lang/String;
+
+    .line 213
+    iget-object v13, v9, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->region:Ljava/lang/String;
+
+    iput-object v13, v12, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->region:Ljava/lang/String;
+
+    .line 214
+    iget-object v9, v9, Lio/nekohasekai/sfa/bg/NodeExitInfo$Info;->city:Ljava/lang/String;
+
+    iput-object v9, v12, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->city:Ljava/lang/String;
+
+    .line 215
+    iput-object v8, v12, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->ip:Ljava/lang/String;
+
+    .line 216
+    invoke-interface {v0, v12}, Ljava/util/List;->add(Ljava/lang/Object;)Z
+
+    .line 217
+    add-int/lit8 v5, v5, 0x1
+
+    .line 219
+    new-instance v9, Ljava/lang/StringBuilder;
+
+    invoke-direct {v9}, Ljava/lang/StringBuilder;-><init>()V
+
+    invoke-virtual {v9, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v7
+
+    invoke-virtual {v7, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    const-string v7, " \u2192 \u5b9e\u6d4b "
+
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    invoke-virtual {v12}, Lio/nekohasekai/sfa/bg/GeoStore$Entry;->shortText()Ljava/lang/String;
+
+    move-result-object v7
+
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    const-string v7, " ["
+
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    invoke-virtual {v6, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    const-string v7, "] "
+
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    invoke-virtual {v6, v10, v11}, Ljava/lang/StringBuilder;->append(J)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    const-string v7, "ms"
+
+    invoke-virtual {v6, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v6
+
+    invoke-virtual {v6}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v6
+
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v6}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
+
+    .line 221
+    goto/16 :goto_bf
 
     .line 223
-    :cond_7
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/GeoStore;->save(Ljava/util/List;)V
+    :cond_196
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/GeoStore;->save(Ljava/util/List;)V
 
     .line 224
-    invoke-interface {v1}, Ljava/util/List;->size()I
-
-    move-result p0
-
     new-instance v0, Ljava/lang/StringBuilder;
 
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
 
-    const-string v1, "\u8282\u70b9\u5730\u533a\uff1a\u672c\u8f6e\u5b9e\u6d4b\u6210\u529f "
+    const-string v4, "\u8282\u70b9\u5730\u533a\uff1a\u672c\u8f6e\u5b9e\u6d4b\u6210\u529f "
+
+    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    invoke-virtual {v0, v5}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    const-string v4, "/"
+
+    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    invoke-interface {v1}, Ljava/util/List;->size()I
+
+    move-result v1
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    const-string v1, "\uff0c\u5df2\u5199\u5165\u7f13\u5b58\uff0c\u8282\u70b9\u9875\u65d7\u5e1c\u5c06\u6309\u5b9e\u6d4b\u663e\u793a"
 
     invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v0, v4}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string v1, "/"
-
-    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string p0, "\uff0c\u5df2\u5199\u5165\u7f13\u5b58\uff0c\u8282\u70b9\u9875\u65d7\u5e1c\u5c06\u6309\u5b9e\u6d4b\u663e\u793a"
-
-    invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v0
 
     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    move-result-object p0
+    move-result-object v0
 
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_3
-    .catchall {:try_start_3 .. :try_end_3} :catchall_1
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
+    :try_end_1c3
+    .catchall {:try_start_dc .. :try_end_1c3} :catchall_1cb
 
-    if-eqz v3, :cond_8
+    .line 229
+    if-eqz v3, :cond_1ff
 
-    goto :goto_3
+    .line 231
+    :try_start_1c5
+    invoke-virtual {v3}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
+    :try_end_1c8
+    .catchall {:try_start_1c5 .. :try_end_1c8} :catchall_1c9
 
-    :catchall_1
-    move-exception p0
+    goto :goto_1fd
+
+    .line 232
+    :catchall_1c9
+    move-exception v0
+
+    goto :goto_1ff
+
+    .line 226
+    :catchall_1cb
+    move-exception v0
 
     .line 227
-    :try_start_4
-    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Ljava/lang/Class;->getSimpleName()Ljava/lang/String;
-
-    move-result-object v0
-
-    invoke-virtual {p0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
-
-    move-result-object p0
-
+    :try_start_1cc
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -476,62 +611,105 @@
 
     invoke-virtual {v1, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
+    move-result-object v1
+
+    invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+
+    move-result-object v4
+
+    invoke-virtual {v4}, Ljava/lang/Class;->getSimpleName()Ljava/lang/String;
+
+    move-result-object v4
+
+    invoke-virtual {v1, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    const-string v4, " "
+
+    invoke-virtual {v1, v4}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
+    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
+
+    move-result-object v0
+
     invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    const-string v0, " "
+    move-result-object v0
 
-    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    # invokes: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$000(Ljava/lang/String;)V
+    :try_end_1f8
+    .catchall {:try_start_1cc .. :try_end_1f8} :catchall_208
 
-    move-result-object p0
-
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_4
-    .catchall {:try_start_4 .. :try_end_4} :catchall_3
-
-    if-eqz v3, :cond_8
+    .line 229
+    if-eqz v3, :cond_1ff
 
     .line 231
-    :goto_3
-    :try_start_5
+    :try_start_1fa
     invoke-virtual {v3}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
-    :try_end_5
-    .catchall {:try_start_5 .. :try_end_5} :catchall_2
+    :try_end_1fd
+    .catchall {:try_start_1fa .. :try_end_1fd} :catchall_1fe
+
+    .line 233
+    :goto_1fd
+    goto :goto_1ff
+
+    .line 232
+    :catchall_1fe
+    move-exception v0
 
     .line 235
-    :catchall_2
-    :cond_8
-    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$sfgetRUNNING()Ljava/util/concurrent/atomic/AtomicBoolean;
-
-    move-result-object p0
-
-    invoke-virtual {p0, v2}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
-
-    return-void
-
-    :catchall_3
-    move-exception p0
-
-    if-eqz v3, :cond_9
-
-    .line 231
-    :try_start_6
-    invoke-virtual {v3}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
-    :try_end_6
-    .catchall {:try_start_6 .. :try_end_6} :catchall_4
-
-    .line 235
-    :catchall_4
-    :cond_9
-    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->-$$Nest$sfgetRUNNING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    :cond_1ff
+    :goto_1ff
+    # getter for: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->RUNNING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$200()Ljava/util/concurrent/atomic/AtomicBoolean;
 
     move-result-object v0
 
     invoke-virtual {v0, v2}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
     .line 236
-    throw p0
+    nop
+
+    .line 237
+    return-void
+
+    .line 229
+    :catchall_208
+    move-exception v0
+
+    if-eqz v3, :cond_210
+
+    .line 231
+    :try_start_20b
+    invoke-virtual {v3}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
+    :try_end_20e
+    .catchall {:try_start_20b .. :try_end_20e} :catchall_20f
+
+    .line 233
+    goto :goto_210
+
+    .line 232
+    :catchall_20f
+    move-exception v1
+
+    .line 235
+    :cond_210
+    :goto_210
+    # getter for: Lio/nekohasekai/sfa/bg/NodeGeoProbe;->RUNNING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->access$200()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v1
+
+    invoke-virtual {v1, v2}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+
+    .line 236
+    throw v0
 .end method

@@ -15,200 +15,227 @@
 
 # direct methods
 .method private constructor <init>()V
-    .locals 0
+    .registers 1
 
     .line 33
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
 
+    .line 34
     return-void
 .end method
 
 .method private static diag(Ljava/lang/String;)V
-    .locals 1
+    .registers 2
 
     .line 99
     :try_start_0
     sget-object v0, Lio/nekohasekai/sfa/bg/DiagLogger;->INSTANCE:Lio/nekohasekai/sfa/bg/DiagLogger;
 
     invoke-virtual {v0, p0}, Lio/nekohasekai/sfa/bg/DiagLogger;->pubgRules(Ljava/lang/String;)V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_5
+    .catchall {:try_start_0 .. :try_end_5} :catchall_6
 
-    :catchall_0
+    .line 101
+    goto :goto_7
+
+    .line 100
+    :catchall_6
+    move-exception p0
+
+    .line 102
+    :goto_7
     return-void
 .end method
 
 .method private static ensure()V
-    .locals 12
+    .registers 9
 
     .line 66
-    const-string v0, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u6865\u63a5\u5c31\u7eea\uff08\u521d\u59cb="
+    sget-boolean v0, Lio/nekohasekai/sfa/bg/SwitchState;->INITED:Z
 
-    const-string v1, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u6865\u63a5\u5931\u8d25 "
-
-    sget-boolean v2, Lio/nekohasekai/sfa/bg/SwitchState;->INITED:Z
-
-    if-eqz v2, :cond_0
-
-    goto/16 :goto_1
-
-    .line 67
-    :cond_0
-    const-class v2, Lio/nekohasekai/sfa/bg/SwitchState;
-
-    monitor-enter v2
-
-    .line 68
-    :try_start_0
-    sget-boolean v3, Lio/nekohasekai/sfa/bg/SwitchState;->INITED:Z
-
-    if-eqz v3, :cond_1
-
-    monitor-exit v2
+    if-eqz v0, :cond_5
 
     return-void
 
-    :cond_1
-    const/4 v3, 0x1
+    .line 67
+    :cond_5
+    const-class v0, Lio/nekohasekai/sfa/bg/SwitchState;
+
+    monitor-enter v0
+
+    .line 68
+    :try_start_8
+    sget-boolean v1, Lio/nekohasekai/sfa/bg/SwitchState;->INITED:Z
+
+    if-eqz v1, :cond_e
+
+    monitor-exit v0
+
+    return-void
 
     .line 69
-    sput-boolean v3, Lio/nekohasekai/sfa/bg/SwitchState;->INITED:Z
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_1
+    :cond_e
+    const/4 v1, 0x1
+
+    sput-boolean v1, Lio/nekohasekai/sfa/bg/SwitchState;->INITED:Z
+    :try_end_11
+    .catchall {:try_start_8 .. :try_end_11} :catchall_b8
 
     .line 71
-    :try_start_1
+    :try_start_11
     invoke-static {}, Lio/nekohasekai/sfa/bg/SwitchState;->fromStore()Z
 
-    move-result v4
+    move-result v2
 
     .line 72
-    const-string v5, "q83"
+    const-string v3, "q83"
+
+    invoke-static {v3}, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;
+
+    move-result-object v3
+
+    .line 73
+    const-string v4, "g0"
+
+    invoke-virtual {v3, v4}, Ljava/lang/Class;->getField(Ljava/lang/String;)Ljava/lang/reflect/Field;
+
+    move-result-object v4
+
+    const/4 v5, 0x0
+
+    invoke-virtual {v4, v5}, Ljava/lang/reflect/Field;->get(Ljava/lang/Object;)Ljava/lang/Object;
+
+    move-result-object v4
+
+    .line 74
+    const-string v5, "jz4"
 
     invoke-static {v5}, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;
 
     move-result-object v5
 
-    .line 73
-    const-string v6, "g0"
-
-    invoke-virtual {v5, v6}, Ljava/lang/Class;->getField(Ljava/lang/String;)Ljava/lang/reflect/Field;
-
-    move-result-object v6
-
-    const/4 v7, 0x0
-
-    invoke-virtual {v6, v7}, Ljava/lang/reflect/Field;->get(Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v6
-
-    .line 74
-    const-string v8, "jz4"
-
-    invoke-static {v8}, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;
-
-    move-result-object v8
-
-    const/4 v9, 0x2
-
     .line 75
-    new-array v9, v9, [Ljava/lang/Class;
+    const/4 v6, 0x2
 
-    const-class v10, Ljava/lang/Object;
+    new-array v6, v6, [Ljava/lang/Class;
 
-    const/4 v11, 0x0
+    const-class v7, Ljava/lang/Object;
 
-    aput-object v10, v9, v11
+    const/4 v8, 0x0
 
-    aput-object v5, v9, v3
+    aput-object v7, v6, v8
 
-    invoke-virtual {v8, v9}, Ljava/lang/Class;->getConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
+    aput-object v3, v6, v1
 
-    move-result-object v5
-
-    .line 76
-    invoke-static {v4}, Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;
-
-    move-result-object v8
-
-    filled-new-array {v8, v6}, [Ljava/lang/Object;
-
-    move-result-object v6
-
-    invoke-virtual {v5, v6}, Ljava/lang/reflect/Constructor;->newInstance([Ljava/lang/Object;)Ljava/lang/Object;
-
-    move-result-object v5
-
-    .line 77
-    const-string v6, "vj6"
-
-    invoke-static {v6}, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;
-
-    move-result-object v6
-
-    const-string v8, "getValue"
-
-    new-array v9, v11, [Ljava/lang/Class;
-
-    invoke-virtual {v6, v8, v7}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
-
-    move-result-object v6
-
-    .line 78
-    const-string v7, "eg4"
-
-    invoke-static {v7}, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;
-
-    move-result-object v7
-
-    const-string v8, "setValue"
-
-    new-array v3, v3, [Ljava/lang/Class;
-
-    const-class v9, Ljava/lang/Object;
-
-    aput-object v9, v3, v11
-
-    invoke-virtual {v7, v8, v3}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+    invoke-virtual {v5, v6}, Ljava/lang/Class;->getConstructor([Ljava/lang/Class;)Ljava/lang/reflect/Constructor;
 
     move-result-object v3
 
+    .line 76
+    invoke-static {v2}, Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;
+
+    move-result-object v5
+
+    filled-new-array {v5, v4}, [Ljava/lang/Object;
+
+    move-result-object v4
+
+    invoke-virtual {v3, v4}, Ljava/lang/reflect/Constructor;->newInstance([Ljava/lang/Object;)Ljava/lang/Object;
+
+    move-result-object v3
+
+    .line 77
+    const-string v4, "vj6"
+
+    invoke-static {v4}, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;
+
+    move-result-object v4
+
+    const-string v5, "getValue"
+
+    new-array v6, v8, [Ljava/lang/Class;
+
+    invoke-virtual {v4, v5, v6}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+
+    move-result-object v4
+
+    .line 78
+    const-string v5, "eg4"
+
+    invoke-static {v5}, Ljava/lang/Class;->forName(Ljava/lang/String;)Ljava/lang/Class;
+
+    move-result-object v5
+
+    const-string v6, "setValue"
+
+    new-array v1, v1, [Ljava/lang/Class;
+
+    const-class v7, Ljava/lang/Object;
+
+    aput-object v7, v1, v8
+
+    invoke-virtual {v5, v6, v1}, Ljava/lang/Class;->getMethod(Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;
+
+    move-result-object v1
+
     .line 79
-    sput-object v6, Lio/nekohasekai/sfa/bg/SwitchState;->GET:Ljava/lang/reflect/Method;
+    sput-object v4, Lio/nekohasekai/sfa/bg/SwitchState;->GET:Ljava/lang/reflect/Method;
 
     .line 80
-    sput-object v3, Lio/nekohasekai/sfa/bg/SwitchState;->SET:Ljava/lang/reflect/Method;
+    sput-object v1, Lio/nekohasekai/sfa/bg/SwitchState;->SET:Ljava/lang/reflect/Method;
 
     .line 81
-    sput-object v5, Lio/nekohasekai/sfa/bg/SwitchState;->STATE:Ljava/lang/Object;
+    sput-object v3, Lio/nekohasekai/sfa/bg/SwitchState;->STATE:Ljava/lang/Object;
 
     .line 82
-    new-instance v3, Ljava/lang/StringBuilder;
+    new-instance v1, Ljava/lang/StringBuilder;
 
-    invoke-direct {v3, v0}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
 
-    invoke-virtual {v3, v4}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
+    const-string v3, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u6865\u63a5\u5c31\u7eea\uff08\u521d\u59cb="
 
-    const-string v0, "\uff09"
+    invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v3, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v1
 
-    invoke-virtual {v3}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
 
-    move-result-object v0
+    move-result-object v1
 
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/SwitchState;->diag(Ljava/lang/String;)V
-    :try_end_1
-    .catchall {:try_start_1 .. :try_end_1} :catchall_0
+    const-string v2, "\uff09"
 
-    goto :goto_0
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    :catchall_0
-    move-exception v0
+    move-result-object v1
+
+    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v1
+
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/SwitchState;->diag(Ljava/lang/String;)V
+    :try_end_88
+    .catchall {:try_start_11 .. :try_end_88} :catchall_89
+
+    .line 85
+    goto :goto_b6
+
+    .line 83
+    :catchall_89
+    move-exception v1
 
     .line 84
-    :try_start_2
-    invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
+    :try_start_8a
+    new-instance v2, Ljava/lang/StringBuilder;
+
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v3, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u6865\u63a5\u5931\u8d25 "
+
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v2
+
+    invoke-virtual {v1}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     move-result-object v3
 
@@ -216,66 +243,73 @@
 
     move-result-object v3
 
-    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    move-result-object v0
+    move-result-object v2
 
-    new-instance v4, Ljava/lang/StringBuilder;
+    const-string v3, " "
 
-    invoke-direct {v4, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v4, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v2
 
-    const-string v1, " "
+    invoke-virtual {v1}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
 
-    invoke-virtual {v4, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v1
 
-    invoke-virtual {v4, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v4}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v1
 
-    move-result-object v0
+    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    invoke-static {v0}, Lio/nekohasekai/sfa/bg/SwitchState;->diag(Ljava/lang/String;)V
+    move-result-object v1
+
+    invoke-static {v1}, Lio/nekohasekai/sfa/bg/SwitchState;->diag(Ljava/lang/String;)V
 
     .line 86
-    :goto_0
-    monitor-exit v2
+    :goto_b6
+    monitor-exit v0
 
-    :goto_1
+    .line 87
     return-void
 
-    :catchall_1
-    move-exception v0
+    .line 86
+    :catchall_b8
+    move-exception v1
 
-    monitor-exit v2
-    :try_end_2
-    .catchall {:try_start_2 .. :try_end_2} :catchall_1
+    monitor-exit v0
+    :try_end_ba
+    .catchall {:try_start_8a .. :try_end_ba} :catchall_b8
 
-    throw v0
+    throw v1
 .end method
 
 .method private static fromStore()Z
-    .locals 1
+    .registers 1
 
     .line 91
     :try_start_0
     invoke-static {}, Lio/nekohasekai/sfa/bg/BalancerInjector;->concurrentEnabled()Z
 
     move-result v0
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_4
+    .catchall {:try_start_0 .. :try_end_4} :catchall_5
 
     return v0
 
-    :catchall_0
+    .line 92
+    :catchall_5
+    move-exception v0
+
+    .line 93
     const/4 v0, 0x0
 
     return v0
 .end method
 
 .method public static read()Z
-    .locals 3
+    .registers 3
 
     .line 38
     invoke-static {}, Lio/nekohasekai/sfa/bg/SwitchState;->ensure()V
@@ -286,14 +320,17 @@
     .line 40
     sget-object v1, Lio/nekohasekai/sfa/bg/SwitchState;->GET:Ljava/lang/reflect/Method;
 
-    if-eqz v0, :cond_0
+    .line 41
+    if-eqz v0, :cond_3d
 
-    if-eqz v1, :cond_0
-
-    const/4 v2, 0x0
+    if-eqz v1, :cond_3d
 
     .line 43
-    :try_start_0
+    const/4 v2, 0x0
+
+    :try_start_c
+    new-array v2, v2, [Ljava/lang/Object;
+
     invoke-virtual {v1, v0, v2}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
 
     move-result-object v0
@@ -301,22 +338,37 @@
     .line 44
     instance-of v1, v0, Ljava/lang/Boolean;
 
-    if-eqz v1, :cond_0
+    if-eqz v1, :cond_1d
 
     check-cast v0, Ljava/lang/Boolean;
 
     invoke-virtual {v0}, Ljava/lang/Boolean;->booleanValue()Z
 
     move-result v0
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_1c
+    .catchall {:try_start_c .. :try_end_1c} :catchall_1e
 
     return v0
 
-    :catchall_0
+    .line 47
+    :cond_1d
+    goto :goto_3d
+
+    .line 45
+    :catchall_1e
     move-exception v0
 
     .line 46
+    new-instance v1, Ljava/lang/StringBuilder;
+
+    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v2, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u8bfb\u53d6\u5931\u8d25 "
+
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v1
+
     invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     move-result-object v0
@@ -325,22 +377,19 @@
 
     move-result-object v0
 
-    new-instance v1, Ljava/lang/StringBuilder;
-
-    const-string v2, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u8bfb\u53d6\u5931\u8d25 "
-
-    invoke-direct {v1, v2}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
     invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object v0
 
     invoke-static {v0}, Lio/nekohasekai/sfa/bg/SwitchState;->diag(Ljava/lang/String;)V
 
     .line 49
-    :cond_0
+    :cond_3d
+    :goto_3d
     invoke-static {}, Lio/nekohasekai/sfa/bg/SwitchState;->fromStore()Z
 
     move-result v0
@@ -349,7 +398,7 @@
 .end method
 
 .method public static write(Z)V
-    .locals 2
+    .registers 3
 
     .line 54
     invoke-static {}, Lio/nekohasekai/sfa/bg/SwitchState;->ensure()V
@@ -360,15 +409,16 @@
     .line 56
     sget-object v1, Lio/nekohasekai/sfa/bg/SwitchState;->SET:Ljava/lang/reflect/Method;
 
-    if-eqz v0, :cond_1
+    .line 57
+    if-eqz v0, :cond_38
 
-    if-nez v1, :cond_0
+    if-nez v1, :cond_c
 
-    goto :goto_0
+    goto :goto_38
 
     .line 59
-    :cond_0
-    :try_start_0
+    :cond_c
+    :try_start_c
     invoke-static {p0}, Ljava/lang/Boolean;->valueOf(Z)Ljava/lang/Boolean;
 
     move-result-object p0
@@ -378,15 +428,27 @@
     move-result-object p0
 
     invoke-virtual {v1, v0, p0}, Ljava/lang/reflect/Method;->invoke(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_17
+    .catchall {:try_start_c .. :try_end_17} :catchall_18
 
-    return-void
+    .line 62
+    goto :goto_37
 
-    :catchall_0
+    .line 60
+    :catchall_18
     move-exception p0
 
     .line 61
+    new-instance v0, Ljava/lang/StringBuilder;
+
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v1, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u5199\u5165\u5931\u8d25 "
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     move-result-object p0
@@ -395,21 +457,22 @@
 
     move-result-object p0
 
-    new-instance v0, Ljava/lang/StringBuilder;
-
-    const-string v1, "\u5e76\u53d1\u5f00\u5173\u72b6\u6001\uff1a\u5199\u5165\u5931\u8d25 "
-
-    invoke-direct {v0, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
     invoke-virtual {v0, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object p0
+
+    invoke-virtual {p0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
     move-result-object p0
 
     invoke-static {p0}, Lio/nekohasekai/sfa/bg/SwitchState;->diag(Ljava/lang/String;)V
 
-    :cond_1
-    :goto_0
+    .line 63
+    :goto_37
+    return-void
+
+    .line 57
+    :cond_38
+    :goto_38
     return-void
 .end method

@@ -29,7 +29,7 @@
 
 # direct methods
 .method constructor <init>([Ljava/lang/String;[Z[J[J)V
-    .locals 0
+    .registers 5
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -53,16 +53,16 @@
 
 # virtual methods
 .method public onError(Ljava/lang/String;)V
-    .locals 2
+    .registers 5
 
     .line 147
     iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$err:[Ljava/lang/String;
 
-    if-nez p1, :cond_0
+    if-nez p1, :cond_6
 
     const-string p1, "unknown"
 
-    :cond_0
+    :cond_6
     const/4 v1, 0x0
 
     aput-object p1, v0, v1
@@ -73,46 +73,50 @@
     monitor-enter p1
 
     .line 149
-    :try_start_0
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
+    :try_start_c
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
 
-    const/4 v0, 0x1
+    const/4 v2, 0x1
 
-    aput-boolean v0, p0, v1
+    aput-boolean v2, v0, v1
 
     .line 150
     monitor-exit p1
 
+    .line 151
     return-void
 
-    :catchall_0
-    move-exception p0
+    .line 150
+    :catchall_13
+    move-exception v0
 
     monitor-exit p1
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_15
+    .catchall {:try_start_c .. :try_end_15} :catchall_13
 
-    throw p0
+    throw v0
 .end method
 
 .method public onProgress(Lio/nekohasekai/libbox/NetworkQualityProgress;)V
-    .locals 9
+    .registers 11
 
-    if-nez p1, :cond_0
+    .line 155
+    if-nez p1, :cond_3
 
-    goto :goto_0
+    return-void
 
     .line 156
-    :cond_0
+    :cond_3
     invoke-virtual {p1}, Lio/nekohasekai/libbox/NetworkQualityProgress;->getPhase()I
 
     move-result v0
 
+    .line 157
     const/4 v1, 0x1
 
     const/4 v2, 0x0
 
-    if-ne v0, v1, :cond_3
+    if-ne v0, v1, :cond_50
 
     .line 158
     iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$phase1Start:[J
@@ -121,11 +125,13 @@
 
     const-wide/16 v5, 0x0
 
-    cmp-long v3, v3, v5
+    cmp-long v0, v3, v5
 
-    if-nez v3, :cond_1
+    if-nez v0, :cond_1d
 
     .line 159
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$phase1Start:[J
+
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
     move-result-wide v3
@@ -133,7 +139,7 @@
     aput-wide v3, v0, v2
 
     .line 161
-    :cond_1
+    :cond_1d
     invoke-virtual {p1}, Lio/nekohasekai/libbox/NetworkQualityProgress;->getDownloadCapacity()J
 
     move-result-wide v3
@@ -143,14 +149,16 @@
 
     aget-wide v7, p1, v2
 
-    cmp-long v0, v3, v7
+    cmp-long p1, v3, v7
 
-    if-lez v0, :cond_2
+    if-lez p1, :cond_2d
+
+    iget-object p1, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$peak:[J
 
     aput-wide v3, p1, v2
 
     .line 164
-    :cond_2
+    :cond_2d
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
     move-result-wide v3
@@ -165,7 +173,7 @@
 
     cmp-long p1, v3, v7
 
-    if-ltz p1, :cond_4
+    if-ltz p1, :cond_5f
 
     iget-object p1, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$peak:[J
 
@@ -173,7 +181,7 @@
 
     cmp-long p1, v3, v5
 
-    if-lez p1, :cond_4
+    if-lez p1, :cond_5f
 
     .line 166
     iget-object p1, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
@@ -181,29 +189,30 @@
     monitor-enter p1
 
     .line 167
-    :try_start_0
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
+    :try_start_47
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
 
-    aput-boolean v1, p0, v2
+    aput-boolean v1, v0, v2
 
     .line 168
     monitor-exit p1
 
-    return-void
+    goto :goto_5f
 
-    :catchall_0
-    move-exception p0
+    :catchall_4d
+    move-exception v0
 
     monitor-exit p1
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_4f
+    .catchall {:try_start_47 .. :try_end_4f} :catchall_4d
 
-    throw p0
+    throw v0
 
-    :cond_3
+    .line 170
+    :cond_50
     const/4 p1, 0x2
 
-    if-lt v0, p1, :cond_4
+    if-lt v0, p1, :cond_5f
 
     .line 172
     iget-object p1, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
@@ -211,36 +220,42 @@
     monitor-enter p1
 
     .line 173
-    :try_start_1
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
+    :try_start_56
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
 
-    aput-boolean v1, p0, v2
+    aput-boolean v1, v0, v2
 
     .line 174
     monitor-exit p1
 
-    return-void
+    goto :goto_60
 
-    :catchall_1
-    move-exception p0
+    :catchall_5c
+    move-exception v0
 
     monitor-exit p1
-    :try_end_1
-    .catchall {:try_start_1 .. :try_end_1} :catchall_1
+    :try_end_5e
+    .catchall {:try_start_56 .. :try_end_5e} :catchall_5c
 
-    throw p0
+    throw v0
 
-    :cond_4
-    :goto_0
+    .line 170
+    :cond_5f
+    :goto_5f
+    nop
+
+    .line 176
+    :goto_60
     return-void
 .end method
 
 .method public onResult(Lio/nekohasekai/libbox/NetworkQualityResult;)V
-    .locals 5
+    .registers 7
 
+    .line 180
     const/4 v0, 0x0
 
-    if-eqz p1, :cond_0
+    if-eqz p1, :cond_13
 
     .line 181
     invoke-virtual {p1}, Lio/nekohasekai/libbox/NetworkQualityResult;->getDownloadCapacity()J
@@ -252,37 +267,41 @@
 
     aget-wide v3, p1, v0
 
-    cmp-long v3, v1, v3
+    cmp-long p1, v1, v3
 
-    if-lez v3, :cond_0
+    if-lez p1, :cond_13
+
+    iget-object p1, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$peak:[J
 
     aput-wide v1, p1, v0
 
     .line 184
-    :cond_0
+    :cond_13
     iget-object p1, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
 
     monitor-enter p1
 
     .line 185
-    :try_start_0
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
+    :try_start_16
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$1;->val$done:[Z
 
-    const/4 v1, 0x1
+    const/4 v2, 0x1
 
-    aput-boolean v1, p0, v0
+    aput-boolean v2, v1, v0
 
     .line 186
     monitor-exit p1
 
+    .line 187
     return-void
 
-    :catchall_0
-    move-exception p0
+    .line 186
+    :catchall_1d
+    move-exception v0
 
     monitor-exit p1
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_1f
+    .catchall {:try_start_16 .. :try_end_1f} :catchall_1d
 
-    throw p0
+    throw v0
 .end method

@@ -19,7 +19,7 @@
 
 # direct methods
 .method constructor <init>()V
-    .locals 0
+    .registers 1
 
     .line 125
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -30,34 +30,41 @@
 
 # virtual methods
 .method public run()V
-    .locals 2
-
-    const/4 p0, 0x0
+    .registers 4
 
     .line 129
-    :try_start_0
+    const/4 v0, 0x0
+
+    :try_start_1
     invoke-static {}, Lio/nekohasekai/sfa/bg/ThroughputStore;->refresh()V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_4
+    .catchall {:try_start_1 .. :try_end_4} :catchall_d
 
     .line 131
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ThroughputStore;->-$$Nest$sfgetWARMING()Ljava/util/concurrent/atomic/AtomicBoolean;
-
-    move-result-object v0
-
-    invoke-virtual {v0, p0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
-
-    return-void
-
-    :catchall_0
-    move-exception v0
-
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ThroughputStore;->-$$Nest$sfgetWARMING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    # getter for: Lio/nekohasekai/sfa/bg/ThroughputStore;->WARMING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ThroughputStore;->access$000()Ljava/util/concurrent/atomic/AtomicBoolean;
 
     move-result-object v1
 
-    invoke-virtual {v1, p0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v1, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
     .line 132
-    throw v0
+    nop
+
+    .line 133
+    return-void
+
+    .line 131
+    :catchall_d
+    move-exception v1
+
+    # getter for: Lio/nekohasekai/sfa/bg/ThroughputStore;->WARMING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ThroughputStore;->access$000()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v2
+
+    invoke-virtual {v2, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+
+    .line 132
+    throw v1
 .end method

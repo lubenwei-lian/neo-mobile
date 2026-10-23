@@ -19,7 +19,7 @@
 
 # direct methods
 .method constructor <init>()V
-    .locals 0
+    .registers 1
 
     .line 143
     invoke-direct {p0}, Ljava/lang/Object;-><init>()V
@@ -30,53 +30,65 @@
 
 # virtual methods
 .method public run()V
-    .locals 2
-
-    :cond_0
-    const/4 p0, 0x0
+    .registers 4
 
     .line 148
-    :try_start_0
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->-$$Nest$sfgetDIRTY()Ljava/util/concurrent/atomic/AtomicBoolean;
+    nop
 
-    move-result-object v0
+    :cond_1
+    const/4 v0, 0x0
 
-    invoke-virtual {v0, p0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
-
-    .line 149
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->-$$Nest$smdoReloadOnce()V
-
-    .line 150
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->-$$Nest$sfgetDIRTY()Ljava/util/concurrent/atomic/AtomicBoolean;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->get()Z
-
-    move-result v0
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
-
-    if-nez v0, :cond_0
-
-    .line 152
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->-$$Nest$sfgetRELOADING()Ljava/util/concurrent/atomic/AtomicBoolean;
-
-    move-result-object v0
-
-    invoke-virtual {v0, p0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
-
-    return-void
-
-    :catchall_0
-    move-exception v0
-
-    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->-$$Nest$sfgetRELOADING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    :try_start_2
+    # getter for: Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->DIRTY:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->access$000()Ljava/util/concurrent/atomic/AtomicBoolean;
 
     move-result-object v1
 
-    invoke-virtual {v1, p0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v1, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+
+    .line 149
+    # invokes: Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->doReloadOnce()V
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->access$100()V
+
+    .line 150
+    # getter for: Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->DIRTY:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->access$000()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Ljava/util/concurrent/atomic/AtomicBoolean;->get()Z
+
+    move-result v1
+    :try_end_14
+    .catchall {:try_start_2 .. :try_end_14} :catchall_1f
+
+    if-nez v1, :cond_1
+
+    .line 152
+    # getter for: Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->RELOADING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->access$200()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v1
+
+    invoke-virtual {v1, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
     .line 153
-    throw v0
+    nop
+
+    .line 154
+    return-void
+
+    .line 152
+    :catchall_1f
+    move-exception v1
+
+    # getter for: Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->RELOADING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ConcurrentNodePicker;->access$200()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v2
+
+    invoke-virtual {v2, v0}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+
+    .line 153
+    throw v1
 .end method

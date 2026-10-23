@@ -32,7 +32,7 @@
 
 # direct methods
 .method constructor <init>(Ljava/util/Map;)V
-    .locals 0
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -50,7 +50,7 @@
 
 # virtual methods
 .method public bridge synthetic compare(Ljava/lang/Object;Ljava/lang/Object;)I
-    .locals 0
+    .registers 3
 
     .line 368
     check-cast p1, Ljava/lang/String;
@@ -59,13 +59,13 @@
 
     invoke-virtual {p0, p1, p2}, Lio/nekohasekai/sfa/bg/NodeThroughputTester$3;->compare(Ljava/lang/String;Ljava/lang/String;)I
 
-    move-result p0
+    move-result p1
 
-    return p0
+    return p1
 .end method
 
 .method public compare(Ljava/lang/String;Ljava/lang/String;)I
-    .locals 1
+    .registers 4
 
     .line 371
     iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$3;->val$exp:Ljava/util/Map;
@@ -77,41 +77,44 @@
     check-cast p1, Ljava/lang/Long;
 
     .line 372
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$3;->val$exp:Ljava/util/Map;
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$3;->val$exp:Ljava/util/Map;
 
-    invoke-interface {p0, p2}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-interface {v0, p2}, Ljava/util/Map;->get(Ljava/lang/Object;)Ljava/lang/Object;
 
-    move-result-object p0
+    move-result-object p2
 
-    check-cast p0, Ljava/lang/Long;
+    check-cast p2, Ljava/lang/Long;
 
-    if-nez p1, :cond_0
+    .line 373
+    if-nez p1, :cond_16
 
-    if-nez p0, :cond_0
+    if-nez p2, :cond_16
 
-    const/4 p0, 0x0
+    const/4 p1, 0x0
 
-    return p0
+    return p1
 
-    :cond_0
-    if-nez p1, :cond_1
+    .line 374
+    :cond_16
+    if-nez p1, :cond_1a
 
-    const/4 p0, -0x1
+    const/4 p1, -0x1
 
-    return p0
+    return p1
 
-    :cond_1
-    if-nez p0, :cond_2
+    .line 375
+    :cond_1a
+    if-nez p2, :cond_1e
 
-    const/4 p0, 0x1
+    const/4 p1, 0x1
 
-    return p0
+    return p1
 
     .line 376
-    :cond_2
-    invoke-virtual {p1, p0}, Ljava/lang/Long;->compareTo(Ljava/lang/Long;)I
+    :cond_1e
+    invoke-virtual {p1, p2}, Ljava/lang/Long;->compareTo(Ljava/lang/Long;)I
 
-    move-result p0
+    move-result p1
 
-    return p0
+    return p1
 .end method

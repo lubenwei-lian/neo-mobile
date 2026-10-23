@@ -29,7 +29,7 @@
 
 # direct methods
 .method constructor <init>([Ljava/lang/String;[Z[Ljava/lang/String;[I)V
-    .locals 0
+    .registers 5
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -53,7 +53,7 @@
 
 # virtual methods
 .method public onError(Ljava/lang/String;)V
-    .locals 2
+    .registers 5
 
     .line 73
     iget-object v0, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$2;->val$err:[Ljava/lang/String;
@@ -68,40 +68,44 @@
     monitor-enter p1
 
     .line 75
-    :try_start_0
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$2;->val$done:[Z
+    :try_start_8
+    iget-object v0, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$2;->val$done:[Z
 
-    const/4 v0, 0x1
+    const/4 v2, 0x1
 
-    aput-boolean v0, p0, v1
+    aput-boolean v2, v0, v1
 
     .line 76
     monitor-exit p1
 
+    .line 77
     return-void
 
-    :catchall_0
-    move-exception p0
+    .line 76
+    :catchall_f
+    move-exception v0
 
     monitor-exit p1
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_11
+    .catchall {:try_start_8 .. :try_end_11} :catchall_f
 
-    throw p0
+    throw v0
 .end method
 
 .method public onProgress(Lio/nekohasekai/libbox/STUNTestProgress;)V
-    .locals 0
+    .registers 2
 
+    .line 81
     return-void
 .end method
 
 .method public onResult(Lio/nekohasekai/libbox/STUNTestResult;)V
-    .locals 3
+    .registers 5
 
+    .line 85
     const/4 v0, 0x0
 
-    if-eqz p1, :cond_0
+    if-eqz p1, :cond_13
 
     .line 86
     iget-object v1, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$2;->val$addr:[Ljava/lang/String;
@@ -122,30 +126,32 @@
     aput p1, v1, v0
 
     .line 89
-    :cond_0
+    :cond_13
     iget-object p1, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$2;->val$done:[Z
 
     monitor-enter p1
 
     .line 90
-    :try_start_0
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$2;->val$done:[Z
+    :try_start_16
+    iget-object v1, p0, Lio/nekohasekai/sfa/bg/StunTagProbe$2;->val$done:[Z
 
-    const/4 v1, 0x1
+    const/4 v2, 0x1
 
-    aput-boolean v1, p0, v0
+    aput-boolean v2, v1, v0
 
     .line 91
     monitor-exit p1
 
+    .line 92
     return-void
 
-    :catchall_0
-    move-exception p0
+    .line 91
+    :catchall_1d
+    move-exception v0
 
     monitor-exit p1
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
+    :try_end_1f
+    .catchall {:try_start_16 .. :try_end_1f} :catchall_1d
 
-    throw p0
+    throw v0
 .end method

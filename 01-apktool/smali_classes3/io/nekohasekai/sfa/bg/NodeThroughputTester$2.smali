@@ -23,7 +23,7 @@
 
 # direct methods
 .method constructor <init>(Ljava/util/List;)V
-    .locals 0
+    .registers 2
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "()V"
@@ -41,326 +41,386 @@
 
 # virtual methods
 .method public run()V
-    .locals 12
+    .registers 14
 
     .line 260
     const-string v0, "\u541e\u5410\u6d4b\u901f\uff1a"
 
-    .line 0
-    const-string v1, "\u541e\u5410\u6d4b\u901f\uff1a\u672c\u8f6e\u76ee\u6807 "
+    .line 262
+    const-wide/16 v1, 0x61a8
 
-    const-wide/16 v2, 0x61a8
+    const/4 v3, 0x0
 
     const/4 v4, 0x0
 
-    const/4 v5, 0x0
-
-    .line 262
-    :try_start_0
-    invoke-static {v2, v3}, Ljava/lang/Thread;->sleep(J)V
+    :try_start_6
+    invoke-static {v1, v2}, Ljava/lang/Thread;->sleep(J)V
 
     .line 263
-    sget-object v2, Lio/nekohasekai/sfa/utils/CommandTarget;->INSTANCE:Lio/nekohasekai/sfa/utils/CommandTarget;
+    sget-object v1, Lio/nekohasekai/sfa/utils/CommandTarget;->INSTANCE:Lio/nekohasekai/sfa/utils/CommandTarget;
 
-    invoke-virtual {v2}, Lio/nekohasekai/sfa/utils/CommandTarget;->ownedStandaloneClient()Lio/nekohasekai/libbox/CommandClient;
+    invoke-virtual {v1}, Lio/nekohasekai/sfa/utils/CommandTarget;->ownedStandaloneClient()Lio/nekohasekai/libbox/CommandClient;
 
-    move-result-object v5
+    move-result-object v4
 
-    if-nez v5, :cond_1
+    .line 264
+    if-nez v4, :cond_25
 
     .line 265
-    const-string p0, "\u541e\u5410\u6d4b\u901f\uff1aclient \u4e3a null\uff0c\u8df3\u8fc7"
+    const-string v0, "\u541e\u5410\u6d4b\u901f\uff1aclient \u4e3a null\uff0c\u8df3\u8fc7"
 
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_1
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$000(Ljava/lang/String;)V
+    :try_end_16
+    .catchall {:try_start_6 .. :try_end_16} :catchall_131
 
-    if-eqz v5, :cond_0
+    .line 307
+    if-eqz v4, :cond_1d
 
     .line 309
-    :try_start_1
-    invoke-virtual {v5}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
-    :try_end_1
-    .catchall {:try_start_1 .. :try_end_1} :catchall_0
+    :try_start_18
+    invoke-virtual {v4}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
+    :try_end_1b
+    .catchall {:try_start_18 .. :try_end_1b} :catchall_1c
+
+    .line 311
+    goto :goto_1d
+
+    .line 310
+    :catchall_1c
+    move-exception v0
 
     .line 313
-    :catchall_0
-    :cond_0
-    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$sfgetRUNNING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    :cond_1d
+    :goto_1d
+    # getter for: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->RUNNING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$400()Ljava/util/concurrent/atomic/AtomicBoolean;
 
-    move-result-object p0
+    move-result-object v0
 
-    invoke-virtual {p0, v4}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v0, v3}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
+    .line 266
     return-void
 
     .line 269
-    :cond_1
-    :try_start_2
-    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smloadCache()Ljava/util/Map;
+    :cond_25
+    :try_start_25
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->loadCache()Ljava/util/Map;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$100()Ljava/util/Map;
 
-    move-result-object v2
+    move-result-object v1
 
     .line 270
-    iget-object v3, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$2;->val$tags:Ljava/util/List;
+    iget-object v2, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$2;->val$tags:Ljava/util/List;
 
-    const/16 v6, 0xc
+    const/16 v5, 0xc
 
-    invoke-static {v3, v2, v6}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smpickTargets(Ljava/util/List;Ljava/util/Map;I)Ljava/util/List;
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->pickTargets(Ljava/util/List;Ljava/util/Map;I)Ljava/util/List;
+    invoke-static {v2, v1, v5}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$200(Ljava/util/List;Ljava/util/Map;I)Ljava/util/List;
+
+    move-result-object v1
+
+    .line 271
+    new-instance v2, Ljava/lang/StringBuilder;
+
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v5, "\u541e\u5410\u6d4b\u901f\uff1a\u672c\u8f6e\u76ee\u6807 "
+
+    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object v2
 
-    .line 271
-    invoke-interface {v2}, Ljava/util/List;->size()I
+    invoke-interface {v1}, Ljava/util/List;->size()I
 
-    move-result v3
+    move-result v5
 
-    iget-object p0, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$2;->val$tags:Ljava/util/List;
+    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v2
+
+    const-string v5, " \u4e2a\u8282\u70b9\uff08\u6c60\u5185\u5171 "
+
+    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v2
+
+    iget-object v5, p0, Lio/nekohasekai/sfa/bg/NodeThroughputTester$2;->val$tags:Ljava/util/List;
 
     .line 272
-    invoke-interface {p0}, Ljava/util/List;->size()I
+    invoke-interface {v5}, Ljava/util/List;->size()I
 
-    move-result p0
+    move-result v5
 
-    new-instance v6, Ljava/lang/StringBuilder;
-
-    invoke-direct {v6, v1}, Ljava/lang/StringBuilder;-><init>(Ljava/lang/String;)V
-
-    invoke-virtual {v6, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string v1, " \u4e2a\u8282\u70b9\uff08\u6c60\u5185\u5171 "
-
-    invoke-virtual {v6, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v6, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string p0, " \u4e2a\uff09"
-
-    invoke-virtual {v6, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v6}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p0
-
-    .line 271
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smlog(Ljava/lang/String;)V
-
-    .line 274
-    new-instance p0, Ljava/util/HashMap;
-
-    invoke-direct {p0}, Ljava/util/HashMap;-><init>()V
-
-    .line 275
-    new-instance v1, Ljava/util/ArrayList;
-
-    invoke-direct {v1}, Ljava/util/ArrayList;-><init>()V
-
-    .line 278
-    invoke-interface {v2}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
     move-result-object v2
 
-    move v3, v4
+    const-string v5, " \u4e2a\uff09"
 
-    :cond_2
-    :goto_0
-    invoke-interface {v2}, Ljava/util/Iterator;->hasNext()Z
+    invoke-virtual {v2, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    move-result v6
+    move-result-object v2
 
-    if-eqz v6, :cond_7
+    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    invoke-interface {v2}, Ljava/util/Iterator;->next()Ljava/lang/Object;
+    move-result-object v2
 
-    move-result-object v6
+    .line 271
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->log(Ljava/lang/String;)V
+    invoke-static {v2}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$000(Ljava/lang/String;)V
 
-    check-cast v6, Ljava/lang/String;
+    .line 274
+    new-instance v2, Ljava/util/HashMap;
 
-    .line 279
-    invoke-static {v5, v6}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->measureOne(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;
+    invoke-direct {v2}, Ljava/util/HashMap;-><init>()V
+
+    .line 275
+    new-instance v5, Ljava/util/ArrayList;
+
+    invoke-direct {v5}, Ljava/util/ArrayList;-><init>()V
+
+    .line 276
+    nop
+
+    .line 278
+    invoke-interface {v1}, Ljava/util/List;->iterator()Ljava/util/Iterator;
+
+    move-result-object v1
+
+    move v6, v3
+
+    :goto_71
+    invoke-interface {v1}, Ljava/util/Iterator;->hasNext()Z
+
+    move-result v7
+
+    if-eqz v7, :cond_f1
+
+    invoke-interface {v1}, Ljava/util/Iterator;->next()Ljava/lang/Object;
 
     move-result-object v7
 
-    .line 280
-    invoke-virtual {v7}, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->describe()Ljava/lang/String;
+    check-cast v7, Ljava/lang/String;
+
+    .line 279
+    invoke-static {v4, v7}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->measureOne(Lio/nekohasekai/libbox/CommandClient;Ljava/lang/String;)Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;
 
     move-result-object v8
 
+    .line 280
     new-instance v9, Ljava/lang/StringBuilder;
 
     invoke-direct {v9}, Ljava/lang/StringBuilder;-><init>()V
 
     invoke-virtual {v9, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v9, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v9
+
+    invoke-virtual {v8}, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->describe()Ljava/lang/String;
+
+    move-result-object v10
+
+    invoke-virtual {v9, v10}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v9
 
     invoke-virtual {v9}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    move-result-object v8
+    move-result-object v9
 
-    invoke-static {v8}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smlog(Ljava/lang/String;)V
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->log(Ljava/lang/String;)V
+    invoke-static {v9}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$000(Ljava/lang/String;)V
 
     .line 281
-    iget-boolean v8, v7, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->measured:Z
+    iget-boolean v9, v8, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->measured:Z
 
-    if-eqz v8, :cond_3
+    if-eqz v9, :cond_cf
 
-    iget-wide v8, v7, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->bps:J
+    iget-wide v9, v8, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->bps:J
 
-    const-wide/16 v10, 0x0
+    const-wide/16 v11, 0x0
 
-    cmp-long v8, v8, v10
+    cmp-long v9, v9, v11
 
-    if-lez v8, :cond_3
+    if-lez v9, :cond_cf
 
     .line 282
-    iget-wide v8, v7, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->bps:J
+    iget-wide v9, v8, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->bps:J
 
-    invoke-static {v8, v9}, Ljava/lang/Long;->valueOf(J)Ljava/lang/Long;
+    invoke-static {v9, v10}, Ljava/lang/Long;->valueOf(J)Ljava/lang/Long;
+
+    move-result-object v9
+
+    invoke-interface {v2, v7, v9}, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+
+    .line 283
+    invoke-virtual {v8}, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->usable()Z
+
+    move-result v8
+
+    if-nez v8, :cond_e1
+
+    .line 286
+    new-instance v8, Ljava/lang/StringBuilder;
+
+    invoke-direct {v8}, Ljava/lang/StringBuilder;-><init>()V
+
+    invoke-virtual {v8, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     move-result-object v8
 
-    invoke-interface {p0, v6, v8}, Ljava/util/Map;->put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;
+    invoke-virtual {v8, v7}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 283
-    invoke-virtual {v7}, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->usable()Z
+    move-result-object v7
 
-    move-result v7
+    const-string v8, " \u4f4e\u4e8e\u9608\u503c\u4f46\u4fdd\u7559\uff08\u4e0d\u5224\u6b7b\uff09"
 
-    if-nez v7, :cond_5
+    invoke-virtual {v7, v8}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 286
-    new-instance v7, Ljava/lang/StringBuilder;
-
-    invoke-direct {v7}, Ljava/lang/StringBuilder;-><init>()V
-
-    invoke-virtual {v7, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v7, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string v6, " \u4f4e\u4e8e\u9608\u503c\u4f46\u4fdd\u7559\uff08\u4e0d\u5224\u6b7b\uff09"
-
-    invoke-virtual {v7, v6}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v7
 
     invoke-virtual {v7}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    move-result-object v6
+    move-result-object v7
 
-    invoke-static {v6}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smlog(Ljava/lang/String;)V
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->log(Ljava/lang/String;)V
+    invoke-static {v7}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$000(Ljava/lang/String;)V
 
-    goto :goto_1
+    goto :goto_e1
 
     .line 288
-    :cond_3
-    iget-object v8, v7, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->error:Ljava/lang/String;
+    :cond_cf
+    iget-object v9, v8, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->error:Ljava/lang/String;
 
-    if-eqz v8, :cond_4
+    if-eqz v9, :cond_df
 
-    iget-object v7, v7, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->error:Ljava/lang/String;
+    iget-object v8, v8, Lio/nekohasekai/sfa/bg/NodeThroughputTester$Result;->error:Ljava/lang/String;
 
-    invoke-static {v7}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smisDeadError(Ljava/lang/String;)Z
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->isDeadError(Ljava/lang/String;)Z
+    invoke-static {v8}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$300(Ljava/lang/String;)Z
+
+    move-result v8
+
+    if-eqz v8, :cond_df
+
+    .line 289
+    invoke-interface {v5, v7}, Ljava/util/List;->add(Ljava/lang/Object;)Z
+
+    goto :goto_e1
+
+    .line 292
+    :cond_df
+    add-int/lit8 v6, v6, 0x1
+
+    .line 296
+    :cond_e1
+    :goto_e1
+    invoke-interface {v2}, Ljava/util/Map;->isEmpty()Z
 
     move-result v7
 
-    if-eqz v7, :cond_4
+    if-eqz v7, :cond_ed
 
-    .line 289
-    invoke-interface {v1, v6}, Ljava/util/List;->add(Ljava/lang/Object;)Z
+    invoke-interface {v5}, Ljava/util/List;->isEmpty()Z
 
-    goto :goto_1
+    move-result v7
 
-    :cond_4
-    add-int/lit8 v3, v3, 0x1
-
-    .line 296
-    :cond_5
-    :goto_1
-    invoke-interface {p0}, Ljava/util/Map;->isEmpty()Z
-
-    move-result v6
-
-    if-eqz v6, :cond_6
-
-    invoke-interface {v1}, Ljava/util/List;->isEmpty()Z
-
-    move-result v6
-
-    if-nez v6, :cond_2
+    if-nez v7, :cond_f0
 
     .line 297
-    :cond_6
-    invoke-static {p0, v1}, Lio/nekohasekai/sfa/bg/ThroughputStore;->save(Ljava/util/Map;Ljava/util/List;)V
+    :cond_ed
+    invoke-static {v2, v5}, Lio/nekohasekai/sfa/bg/ThroughputStore;->save(Ljava/util/Map;Ljava/util/List;)V
 
-    goto :goto_0
+    .line 299
+    :cond_f0
+    goto :goto_71
 
     .line 301
-    :cond_7
-    invoke-interface {p0}, Ljava/util/Map;->size()I
+    :cond_f1
+    new-instance v0, Ljava/lang/StringBuilder;
 
-    move-result p0
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+
+    const-string v1, "\u541e\u5410\u6d4b\u901f\uff1a\u672c\u8f6e\u5b8c\u6210\uff0c\u6d4b\u5f97 "
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    invoke-interface {v2}, Ljava/util/Map;->size()I
+
+    move-result v1
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    const-string v1, " \u4e2a\uff0c\u5224\u6b7b "
+
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
 
     .line 302
-    invoke-interface {v1}, Ljava/util/List;->size()I
+    invoke-interface {v5}, Ljava/util/List;->size()I
 
-    move-result v0
+    move-result v1
 
-    new-instance v1, Ljava/lang/StringBuilder;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+    move-result-object v0
 
-    const-string v2, "\u541e\u5410\u6d4b\u901f\uff1a\u672c\u8f6e\u5b8c\u6210\uff0c\u6d4b\u5f97 "
+    const-string v1, " \u4e2a\uff0c\u8bc1\u636e\u4e0d\u8db3\u8df3\u8fc7 "
 
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    const-string p0, " \u4e2a\uff0c\u5224\u6b7b "
+    invoke-virtual {v0, v6}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    const-string v1, " \u4e2a"
 
-    const-string p0, " \u4e2a\uff0c\u8bc1\u636e\u4e0d\u8db3\u8df3\u8fc7 "
+    invoke-virtual {v0, v1}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v0
 
-    invoke-virtual {v1, v3}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
 
-    const-string p0, " \u4e2a"
-
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-
-    move-result-object p0
+    move-result-object v0
 
     .line 301
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_2
-    .catchall {:try_start_2 .. :try_end_2} :catchall_1
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$000(Ljava/lang/String;)V
+    :try_end_129
+    .catchall {:try_start_25 .. :try_end_129} :catchall_131
 
-    if-eqz v5, :cond_8
+    .line 307
+    if-eqz v4, :cond_165
 
-    goto :goto_2
+    .line 309
+    :try_start_12b
+    invoke-virtual {v4}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
+    :try_end_12e
+    .catchall {:try_start_12b .. :try_end_12e} :catchall_12f
 
-    :catchall_1
-    move-exception p0
+    goto :goto_163
+
+    .line 310
+    :catchall_12f
+    move-exception v0
+
+    goto :goto_165
+
+    .line 303
+    :catchall_131
+    move-exception v0
 
     .line 304
-    :try_start_3
-    invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
-
-    move-result-object v0
-
-    invoke-virtual {v0}, Ljava/lang/Class;->getSimpleName()Ljava/lang/String;
-
-    move-result-object v0
-
-    .line 305
-    invoke-virtual {p0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
-
-    move-result-object p0
-
+    :try_start_132
     new-instance v1, Ljava/lang/StringBuilder;
 
     invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
@@ -369,63 +429,107 @@
 
     invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v1
 
-    const-string v0, " "
+    invoke-virtual {v0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
-    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    move-result-object v2
 
-    invoke-virtual {v1, p0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2}, Ljava/lang/Class;->getSimpleName()Ljava/lang/String;
 
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v2
 
-    move-result-object p0
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 304
-    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$smlog(Ljava/lang/String;)V
-    :try_end_3
-    .catchall {:try_start_3 .. :try_end_3} :catchall_3
+    move-result-object v1
 
-    if-eqz v5, :cond_8
+    const-string v2, " "
 
-    .line 309
-    :goto_2
-    :try_start_4
-    invoke-virtual {v5}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
-    :try_end_4
-    .catchall {:try_start_4 .. :try_end_4} :catchall_2
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
-    .line 313
-    :catchall_2
-    :cond_8
-    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$sfgetRUNNING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    move-result-object v1
 
-    move-result-object p0
-
-    invoke-virtual {p0, v4}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
-
-    return-void
-
-    :catchall_3
-    move-exception p0
-
-    if-eqz v5, :cond_9
-
-    .line 309
-    :try_start_5
-    invoke-virtual {v5}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
-    :try_end_5
-    .catchall {:try_start_5 .. :try_end_5} :catchall_4
-
-    .line 313
-    :catchall_4
-    :cond_9
-    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->-$$Nest$sfgetRUNNING()Ljava/util/concurrent/atomic/AtomicBoolean;
+    .line 305
+    invoke-virtual {v0}, Ljava/lang/Throwable;->getMessage()Ljava/lang/String;
 
     move-result-object v0
 
-    invoke-virtual {v0, v4}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+    invoke-virtual {v1, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+
+    move-result-object v0
+
+    .line 304
+    # invokes: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->log(Ljava/lang/String;)V
+    invoke-static {v0}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$000(Ljava/lang/String;)V
+    :try_end_15e
+    .catchall {:try_start_132 .. :try_end_15e} :catchall_16e
+
+    .line 307
+    if-eqz v4, :cond_165
+
+    .line 309
+    :try_start_160
+    invoke-virtual {v4}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
+    :try_end_163
+    .catchall {:try_start_160 .. :try_end_163} :catchall_164
+
+    .line 311
+    :goto_163
+    goto :goto_165
+
+    .line 310
+    :catchall_164
+    move-exception v0
+
+    .line 313
+    :cond_165
+    :goto_165
+    # getter for: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->RUNNING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$400()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v0
+
+    invoke-virtual {v0, v3}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
 
     .line 314
-    throw p0
+    nop
+
+    .line 315
+    return-void
+
+    .line 307
+    :catchall_16e
+    move-exception v0
+
+    if-eqz v4, :cond_176
+
+    .line 309
+    :try_start_171
+    invoke-virtual {v4}, Lio/nekohasekai/libbox/CommandClient;->disconnect()V
+    :try_end_174
+    .catchall {:try_start_171 .. :try_end_174} :catchall_175
+
+    .line 311
+    goto :goto_176
+
+    .line 310
+    :catchall_175
+    move-exception v1
+
+    .line 313
+    :cond_176
+    :goto_176
+    # getter for: Lio/nekohasekai/sfa/bg/NodeThroughputTester;->RUNNING:Ljava/util/concurrent/atomic/AtomicBoolean;
+    invoke-static {}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->access$400()Ljava/util/concurrent/atomic/AtomicBoolean;
+
+    move-result-object v1
+
+    invoke-virtual {v1, v3}, Ljava/util/concurrent/atomic/AtomicBoolean;->set(Z)V
+
+    .line 314
+    throw v0
 .end method

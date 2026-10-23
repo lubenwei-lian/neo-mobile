@@ -23,7 +23,7 @@ $EXPECTED_CLASSES4 = @(
     'Lio/neoguard/NetworkWatcher$1;',
     'Lio/neoguard/SubGuard;'
 )
-$EXPECTED_HOOKS = 10
+$EXPECTED_HOOKS = 12
 
 if (-not $Apk) { $Apk = Join-Path $PROJ '03-dist\neo-latest.apk' }
 if (-not (Test-Path -LiteralPath $Apk)) { throw "APK 不存在: $Apk" }
@@ -166,6 +166,8 @@ if (Test-Path -LiteralPath $dex4) {
     if ($disasm -notmatch 'clearIfUrlChanged') { $fail.Add('S3: classes4.dex 缺 SubscriptionUsageHooks.clearIfUrlChanged') } else { $ok.Add('S3: URL 变更判定已下沉 Java（clearIfUrlChanged）') }
     if ($disasm -notmatch 'subscriptionUserAgentChain') { $fail.Add('S3: classes4.dex 缺 KernelHooks.subscriptionUserAgentChain') } else { $ok.Add('S3: 内核 UA 链已下沉 Java（subscriptionUserAgentChain）') }
     if ($disasm -notmatch 'KernelHooks;\.version') { $fail.Add('S3: classes4.dex 缺 KernelHooks.version') } else { $ok.Add('S3: 内核版本号已下沉 Java（KernelHooks.version）') }
+    if ($disasm -notmatch 'usageEmptyText') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.usageEmptyText') } else { $ok.Add('S3: 首页空数据文案已下沉 Java（usageEmptyText）') }
+    if ($disasm -notmatch 'usageDisconnectedText') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.usageDisconnectedText') } else { $ok.Add('S3: 首页未连接文案已下沉 Java（usageDisconnectedText）') }
     if ($disasm -notmatch 'https://www\.gstatic\.com/generate_204') { $fail.Add('S6: FailoverGuard TEST_URL 未改为 https') }
     else { $ok.Add('S6: FailoverGuard TEST_URL 为 https（配合明文限制）') }
 } else { $fail.Add('S6: classes4.dex 未解出，无法做方法级校验') }

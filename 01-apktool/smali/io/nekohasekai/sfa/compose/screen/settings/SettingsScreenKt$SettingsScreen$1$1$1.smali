@@ -382,8 +382,6 @@
 
     .line 100
     .line 101
-    sget-object v0, Lio/nekohasekai/sfa/bg/BalancerInjector;->INSTANCE:Lio/nekohasekai/sfa/bg/BalancerInjector;
-
     .line 102
     .line 103
     invoke-static {p1}, Lk12;->G(Ljava/io/File;)Ljava/lang/String;
@@ -393,8 +391,9 @@
     .line 106
     move-result-object p1
 
+    # [S4 B2 2026-10-24] 地区发现 candidateTags 下沉 io.neoguard.KernelConfigHooks
     .line 107
-    invoke-virtual {v0, p1}, Lio/nekohasekai/sfa/bg/BalancerInjector;->candidateTags(Ljava/lang/String;)Ljava/util/List;
+    invoke-static {p1}, Lio/neoguard/KernelConfigHooks;->candidateTags(Ljava/lang/String;)Ljava/util/List;
 
     .line 108
     .line 109

@@ -1696,16 +1696,7 @@
 
     .line 342
     .line 343
-    sget-object v6, Lio/nekohasekai/sfa/bg/BalancerInjector;->INSTANCE:Lio/nekohasekai/sfa/bg/BalancerInjector;
-
-    .line 344
-    .line 345
-    invoke-virtual {v6, v3}, Lio/nekohasekai/sfa/bg/BalancerInjector;->ensure(Ljava/lang/String;)Ljava/lang/String;
-
-    .line 346
-    .line 347
-    .line 348
-    move-result-object v3
+    # [S4 B2 2026-10-24] 并发注入已移除（BalancerInjector.ensure 门闩恒 false，返回原配置）：此处直接沿用 v3。
 
     .line 349
     invoke-virtual {v2, v3}, Lio/nekohasekai/sfa/bg/PubgRuleInjector;->ensure(Ljava/lang/String;)Ljava/lang/String;
@@ -4563,16 +4554,7 @@
 
     .line 222
     .line 223
-    sget-object v9, Lio/nekohasekai/sfa/bg/BalancerInjector;->INSTANCE:Lio/nekohasekai/sfa/bg/BalancerInjector;
-
-    .line 224
-    .line 225
-    invoke-virtual {v9, v0}, Lio/nekohasekai/sfa/bg/BalancerInjector;->ensure(Ljava/lang/String;)Ljava/lang/String;
-
-    .line 226
-    .line 227
-    .line 228
-    move-result-object v0
+    # [S4 B2 2026-10-24] 并发注入已移除（同 site1）：直接沿用 v0。
 
     .line 229
     invoke-virtual {v2, v0}, Lio/nekohasekai/sfa/bg/PubgRuleInjector;->ensure(Ljava/lang/String;)Ljava/lang/String;

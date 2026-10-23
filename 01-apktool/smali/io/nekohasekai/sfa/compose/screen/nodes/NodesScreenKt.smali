@@ -15189,6 +15189,12 @@
 
     .line 6
     .line 7
+    # [2026-10-22 产品化] 过滤机场塞进节点列表的订阅信息行（剩余流量/套餐到期…）：
+    # 只改这一处出口，列表/计数/搜索/排序/测速范围同时一致（NodeFilter 内部按入参身份缓存）。
+    invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeFilter;->apply(Ljava/util/List;)Ljava/util/List;
+
+    move-result-object p0
+
     return-object p0
 .end method
 
@@ -17803,7 +17809,30 @@
 .method public static final countryOf(Ljava/lang/String;)Ljava/lang/String;
     .locals 3
 
-    .line 1
+    # [需求1 2026-10-21] 优先用**实测**地区，而不是从节点名猜。
+    #
+    # 实测证据：名字与实际严重不符
+    #   「🇺🇸美国圣何塞02 | 三网推荐」实际 US/Arizona/Phoenix
+    #   「🇺🇸美国圣何塞07 | 三网推荐」实际 US/New York/Syracuse
+    # 按名字画国旗等于给用户假信息。GeoStore 里存的是 STUN + ip-api 实测结果，
+    # 有就优先用；没有（没测到）才回退到下面的名字正则匹配。
+    #
+    # 返回小写国家码，与原逻辑风格一致（原逻辑返回 "us"/"jp"/"other"）。
+    invoke-static {p0}, Lio/nekohasekai/sfa/bg/GeoStore;->countryCodeOf(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v0
+
+    if-eqz v0, :geo_fallback
+
+    invoke-virtual {v0}, Ljava/lang/String;->length()I
+
+    move-result v1
+
+    if-nez v1, :geo_fallback
+
+    return-object v0
+
+    :geo_fallback
     invoke-virtual {p0}, Ljava/lang/Object;->getClass()Ljava/lang/Class;
 
     .line 2
@@ -24939,6 +24968,13 @@
     .line 330
     .line 331
     .line 332
+    move-result-object v13
+
+    # [需求1 2026-10-22] 第二行追加"实测地区"（只读 GeoStore 内存快照，不碰 DB）。
+    # 放在 NodeEntry 构造处（loadConfigNodes），不碰 Compose 渲染 lambda —— 避开 44 那次崩溃的雷区。
+    # v13 = 原协议名，v15 = 节点 tag，两寄存器此处都已就绪，不新增寄存器。
+    invoke-static {v13, v15}, Lio/nekohasekai/sfa/bg/NodeDisplay;->decorate(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
     move-result-object v13
 
     .line 333

@@ -491,6 +491,12 @@
     move-result-object p1
 
     .line 145
+    invoke-static {v0}, Lio/neoguard/SubGuard;->prepare(Ljava/lang/String;)Ljava/lang/String;
+
+    .line 1241
+    move-result-object v0
+
+    .line 1242
     invoke-interface {p1, v0}, Lio/nekohasekai/sfa/kernel/NeoKernel;->checkConfig(Ljava/lang/String;)V
 
     .line 146

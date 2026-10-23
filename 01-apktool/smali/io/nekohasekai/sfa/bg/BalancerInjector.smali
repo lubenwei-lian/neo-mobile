@@ -358,32 +358,14 @@
 .end method
 
 .method public static final concurrentEnabled()Z
-    .locals 3
+    .locals 1
 
-    :try_start_0
-    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
-
-    invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getDataStore()Lio/nekohasekai/sfa/database/preference/RoomPreferenceDataStore;
-
-    move-result-object v0
-
-    const-string v1, "concurrent_mode_enabled"
-
-    const/4 v2, 0x1
-
-    invoke-virtual {v0, v1, v2}, Lio/nekohasekai/sfa/database/preference/RoomPreferenceDataStore;->getBoolean(Ljava/lang/String;Z)Z
-
-    move-result v0
-:try_end_0
-    return v0
-
-    :catchall_0
-    move-exception v0
-
-    const/4 v0, 0x1
+    # [2026-10-23 用户决定] 删除并发模式：手机端与电脑版对齐，固定单节点。
+    # 并发池实测不如单节点（电脑版已实测），这里恒返回 false，
+    # 注入入口 ensure() 走「原配置原样返回」分支，不做任何改写。
+    const/4 v0, 0x0
 
     return v0
-    .catchall {:try_start_0 .. :try_end_0} :catchall_0
 .end method
 
 .method public static final setConcurrentEnabled(Z)V
@@ -412,6 +394,55 @@
 .method public static final baseRegion()Ljava/lang/String;
     .locals 3
 
+    # [需求3 修复 2026-10-21] 点选结果改存独立键 concurrent_pick_v1，优先读取。
+    #
+    # 为什么不能用 selectedGroupItems：GroupsViewModel.restoreSavedSelections()
+    # 每次都按「当前内核里存在的组」重建这个 map，找不到组就丢弃该条，
+    # 并把缩小后的结果写回 DB。并发模式下只剩 balancer ⚡并发，
+    # 它不在可选择的组列表里 → 用户点选每轮都被清空 → baseRegion() 永远为空
+    # → 回退到「全量节点出现最多的地区」(US) → 池子永远是美国节点。
+    # 这就是「点其他节点还是走美国」的真根因。
+    invoke-static {}, Lio/nekohasekai/sfa/bg/PickStore;->load()Ljava/lang/String;
+
+    move-result-object v0
+
+    invoke-virtual {v0}, Ljava/lang/String;->length()I
+
+    move-result v1
+
+    if-eqz v1, :br_orig
+
+    sget-object v1, Lio/nekohasekai/sfa/bg/NeoRegion;->INSTANCE:Lio/nekohasekai/sfa/bg/NeoRegion;
+
+    invoke-virtual {v1, v0}, Lio/nekohasekai/sfa/bg/NeoRegion;->regionOf(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v2
+
+    invoke-virtual {v2}, Ljava/lang/String;->length()I
+
+    move-result v1
+
+    if-eqz v1, :br_orig
+
+    return-object v2
+
+    # [修复 2026-10-22] 「并发地区」设置（设置页可写、以前恒读不到）：作为第二优先级，
+    # 点选结果优先；填了就按它筛池，再回退旧的 selectedGroupItems / 自动地区。
+    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
+
+    invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getConcurrentRegion()Ljava/lang/String;
+
+    move-result-object v2
+
+    invoke-virtual {v2}, Ljava/lang/String;->length()I
+
+    move-result v1
+
+    if-eqz v1, :br_orig
+
+    return-object v2
+
+    :br_orig
     sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
 
     invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getSelectedGroupItems()Ljava/util/Map;
@@ -465,6 +496,23 @@
 
     sput-object v0, Lio/nekohasekai/sfa/bg/BalancerInjector;->BASE_PROTOCOL:Ljava/lang/String;
 
+    # [修复 2026-10-21] 需求3 已把"用户点选"迁到独立键 concurrent_pick_v1（PickStore），
+    # 但本方法仍读 selectedGroupItems —— 并发模式下那张表会被 restoreSavedSelections
+    # 反复清空，导致 BASE_PROTOCOL 恒空、协议过滤失效（池内不再保证同协议）。
+    # 改为 PickStore 优先，读不到再退回旧源（单节点模式仍然靠旧源）。
+    invoke-static {}, Lio/nekohasekai/sfa/bg/PickStore;->load()Ljava/lang/String;
+
+    move-result-object v1
+
+    invoke-virtual {v1}, Ljava/lang/String;->length()I
+
+    move-result v0
+
+    if-nez v0, :sp_legacy
+
+    goto :sp_find
+
+    :sp_legacy
     sget-object v0, Lio/nekohasekai/sfa/database/Settings;->INSTANCE:Lio/nekohasekai/sfa/database/Settings;
 
     invoke-virtual {v0}, Lio/nekohasekai/sfa/database/Settings;->getSelectedGroupItems()Ljava/util/Map;
@@ -491,6 +539,8 @@
 
     check-cast v1, Ljava/lang/String;
 
+    # v1 = 目标节点 tag（PickStore 的点选结果，或单节点模式下的旧选择）
+    :sp_find
     invoke-interface {p0}, Ljava/util/List;->iterator()Ljava/util/Iterator;
 
     move-result-object v2
@@ -654,7 +704,11 @@
 .end method
 
 .method private final buildBalancer(Ljava/util/List;)Lorg/json/JSONObject;
-    .locals 2
+    .locals 3
+
+    # [全量并发 2026-10-21] 先把成员 List 存进 v2 —— 下面 p0/p1 会被反复覆盖成
+    # JSONObject / 字符串键，方法末尾就拿不到原始 List 算 pool_size 了。
+    move-object v2, p1
     .annotation system Ldalvik/annotation/Signature;
         value = {
             "(",
@@ -794,9 +848,15 @@
     .line 65
     const-string p1, "pool_size"
 
+    # [全量并发 2026-10-21] 改成员总数。依据：补丁 balancer 的 healthyMembers 里有
+    # `if poolSize>0 && len(alive)>poolSize { alive = alive[:poolSize] }`，
+    # 而 C.BalancerDefaultPoolSize = 3。写死 8 会把 12 个成员截断成 8 个。
+    # 设成成员总数 = 关闭这层截断，让全部成员都参与轮转。
     .line 66
     .line 67
-    const/16 v0, 0x8
+    invoke-interface {v2}, Ljava/util/List;->size()I
+
+    move-result v0
 
     .line 68
     invoke-virtual {p0, p1, v0}, Lorg/json/JSONObject;->put(Ljava/lang/String;I)Lorg/json/JSONObject;
@@ -822,31 +882,24 @@
     move-result-object p0
 
     .line 79
+
+    # [全量并发 2026-10-21] 粘滞改为 "none"（照电脑版 0.2.35 SingBoxConfigBuilder L175）。
+    # 依据（电脑版 2026-10-18 实测）：补丁 balancer 的 stickyKeys 默认 [process,domain]，
+    # 且 stickyDisabled() 只在列表含 "none" 或为空时才关闭 → 默认粘滞是**开着**的。
+    # 后果：12 条并发连接下载同一 URL 时全部绑到第一次选中的节点，
+    # clash_api 采样 32 次全是一个节点，其余成员一次没轮到 —— 这就是"假并发"。
     new-instance p1, Lorg/json/JSONArray;
 
-    .line 80
-    .line 81
-    const-string v0, "domain"
+    const-string v0, "none"
 
-    .line 82
-    .line 83
     invoke-static {v0}, Ly9;->D(Ljava/lang/Object;)Ljava/util/List;
 
-    .line 84
-    .line 85
-    .line 86
     move-result-object v0
 
-    .line 87
     invoke-direct {p1, v0}, Lorg/json/JSONArray;-><init>(Ljava/util/Collection;)V
 
-    .line 88
-    .line 89
-    .line 90
     const-string v0, "sticky_key"
 
-    .line 91
-    .line 92
     invoke-virtual {p0, v0, p1}, Lorg/json/JSONObject;->put(Ljava/lang/String;Ljava/lang/Object;)Lorg/json/JSONObject;
 
     .line 93
@@ -2378,6 +2431,11 @@
     .line 28
     move-result-object v4
 
+    # [需求2 修复 2026-10-22] 此刻 v4 还是 collectNodes 的**全量**候选；
+    # 后面「地区筛选」会把 v4 覆盖成筛完的池（实测日志一直是「池内共 6/12 个」，
+    # 说明"测所有节点"从未真正生效）。这里先记一份全量，供测速调用。
+    invoke-static {v4}, Lio/nekohasekai/sfa/bg/CandidateTags;->remember(Ljava/util/List;)V
+
     # [自动基准地区] 用户显式选中优先；未选中时取池内出现最多的地区（保证同地区风控生效）。
     invoke-static {v4}, Lio/nekohasekai/sfa/bg/BalancerInjector;->autoRegion(Ljava/util/List;)Ljava/lang/String;
 
@@ -3171,9 +3229,12 @@
     .line 404
     move-result v11
 
-    # [自主选择] 原订阅的 selector/urltest 组一律保留，用户才能继续自由选节点；
-    # 本方法注入的 ⚡并发 靠随后 hashSet 的 tag 去重跳过，不会重复。
+    # [全量并发 2026-10-21] 恢复原版判断：selector/urltest/balancer 一律不保留，
+    # 只留真实节点 + 随后注入的 ⚡并发。这样 route.final 与所有规则都会被
+    # redirectGroupReferences 改指到 ⚡并发，实现"所有流量走并发组"。
     .line 405
+    if-nez v11, :cond_b
+
     .line 406
     .line 407
     invoke-virtual {v5, v10}, Lorg/json/JSONArray;->put(Ljava/lang/Object;)Lorg/json/JSONArray;
@@ -3292,6 +3353,70 @@
 
     .line 464
     :cond_d
+
+    # [真实吞吐 2026-10-21 第 2 批·路线 A] 按节点实测下载吞吐重排池、剔除不可用节点。
+    #
+    # 为什么现在能做到（上一轮我曾判「做不到」，是错的，此处留下纠错记录）：
+    #   ① 曾以为内核纯进程内、无 gRPC 通道 —— 实测 command.sock 存在，
+    #      BoxService.CommandServer.start() 确实跑起来了，通道一直在；
+    #      之前的 "rpc error: invalid argument" 是参数不合法（传了 balancer tag）。
+    #   ② 带 outboundTag 的接口：
+    #      CommandClient.startNetworkQualityTest(configURL, outboundTag, serial, maxRuntime, http3, handler)
+    #      传真实节点 tag 时返回 session=true 并正常执行。
+    #   ③ 设备实测三节点下载峰值：100.2 Mbps / 77.8 Mbps / 一个 503 假活。
+    #      假活节点被 Apple CDN 持续 503 —— 即「延迟好看但用不了」。
+    #
+    # 本方法内部：无实测数据则原样返回；剔除后少于 3 个则放弃剔除；异常全吞。
+    invoke-static {v2}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->rankAndFilter(Ljava/util/List;)Ljava/util/List;
+
+    move-result-object v2
+
+    # [日志修正] 记下剔除后的真实成员数，供下面的日志使用。
+    # 原来的日志打的是剔除前的数量，与实际注入的池成员数不一致。
+    invoke-interface {v2}, Ljava/util/List;->size()I
+
+    move-result v11
+
+    # [需求2 2026-10-21] 测速目标改为**全部节点**（v4 = collectNodes 的全量结果），
+    # 不再只测并发池内的（v2）。用户明确要求「测速要测所有节点」。
+    # 但全部实测 71 个，一次跑完约 24 分钟 + 数 GB 流量，会烧穿套餐，
+    # 所以内部采用滚动分批（每轮 12 个、最旧优先），多次连接后覆盖全部。
+    #
+    # [类型修复 2026-10-21] v4 是 List<Candidate>，measureAllAsync 要 List<String>，
+    # 直接传会抛 ClassCastException（实测日志：
+    # 「吞吐测速：后台异常 ClassCastException ...Candidate cannot be cast to java.lang.String」），
+    # 全量测速其实一次都没跑起来。转成 tag 列表再传。
+    # [需求2 修复 2026-10-22] 改用 ensure 早期记住的全量 tag（v4 此时已被筛成池内成员）
+    invoke-static {}, Lio/nekohasekai/sfa/bg/CandidateTags;->all()Ljava/util/List;
+
+    move-result-object v12
+
+    invoke-static {v12}, Lio/nekohasekai/sfa/bg/NodeThroughputTester;->measureAllAsync(Ljava/util/List;)V
+
+    # ===== 第 3 批：真实节点信息（A + C 双路，只报告不改池）=====
+    #
+    # C 路（可靠）：用 cloudflare cdn-cgi/trace 采样当前池的实际出口分布，
+    #   回答「这个池子会不会让我的 IP 跳」。实测 10/10 成功。
+    #   依据（2026-10-21 设备实测）：10 次采样拿到 9 个不同出口 IP，
+    #   名字全写「美国圣何塞」，实际横跨 Arizona / California / New York 三州。
+    invoke-static {}, Lio/nekohasekai/sfa/bg/ExitInsight;->samplePoolAsync()V
+
+    # A 路（尽力而为）：按节点 STUN 测各自出口。
+    #   只报告，不参与池筛选 —— 实测 STUN 成功率不稳定（单独跑成功、
+    #   与吞吐测速同跑全失败），拿它筛池会误杀好节点。
+    #   失败时如实标「未测到」，绝不拿节点名冒充实测（名字本身就是错的）。
+    const/4 v12, 0x5
+
+    invoke-static {v2, v12}, Lio/nekohasekai/sfa/bg/ExitInsight;->probeNodesAsync(Ljava/util/List;I)V
+
+    # [需求1 2026-10-21] 把实测地区写进 GeoStore，节点页旗帜优先按实测显示。
+    #   v2 = 剔除后的池成员 tag 列表（List<String>），正是本方法需要的输入，
+    #   复用它避免额外占用寄存器（本方法 .locals 13 已接近上限）。
+    #   内部会延迟 2 分钟启动，避开吞吐测速与池采样的带宽争抢
+    #   （实测同跑 STUN 全失败、单独跑 40% 成功）。
+    #   测不到就不写，NodesScreenKt.countryOf 会回退到按名字显示。
+    invoke-static {v2}, Lio/nekohasekai/sfa/bg/NodeGeoProbe;->probeAsync(Ljava/util/List;)V
+
     # 原版行为：每个 tag 只出现一次，流量倾斜交给内核的 urltest + roundRobin 动态调度。
     invoke-direct {p0, v2}, Lio/nekohasekai/sfa/bg/BalancerInjector;->buildBalancer(Ljava/util/List;)Lorg/json/JSONObject;
 
@@ -3333,9 +3458,8 @@
     .line 484
     .line 485
     # 成员数 = 池内候选数（每节点一份，原版行为）
-    invoke-virtual {v4}, Ljava/util/ArrayList;->size()I
-
-    move-result v2
+    # [日志修正] 改用剔除后的真实成员数 v11（与 buildBalancer 里 pool_size 的来源一致）。
+    move v2, v11
 
     .line 486
     .line 487
@@ -3398,10 +3522,17 @@
     .line 515
     .line 516
     .line 517
-    const-string v2, "\uff08\u6c60\u5927\u5c0f=8\uff0c\u5730\u533a="
+    # [日志修正 2026-10-21] 原版这里写死 "池大小=8，粘滞=同App+同域名"，
+    # 与实际配置早已不符（实测 pool_size 跟随成员数、sticky_key=["none"]），
+    # 会误导排障。改为输出真实值：池大小=成员数(v2)，粘滞固定 none。
+    const-string v5, "\uff08\u6c60\u5927\u5c0f="
 
-    .line 518
-    .line 519
+    invoke-virtual {v4, v5}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+
+    invoke-virtual {v4, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+
+    const-string v2, "\uff0c\u7c98\u6ede=none\uff0c\u5730\u533a="
+
     invoke-virtual {v4, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
 
     .line 520
@@ -3412,7 +3543,7 @@
     .line 523
     .line 524
     .line 525
-    const-string v2, "\uff0c\u7c98\u6ede=\u540cApp+\u540c\u57df\u540d\uff0c\u6539\u6307\u5f15\u7528="
+    const-string v2, "\uff0c\u6539\u6307\u5f15\u7528="
 
     .line 526
     .line 527

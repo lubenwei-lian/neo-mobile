@@ -718,7 +718,7 @@
 
     .line 310
     :cond_c
-    const-wide/16 v0, 0xf
+    const-wide/16 v0, 0x2d0
 
     .line 311
     .line 312

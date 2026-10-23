@@ -763,7 +763,7 @@
     .line 292
     .line 293
     .line 294
-    if-lez v1, :cond_f
+    goto :cond_f
 
     .line 295
     .line 296
@@ -783,7 +783,7 @@
 
     .line 303
     :cond_f
-    const-string v4, "\u5e76\u53d1 \u2014"
+    const-string v4, "\u5355\u8282\u70b9"
 
     .line 304
     .line 305
@@ -2440,7 +2440,7 @@
 
     .line 223
     .line 224
-    const-string v1, "\u6682\u65e0"
+    const-string v1, "\u5e76\u53d1\u6c60\u6682\u65e0\u6570\u636e"
 
     .line 225
     .line 226
@@ -2448,7 +2448,7 @@
 
     .line 227
     :cond_6
-    const-string v1, "\u672a\u8fde\u63a5"
+    const-string v1, "\u672a\u8fde\u63a5 \u00b7 \u8fde\u63a5\u540e\u663e\u793a\u5e76\u53d1\u6c60"
 
     .line 228
     .line 229
@@ -11501,7 +11501,10 @@
     .line 1289
     .line 1290
     .line 1291
-    const-string v6, "\u5f53\u524d\u914d\u7f6e \u00b7 \u70b9\u6309\u5207\u6362"
+    # [2026-10-22 产品化] 副标题补一句「出口 XX IP」；没有新鲜采样数据时退回原文案（HomeText 内部判断）
+    invoke-static {}, Lio/nekohasekai/sfa/bg/HomeText;->configSubtitle()Ljava/lang/String;
+
+    move-result-object v6
 
     .line 1292
     .line 1293

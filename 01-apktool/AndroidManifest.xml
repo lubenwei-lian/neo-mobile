@@ -25,7 +25,7 @@
     <permission android:name="com.xiaosaik.neo.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" android:protectionLevel="signature"/>
     <uses-permission android:name="com.xiaosaik.neo.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"/>
     <uses-permission android:name="moe.shizuku.manager.permission.API_V23"/>
-    <application android:allowBackup="true" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:dataExtractionRules="@xml/data_extraction_rules" android:extractNativeLibs="true" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:localeConfig="@xml/_generated_res_locale_config" android:name="io.nekohasekai.sfa.Application" android:supportsRtl="true" android:theme="@style/AppTheme">
+    <application android:allowBackup="true" android:appComponentFactory="androidx.core.app.CoreComponentFactory" android:dataExtractionRules="@xml/data_extraction_rules" android:extractNativeLibs="true" android:fullBackupContent="@xml/backup_rules" android:icon="@mipmap/ic_launcher" android:label="@string/app_name" android:localeConfig="@xml/_generated_res_locale_config" android:usesCleartextTraffic="true" android:name="io.nekohasekai.sfa.Application" android:supportsRtl="true" android:theme="@style/AppTheme">
         <provider android:authorities="com.xiaosaik.neo.shizuku" android:exported="true" android:multiprocess="false" android:name="rikka.shizuku.ShizukuProvider" android:permission="android.permission.INTERACT_ACROSS_USERS_FULL"/>
         <service android:exported="false" android:name="io.nekohasekai.sfa.bg.RootServer"/>
         <receiver android:exported="false" android:name="io.nekohasekai.sfa.vendor.InstallResultReceiver">

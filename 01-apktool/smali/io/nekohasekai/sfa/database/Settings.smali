@@ -5546,11 +5546,25 @@
 .end method
 
 .method public final getConcurrentRegion()Ljava/lang/String;
-    .locals 1
+    .locals 3
 
-    const-string v0, ""
+    # [修复 2026-10-22] 原实现恒返回 ""：设置页能写、程序从不读，属"死设置"。
+    # 改为读 concurrentRegion$delegate（delegatedProperties 索引 7，与字段声明顺序一致）。
+    sget-object v0, Lio/nekohasekai/sfa/database/Settings;->concurrentRegion$delegate:Lio/nekohasekai/sfa/ktx/PreferenceProxy;
 
-    return-object v0
+    sget-object v1, Lio/nekohasekai/sfa/database/Settings;->$$delegatedProperties:[Lbh3;
+
+    const/4 v2, 0x7
+
+    aget-object v1, v1, v2
+
+    invoke-virtual {v0, p0, v1}, Lio/nekohasekai/sfa/ktx/PreferenceProxy;->getValue(Ljava/lang/Object;Lbh3;)Ljava/lang/Object;
+
+    move-result-object p0
+
+    check-cast p0, Ljava/lang/String;
+
+    return-object p0
 .end method
 
 .method public final getDashboardDisabledItems()Ljava/util/Set;

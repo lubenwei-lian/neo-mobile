@@ -144,6 +144,28 @@ if (Test-Path -LiteralPath $clrFile) {
     if ($txt -notmatch 'StartupAutoTest;->trigger') { $fail.Add('S13: ConfigLoadResult 构造后没有 StartupAutoTest.trigger 触发点') }
     else { $ok.Add('S13: ConfigLoadResult 已挂钩 StartupAutoTest.trigger') }
 } else { $fail.Add('S13: 找不到 ConfigLoadResult.smali') }
+# ---- 8. S6: 明文 HTTP / 端口发现 ----
+$manifest = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\AndroidManifest.xml') -Raw
+if ($manifest -notmatch 'android:networkSecurityConfig="@xml/network_security_config"') {
+    $fail.Add('S6: Manifest 未指向 networkSecurityConfig')
+} else { $ok.Add('S6: Manifest 已使用 networkSecurityConfig') }
+if ($manifest -match 'usesCleartextTraffic') { $fail.Add('S6: Manifest 仍保留全局 usesCleartextTraffic') }
+$nscPath = Join-Path $PROJ '01-apktool\res\xml\network_security_config.xml'
+if (-not (Test-Path -LiteralPath $nscPath)) { $fail.Add('S6: 缺少 res/xml/network_security_config.xml') }
+else {
+    $nscTxt = Get-Content -LiteralPath $nscPath -Raw
+    if ($nscTxt -notmatch 'cleartextTrafficPermitted="false"' -or $nscTxt -notmatch '127\.0\.0\.1') { $fail.Add('S6: networkSecurityConfig 未做到默认禁明文+回环放行') }
+    else { $ok.Add('S6: networkSecurityConfig 默认禁明文、仅放行 127.0.0.1/localhost') }
+}
+$dex4 = Join-Path $tmp 'classes4.dex'
+if (Test-Path -LiteralPath $dex4) {
+    $disasm = (& $DEXDUMP -d $dex4 2>&1) -join "`n"
+    if ($disasm -notmatch 'readConfigPorts') { $fail.Add('S6: classes4.dex 缺 SubGuard.readConfigPorts（端口发现未打进产物）') }
+    else { $ok.Add('S6: classes4.dex 含 SubGuard.readConfigPorts（方法级校验）') }
+    if ($disasm -notmatch 'https://www\.gstatic\.com/generate_204') { $fail.Add('S6: FailoverGuard TEST_URL 未改为 https') }
+    else { $ok.Add('S6: FailoverGuard TEST_URL 为 https（配合明文限制）') }
+} else { $fail.Add('S6: classes4.dex 未解出，无法做方法级校验') }
+
 $launchFile = Join-Path $nodesDir 'StartupAutoTest$Launch.smali'
 if (Test-Path -LiteralPath $launchFile) {
     $txt = Get-Content -LiteralPath $launchFile -Raw

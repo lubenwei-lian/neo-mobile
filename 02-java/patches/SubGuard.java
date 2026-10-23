@@ -34,8 +34,11 @@ public final class SubGuard {
      *   而订阅域名在墙外/直连极慢（实测手机 30s 超时、电脑 8.4s），导致「应用导入成功但流量信息查不到」。
      *   已连接时 mixed 入站 127.0.0.1:7891 可用，走它就能拿到 subscription-userinfo 头。
      */
+    /** 最近一次成功的代理端口（跨调用记忆，优先复用）。 */
+    private static volatile int lastGoodPort = 0;
+
     public static java.net.URLConnection open(String url) {
-        int[] ports = {7891, 21809, 10808};
+        int[] ports = discoverPorts();
         for (int i = 0; i < ports.length; i++) {
             int port = ports[i];
             if (!portOpen(port)) {
@@ -45,6 +48,7 @@ public final class SubGuard {
                 java.net.Proxy proxy = new java.net.Proxy(java.net.Proxy.Type.HTTP,
                         new java.net.InetSocketAddress("127.0.0.1", port));
                 android.util.Log.i("SubGuard", "usage fetch via proxy 127.0.0.1:" + port);
+                lastGoodPort = port;
                 return new java.net.URL(url).openConnection(proxy);
             } catch (Throwable t) {
                 android.util.Log.w("SubGuard", "proxy open failed(" + port + "): " + t);
@@ -55,6 +59,124 @@ public final class SubGuard {
             return new java.net.URL(url).openConnection();
         } catch (Throwable t) {
             throw new RuntimeException(t);
+        }
+    }
+
+    /**
+     * 候选端口：先从运行配置里读（files/configuration.json 或 files/configs/*.json 的 mixed/socks/http 入站），
+     * 再补硬编码默认值。这样用户改 Settings 里的 mixed 端口后不会静默失效。
+     */
+    private static int[] discoverPorts() {
+        java.util.LinkedHashSet<Integer> ports = new java.util.LinkedHashSet<Integer>();
+        if (lastGoodPort > 0) {
+            ports.add(Integer.valueOf(lastGoodPort));
+        }
+        int fromConfig = readConfigPorts(ports);
+        ports.add(Integer.valueOf(7891));
+        ports.add(Integer.valueOf(21809));
+        ports.add(Integer.valueOf(10808));
+        int[] arr = new int[ports.size()];
+        int i = 0;
+        for (Integer p : ports) {
+            arr[i++] = p.intValue();
+        }
+        android.util.Log.i("SubGuard", "proxy candidate ports: " + java.util.Arrays.toString(arr)
+                + (fromConfig > 0 ? " (from config)" : " (defaults)"));
+        return arr;
+    }
+
+    private static int readConfigPorts(java.util.Set<Integer> out) {
+        try {
+            Object app = application();
+            if (app == null) {
+                return 0;
+            }
+            java.io.File files = (java.io.File) app.getClass().getMethod("getFilesDir").invoke(app);
+            int found = scanConfig(new java.io.File(files, "configuration.json"), out);
+            java.io.File dir = new java.io.File(files, "configs");
+            java.io.File[] list = dir.listFiles();
+            if (list != null) {
+                java.util.Arrays.sort(list, new java.util.Comparator<java.io.File>() {
+                    public int compare(java.io.File a, java.io.File b) {
+                        return Long.compare(b.lastModified(), a.lastModified());
+                    }
+                });
+                for (int i = 0; i < list.length && i < 5; i++) {
+                    if (!list[i].isFile()) {
+                        continue;
+                    }
+                    found += scanConfig(list[i], out);
+                    if (found > 0) {
+                        break;
+                    }
+                }
+            }
+            return found;
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "read config ports failed: " + t);
+            return 0;
+        }
+    }
+
+    private static Object application() {
+        try {
+            Class<?> app = Class.forName("io.nekohasekai.sfa.Application");
+            Object companion = app.getField("Companion").get(null);
+            if (companion == null) {
+                return null;
+            }
+            return companion.getClass().getMethod("getApplication").invoke(companion);
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    private static int scanConfig(java.io.File f, java.util.Set<Integer> out) {
+        if (f == null || !f.isFile() || f.length() > 8L * 1024 * 1024) {
+            return 0;
+        }
+        try {
+            JSONObject root = new JSONObject(readFile(f));
+            JSONArray inbounds = root.optJSONArray("inbounds");
+            if (inbounds == null) {
+                return 0;
+            }
+            int n = 0;
+            for (int i = 0; i < inbounds.length(); i++) {
+                JSONObject ib = inbounds.optJSONObject(i);
+                if (ib == null) {
+                    continue;
+                }
+                String type = ib.optString("type", "");
+                if (!"mixed".equals(type) && !"socks".equals(type) && !"http".equals(type)) {
+                    continue;
+                }
+                int p = ib.optInt("listen_port", 0);
+                if (p > 0 && p < 65536 && out.add(Integer.valueOf(p))) {
+                    n++;
+                }
+            }
+            return n;
+        } catch (Throwable t) {
+            return 0;
+        }
+    }
+
+    private static String readFile(java.io.File f) throws Exception {
+        java.io.FileInputStream in = new java.io.FileInputStream(f);
+        try {
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream((int) Math.min(f.length(), 65536L));
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                bos.write(buf, 0, n);
+            }
+            return new String(bos.toByteArray(), "UTF-8");
+        } finally {
+            try {
+                in.close();
+            } catch (Throwable ignored) {
+            }
         }
     }
 

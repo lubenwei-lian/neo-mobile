@@ -23,7 +23,7 @@ $EXPECTED_CLASSES4 = @(
     'Lio/neoguard/NetworkWatcher$1;',
     'Lio/neoguard/SubGuard;'
 )
-$EXPECTED_HOOKS = 14
+$EXPECTED_HOOKS = 17
 
 if (-not $Apk) { $Apk = Join-Path $PROJ '03-dist\neo-latest.apk' }
 if (-not (Test-Path -LiteralPath $Apk)) { throw "APK 不存在: $Apk" }
@@ -168,6 +168,7 @@ if (Test-Path -LiteralPath $dex4) {
     if ($disasm -notmatch 'KernelHooks;\.version') { $fail.Add('S3: classes4.dex 缺 KernelHooks.version') } else { $ok.Add('S3: 内核版本号已下沉 Java（KernelHooks.version）') }
     if ($disasm -notmatch 'usageEmptyText') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.usageEmptyText') } else { $ok.Add('S3: 首页空数据文案已下沉 Java（usageEmptyText）') }
     if ($disasm -notmatch 'usageDisconnectedText') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.usageDisconnectedText') } else { $ok.Add('S3: 首页未连接文案已下沉 Java（usageDisconnectedText）') }
+    if ($disasm -notmatch 'colorGreen') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.colorGreen') } else { $ok.Add('S3: 首页主题色已下沉 Java（colorGreen/Orange/IdleRing）') }
     if ($disasm -notmatch 'candidateTags') { $fail.Add('S4: classes4.dex 缺 KernelConfigHooks.candidateTags') } else { $ok.Add('S4: 地区发现 candidateTags 已下沉 Java') }
     if ($disasm -notmatch 'idleTimeoutMillis') { $fail.Add('S4: classes4.dex 缺 KernelConfigHooks.idleTimeoutMillis') } else { $ok.Add('S4: 空闲超时 idleTimeoutMillis 已下沉 Java') }
     if ($disasm -notmatch 'https://www\.gstatic\.com/generate_204') { $fail.Add('S6: FailoverGuard TEST_URL 未改为 https') }

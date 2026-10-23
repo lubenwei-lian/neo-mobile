@@ -18,4 +18,17 @@ public final class NeoUiHooks {
     public static String usageDisconnectedText() {
         return "未连接";
     }
+
+    /** 首页主题色（原 HomeScreenKt 手写 const-wide）。 */
+    public static long colorGreen() {
+        return 0xff4ade80L;
+    }
+
+    public static long colorOrange() {
+        return 0xfff59e0bL;
+    }
+
+    public static long colorIdleRing() {
+        return 0xff2a2f38L;
+    }
 }

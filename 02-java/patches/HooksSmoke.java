@@ -24,6 +24,7 @@ public final class HooksSmoke {
         SubscriptionUsageHooks.clearIfUrlChanged(id, "https://a.example/sub", "https://b.example/sub");
         SubscriptionUsageHooks.clearIfUrlChanged(id, null, null);
         SubscriptionUsageHooks.clearProfileUsage(id);
+        android.util.Log.i("HooksSmoke", "ui empty=[" + NeoUiHooks.usageEmptyText() + "] disconnected=[" + NeoUiHooks.usageDisconnectedText() + "]");
         android.util.Log.i("HooksSmoke", "kernel version=" + KernelHooks.version());
         android.util.Log.i("HooksSmoke", "ua chain=" + KernelHooks.subscriptionUserAgentChain());
         android.util.Log.i("HooksSmoke", "done");

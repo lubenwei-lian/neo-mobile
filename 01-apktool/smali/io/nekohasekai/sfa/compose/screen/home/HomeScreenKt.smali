@@ -2440,7 +2440,9 @@
 
     .line 223
     .line 224
-    const-string v1, "\u6682\u65e0\u6570\u636e"
+    invoke-static {}, Lio/neoguard/NeoUiHooks;->usageEmptyText()Ljava/lang/String;
+
+    move-result-object v1
 
     .line 225
     .line 226
@@ -2448,7 +2450,9 @@
 
     .line 227
     :cond_6
-    const-string v1, "\u672a\u8fde\u63a5"
+    invoke-static {}, Lio/neoguard/NeoUiHooks;->usageDisconnectedText()Ljava/lang/String;
+
+    move-result-object v1
 
     .line 228
     .line 229

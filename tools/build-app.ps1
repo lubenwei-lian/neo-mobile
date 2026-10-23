@@ -14,7 +14,9 @@ $env:JAVA_HOME = $JDK
 
 if (-not (Test-Path "$ASC\01-apktool")) { throw "junction $ASC 未指向工程" }
 
+# 2026-10-24 审查 P2-3：先清旧 class/dex，避免删/改名后的陈旧 .class 被打进 classes4.dex
 $work = "$ASC\03-dist\_build"
+Remove-Item "$work\classes","$work\dex" -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $work,"$work\classes","$work\dex" | Out-Null
 
 # 1. SubGuard → dex
@@ -54,6 +56,13 @@ $out = "$ASC\03-dist\neo-latest.apk"
 & "$BT\apksigner.bat" sign --ks $KS --ks-pass pass:123456 --key-pass pass:123456 --out $out "$work\aligned.apk"
 if ($LASTEXITCODE -ne 0) { throw "签名失败" }
 Write-Host ("构建完成: " + $out + "  " + (Get-Item $out).Length + " B")
+
+# 5. 产物校验（失败即中止，避免把坏包装到手机）
+$verify = Join-Path $PSScriptRoot 'verify-app.ps1'
+if (Test-Path -LiteralPath $verify) {
+  & $verify -Apk $out
+  if ($LASTEXITCODE -ne 0) { throw "产物校验失败（见上方 [FAIL] 项）" }
+}
 
 if ($Install) {
   adb push $out /data/local/tmp/neo-latest.apk | Select-Object -Last 1

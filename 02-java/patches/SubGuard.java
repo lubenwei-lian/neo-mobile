@@ -118,7 +118,7 @@ public final class SubGuard {
     }
 
     private static final String[] HINTS = {
-            "使用的设备过多", "请去官网获取新订阅链接", "设备过多", "请去官网", "套餐已到期", "流量已用尽"
+            "使用的设备过多", "请去官网获取新订阅链接", "设备过多", "请去官网", "官网地址", "套餐已到期", "流量已用尽"
     };
 
     private static boolean isLocal(String server) {
@@ -168,7 +168,40 @@ public final class SubGuard {
             android.util.Log.w("SubGuard", problem);
             throw new RuntimeException(problem);
         }
+        // 2026-10-24 修复（审查 P0-2）：迁移"成功"但内核拒绝时，以前直接抛错，
+        //   用户侧表现为该订阅永久"更新失败"。现在回退原文再校验一次。
+        if (migrated != null && !migrated.equals(content)) {
+            if (!kernelAccepts(migrated)) {
+                android.util.Log.w("SubGuard", "迁移后的配置被内核拒绝，尝试回退原文");
+                if (kernelAccepts(content)) {
+                    android.util.Log.i("SubGuard", "已回退为原文订阅（保留旧 DNS 格式）");
+                    return content;
+                }
+                android.util.Log.w("SubGuard", "原文也被内核拒绝，保留迁移结果交给调用方报错");
+            }
+        }
         return migrated;
+    }
+
+    /**
+     * 用内核 checkConfig 预检一份配置（libbox 静态检查，不需要服务在运行）。
+     * 返回 false = 明确被拒；true = 通过或无法判定（反射/内核不可用时保持原有行为，不误伤）。
+     */
+    private static boolean kernelAccepts(String content) {
+        try {
+            Class<?> appCls = Class.forName("io.nekohasekai.sfa.Application");
+            Object companion = appCls.getField("Companion").get(null);
+            Object kernel = companion.getClass().getMethod("getKernel").invoke(companion);
+            kernel.getClass().getMethod("checkConfig", String.class).invoke(kernel, content);
+            return true;
+        } catch (java.lang.reflect.InvocationTargetException ite) {
+            Throwable cause = ite.getCause();
+            android.util.Log.w("SubGuard", "内核预检拒绝：" + (cause == null ? ite.toString() : cause.toString()));
+            return false;
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "内核预检不可用，跳过：" + t);
+            return true;
+        }
     }
 
     private static boolean isLegacyType(String s) {
@@ -278,17 +311,48 @@ public final class SubGuard {
             }
         }
         dns.put("servers", fresh);
-        dns.remove("fakeip");
+        // 2026-10-24 修复（审查 P0-2）：只有确实把 legacy fakeip 迁进 servers 时才删顶层 dns.fakeip，
+        //   原先无条件 remove 会让 fakeip 配置静默消失。
+        boolean fakeipMigrated = false;
+        for (int i = 0; i < fresh.length(); i++) {
+            JSONObject s = fresh.optJSONObject(i);
+            if (s != null && "fakeip".equals(s.optString("type", ""))) {
+                fakeipMigrated = true;
+                break;
+            }
+        }
+        if (fakeipMigrated) {
+            dns.remove("fakeip");
+        }
         JSONObject route = root.optJSONObject("route");
         if (route == null) {
             route = new JSONObject();
             root.put("route", route);
         }
         if (!route.has("default_domain_resolver")) {
-            route.put("default_domain_resolver", "local");
+            // 2026-10-24 修复（审查 P0-2）：只有确实存在 tag=local 的 DNS server 时才写 "local"，
+            //   否则 sing-box 1.12+ 会报 default domain resolver not found。
+            if (hasServerTag(fresh, "local")) {
+                route.put("default_domain_resolver", "local");
+            } else {
+                android.util.Log.w("SubGuard", "迁移后没有 tag=local 的 DNS server，跳过 default_domain_resolver");
+            }
         }
         android.util.Log.i("SubGuard", "订阅 DNS 已从 legacy 迁移为新格式");
         return root.toString();
+    }
+
+    private static boolean hasServerTag(JSONArray servers, String tag) {
+        if (servers == null) {
+            return false;
+        }
+        for (int i = 0; i < servers.length(); i++) {
+            JSONObject s = servers.optJSONObject(i);
+            if (s != null && tag.equals(s.optString("tag", ""))) {
+                return true;
+            }
+        }
+        return false;
     }
 
 

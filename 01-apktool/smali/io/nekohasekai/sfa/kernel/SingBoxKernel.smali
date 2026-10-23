@@ -874,7 +874,8 @@
     .line 51
     .line 52
     :catchall_2
-    throw p1.end method
+    throw p1
+.end method
 
 .method public normalizeSubscriptionContent(Ljava/lang/String;)Ljava/lang/String;
     .locals 1

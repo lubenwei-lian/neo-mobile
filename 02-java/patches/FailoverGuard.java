@@ -29,6 +29,8 @@ public final class FailoverGuard {
     private static final int INTERVAL_MS = 20000;
     private static final int FAIL_THRESHOLD = 3;
     private static final long COOLDOWN_MS = 90000L;
+    /** 切换后若原出口是自动选择组，探测稳定 5 分钟后还原，避免把 urltest 永久钉死。 */
+    private static final long RESTORE_AFTER_MS = 300000L;
     private static final int DELAY_TIMEOUT_MS = 6000;
 
     private static volatile boolean running;
@@ -37,35 +39,52 @@ public final class FailoverGuard {
     private static volatile String cachedBase;
     private static volatile long lastWakeAt;
     private static volatile boolean networkWake;
+    private static final Object LOCK = new Object();
+    /** 每次 start/stop 自增；旧线程发现 gen 变了就退出，避免双 worker。 */
+    private static volatile int generation;
+    private static volatile String restoreGroup;
+    private static volatile long restoreAt;
 
     private FailoverGuard() {
     }
 
     public static void start() {
-        if (running) {
-            return;
-        }
-        running = true;
-        Thread t = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                loop();
+        synchronized (LOCK) {
+            if (worker != null && worker.isAlive()) {
+                return;
             }
-        }, "neo-failover");
-        t.setDaemon(true);
-        worker = t;
-        t.start();
+            running = true;
+            final int myGen = ++generation;
+            Thread t = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    loop(myGen);
+                }
+            }, "neo-failover");
+            t.setDaemon(true);
+            worker = t;
+            t.start();
+        }
         NetworkWatcher.start();
         android.util.Log.i(TAG, "failover guard started");
     }
 
     public static void stop() {
-        running = false;
-        Thread t = worker;
-        worker = null;
+        Thread t;
+        synchronized (LOCK) {
+            running = false;
+            generation++;
+            t = worker;
+            worker = null;
+        }
         NetworkWatcher.stop();
         if (t != null) {
             t.interrupt();
+            try {
+                t.join(3000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
         }
         android.util.Log.i(TAG, "failover guard stopped");
     }
@@ -88,19 +107,19 @@ public final class FailoverGuard {
         }
     }
 
-    private static void loop() {
+    private static void loop(int myGen) {
         int fails = 0;
         int tick = 0;
-        while (running) {
+        while (running && generation == myGen) {
             try {
                 Thread.sleep(INTERVAL_MS);
             } catch (InterruptedException e) {
-                if (!running) {
+                if (!running || generation != myGen) {
                     break;
                 }
                 // 网络变化唤醒：跳过剩余休眠
             }
-            if (!running) {
+            if (!running || generation != myGen) {
                 break;
             }
             if (networkWake) {
@@ -109,7 +128,7 @@ public final class FailoverGuard {
                 try {
                     Thread.sleep(2500);
                 } catch (InterruptedException e) {
-                    if (!running) {
+                    if (!running || generation != myGen) {
                         break;
                     }
                 }
@@ -139,6 +158,7 @@ public final class FailoverGuard {
                         android.util.Log.i(TAG, "recovered, delay=" + delay + "ms");
                     }
                     fails = 0;
+                    maybeRestore(base, group);
                     continue;
                 }
                 fails++;
@@ -148,23 +168,100 @@ public final class FailoverGuard {
                 }
                 long now = System.currentTimeMillis();
                 if (now - lastSwitchAt < COOLDOWN_MS) {
+                    // 2026-10-24 修复（审查 P1-4）：冷却期不清零会让每轮都重跑全量探测，这里清零。
                     android.util.Log.w(TAG, "in cooldown, skip switch");
+                    fails = 0;
                     continue;
                 }
-                String target = pickHealthy(base, group);
+                String nowNode = currentNow(base, group);
+                java.util.HashSet<String> groupSet = loadGroupSet(base);
+                String target = pickHealthy(base, group, nowNode, groupSet, 15000, 6);
                 if (target == null) {
+                    // 2026-10-24 修复（审查 P1-4）：找不到候选也清零，下一轮重新从 0 计。
                     android.util.Log.w(TAG, "no healthy node found, keep current");
+                    fails = 0;
                     continue;
                 }
                 if (switchTo(base, group, target)) {
                     lastSwitchAt = System.currentTimeMillis();
                     fails = 0;
+                    // 2026-10-24 修复（审查 P1-3）：原出口是自动选择组时，记录并在稳定 5 分钟后还原。
+                    if (nowNode != null && nowNode.length() > 0 && groupSet.contains(nowNode)) {
+                        restoreGroup = nowNode;
+                        restoreAt = lastSwitchAt + RESTORE_AFTER_MS;
+                        android.util.Log.i(TAG, "pinned from group " + nowNode + "，稳定后还原");
+                    } else {
+                        restoreGroup = null;
+                        restoreAt = 0;
+                    }
                     android.util.Log.w(TAG, "switched to " + target);
                 }
             } catch (Throwable t) {
                 android.util.Log.w(TAG, "loop error: " + t);
             }
         }
+    }
+
+    /** 探测稳定且到时间后，把选择器还原成原来的自动选择组（不还原到固定节点）。 */
+    private static void maybeRestore(String base, String group) {
+        String target = restoreGroup;
+        if (target == null) {
+            return;
+        }
+        long now = System.currentTimeMillis();
+        if (now < restoreAt) {
+            return;
+        }
+        if (switchTo(base, group, target)) {
+            android.util.Log.i(TAG, "连续稳定，选择器已还原为 " + target);
+            restoreGroup = null;
+            restoreAt = 0;
+            lastSwitchAt = now;
+        } else {
+            android.util.Log.w(TAG, "还原选择器失败，1 分钟后重试");
+            restoreAt = now + 60000L;
+        }
+    }
+
+    /** 读当前出口名；失败返回 null。 */
+    private static String currentNow(String base, String group) {
+        String body = http(base + "/proxies/" + enc(group), "GET", null, 5000);
+        if (body == null || !body.startsWith("{")) {
+            return null;
+        }
+        try {
+            return new JSONObject(body).optString("now", "");
+        } catch (Throwable t) {
+            return null;
+        }
+    }
+
+    /** 组类型集合（Selector/URLTest/Fallback/LoadBalance），用于跳过组节点与判断原出口是不是组。 */
+    private static java.util.HashSet<String> loadGroupSet(String base) {
+        java.util.HashSet<String> groups = new java.util.HashSet<String>();
+        String body = http(base + "/proxies", "GET", null, 5000);
+        if (body == null || !body.startsWith("{")) {
+            return groups;
+        }
+        try {
+            JSONObject root = new JSONObject(body).optJSONObject("proxies");
+            if (root != null) {
+                java.util.Iterator<String> it = root.keys();
+                while (it.hasNext()) {
+                    String name = it.next();
+                    JSONObject p = root.optJSONObject(name);
+                    if (p == null) {
+                        continue;
+                    }
+                    String ty = p.optString("type");
+                    if ("Selector".equals(ty) || "URLTest".equals(ty) || "Fallback".equals(ty) || "LoadBalance".equals(ty)) {
+                        groups.add(name);
+                    }
+                }
+            }
+        } catch (Throwable ignored) {
+        }
+        return groups;
     }
 
     // ---------- HTTP ----------
@@ -300,17 +397,23 @@ public final class FailoverGuard {
         }
     }
 
-    /** 从组内候选里挑一个能通的（跳过组、当前节点放最后）。 */
-    private static String pickHealthy(String base, String group) {
+    /**
+     * 从组内候选里挑一个能通的（跳过组与当前节点，从当前节点下一个开始轮询）。
+     * 2026-10-24 修复（审查 P1-4）：加总预算 budgetMs 与每轮最多探测数 maxProbes，
+     *   避免 20 个节点 × 6s 串行探测把一轮拖到 2 分钟。
+     */
+    private static String pickHealthy(String base, String group, String now, java.util.HashSet<String> groups,
+                                      int budgetMs, int maxProbes) {
         String body = http(base + "/proxies/" + enc(group), "GET", null, 5000);
         if (body == null || !body.startsWith("{")) {
             return null;
         }
         List<String> all = new ArrayList<String>();
-        String now = "";
         try {
             JSONObject o = new JSONObject(body);
-            now = o.optString("now", "");
+            if (now == null || now.length() == 0) {
+                now = o.optString("now", "");
+            }
             JSONArray arr = o.optJSONArray("all");
             if (arr != null) {
                 for (int i = 0; i < arr.length(); i++) {
@@ -323,35 +426,23 @@ public final class FailoverGuard {
         } catch (Throwable t) {
             return null;
         }
-        // 组类型集合（用于跳过）
-        java.util.HashSet<String> groups = new java.util.HashSet<String>();
-        String allBody = http(base + "/proxies", "GET", null, 5000);
-        if (allBody != null && allBody.startsWith("{")) {
-            try {
-                JSONObject root = new JSONObject(allBody).optJSONObject("proxies");
-                if (root != null) {
-                    java.util.Iterator<String> it = root.keys();
-                    while (it.hasNext()) {
-                        String name = it.next();
-                        JSONObject p = root.optJSONObject(name);
-                        if (p == null) {
-                            continue;
-                        }
-                        String ty = p.optString("type");
-                        if ("Selector".equals(ty) || "URLTest".equals(ty) || "Fallback".equals(ty) || "LoadBalance".equals(ty)) {
-                            groups.add(name);
-                        }
-                    }
-                }
-            } catch (Throwable ignored) {
-            }
-        }
         int n = all.size();
+        if (n == 0) {
+            return null;
+        }
+        int start = all.indexOf(now);
+        long deadline = System.currentTimeMillis() + budgetMs;
+        int probes = 0;
         for (int step = 1; step <= n; step++) {
-            String cand = all.get((all.indexOf(now) + step + n) % n);
+            String cand = all.get((start + step + n) % n);
             if (cand.equals(now) || groups.contains(cand)) {
                 continue;
             }
+            if (probes >= maxProbes || System.currentTimeMillis() >= deadline) {
+                android.util.Log.w(TAG, "候选探测达到预算（probes=" + probes + "），本轮放弃");
+                break;
+            }
+            probes++;
             int d = probeNode(base, cand);
             if (d >= 0 && d < DELAY_TIMEOUT_MS) {
                 return cand;

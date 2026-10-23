@@ -7686,10 +7686,7 @@
     .line 519
     .line 520
     :cond_8
-    # [并发模式开关] 旧的纯点击行已由下方 ToggleRow 取代（保留 v11 赋值以维持原控制流）。
-    new-instance v11, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;
-
-    invoke-direct {v11}, Lio/nekohasekai/sfa/compose/screen/settings/ConcurrentModeClick;-><init>()V
+    # [S4 2026-10-24] 并发模式入口已删除：ConcurrentModeClick / SwitchState 一并清除（该功能开关已从设置页移除）。
 
     .line 531
     .line 532

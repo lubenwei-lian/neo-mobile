@@ -64,6 +64,13 @@ if (Test-Path -LiteralPath $verify) {
   if ($LASTEXITCODE -ne 0) { throw "产物校验失败（见上方 [FAIL] 项）" }
 }
 
+# 6. src2 源码与 smali_classes3 产物一致性（S2：防「改了 Java 源但产物没重新生成」的静默漂移）
+$verifySrc2 = Join-Path $PSScriptRoot 'verify-src2.ps1'
+if (Test-Path -LiteralPath $verifySrc2) {
+  & $verifySrc2 -Apk $out
+  if ($LASTEXITCODE -ne 0) { throw "src2 与 smali_classes3 不一致：请重新生成 smali 产物（见上方输出）" }
+}
+
 if ($Install) {
   adb push $out /data/local/tmp/neo-latest.apk | Select-Object -Last 1
   adb shell "su 0 sh -c 'pm install -r /data/local/tmp/neo-latest.apk; rm -f /data/local/tmp/neo-latest.apk'"

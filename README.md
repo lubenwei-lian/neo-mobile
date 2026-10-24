@@ -16,6 +16,19 @@
 - 启动默认测速、故障转移
 - 订阅更新时执行路由/DNS 优化：prefer_ipv4、fakeip 仅 A、AAAA/HTTPS/SVCB 交给节点侧 DNS 解析
 
+## 克隆说明（Git LFS）
+
+仓库中的原生库/APK/规则集等大文件使用 **Git LFS** 管理（`*.so、*.apk、*.apk.bad、*.jar、*.srs` 等，见 `.gitattributes`）。
+
+```bash
+git lfs install
+git clone https://github.com/lubenwei-lian/neo-mobile.git
+# 已克隆的仓库：
+git lfs pull
+```
+
+Release 里的 `neo-0.0.1.apk` 是普通发布资产，不需要 LFS。
+
 ## 构建
 
 依赖：JDK 17、Android SDK build-tools 37.0.0、apktool 3.0.2、Python 3。

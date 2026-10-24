@@ -31,7 +31,7 @@ public final class SubGuard {
     /**
      * 订阅更新用：对齐 v2rayNG 的顺序。
      *   1. 已有本地代理在运行 → 代理优先（3s 连接 / 10s 读取）；
-     *   2. 代理不可用/失败 → 直连（8s 连接 / 15s 读取）；
+     *   2. 代理不可用/失败 → 直连（15s 连接 / 120s 读取，覆盖慢速机场）；
      *   3. 都失败 → 返回 null，由 SubscriptionFetcher 回退内核 HTTP。
      * 单次直连不再用 3s/5s，避免慢机场被过早判失败。
      */
@@ -48,7 +48,7 @@ public final class SubGuard {
             }
         }
         try {
-            String r = fetchWithProxy(url, ua, 8000, 15000, 0);
+            String r = fetchWithProxy(url, ua, 15000, 120000, 0);
             android.util.Log.i("SubGuard", "订阅直连拉取成功 len=" + (r == null ? 0 : r.length()) + " url=" + url);
             return r;
         } catch (Throwable t) {
@@ -291,8 +291,7 @@ public final class SubGuard {
             conn.setInstanceFollowRedirects(true);
             conn.setRequestProperty("User-Agent", ua);
             conn.setRequestProperty("Accept", "*/*");
-            conn.setRequestProperty("Accept-Encoding", "identity");
-            conn.setRequestProperty("Connection", "close");
+            conn.setRequestProperty("Accept-Encoding", "gzip");
             int code = conn.getResponseCode();
             if (code < 200 || code >= 300) {
                 // P2 修复：非 2xx 时带上响应体片段，便于定位 401/403/代理错误
@@ -320,15 +319,18 @@ public final class SubGuard {
                         + (body.isEmpty() ? "" : " : " + body.replace('\n', ' ').replace('\r', ' ')));
             }
             InputStream in = conn.getInputStream();
-            BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"), 16384);
-            StringBuilder sb = new StringBuilder(16384);
-            char[] buf = new char[8192];
-            int n;
-            while ((n = br.read(buf)) > 0) {
-                sb.append(buf, 0, n);
+            String contentEncoding = conn.getContentEncoding();
+            if (contentEncoding != null && contentEncoding.toLowerCase().contains("gzip")) {
+                in = new java.util.zip.GZIPInputStream(in);
             }
-            br.close();
-            return sb.toString();
+            java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream(16384);
+            byte[] buf = new byte[8192];
+            int n;
+            while ((n = in.read(buf)) > 0) {
+                bos.write(buf, 0, n);
+            }
+            in.close();
+            return new String(bos.toByteArray(), "UTF-8");
         } catch (RuntimeException e) {
             throw e;
         } catch (Throwable t) {

@@ -280,6 +280,8 @@ if (Test-Path -LiteralPath $dex4) {
     else { $ok.Add('订阅拉取: classes4.dex 含本地代理优先探测') }
     if ($disasm2 -notmatch 'fetchWithProxy') { $fail.Add('订阅拉取: classes4.dex 缺代理/直连共用 HTTP 实现（fetchWithProxy）') }
     else { $ok.Add('订阅拉取: classes4.dex 含代理/直连 HTTP 实现') }
+    if ($disasm2 -notmatch 'GZIPInputStream') { $fail.Add('订阅拉取: classes4.dex 缺 gzip 解压') }
+    else { $ok.Add('订阅拉取: classes4.dex 含 gzip 解压') }
 }
 
 $fetcherTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\bg\SubscriptionFetcher.smali') -Raw

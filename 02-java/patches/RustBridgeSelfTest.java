@@ -13,7 +13,7 @@ import java.util.List;
 import java.util.TreeSet;
 
 /**
- * M3 阶段 1 自检入口（root app_process，不依赖 UI）：
+ * Rust JNI 自检入口（root app_process，不依赖 UI）：
  *   CLASSPATH=<base.apk> LD_LIBRARY_PATH=<apk lib dir> /system/bin/app_process /system/bin \
  *     io.neoguard.RustBridgeSelfTest [config.json ...]
  *

@@ -1,30 +1,5 @@
 package io.nekohasekai.sfa.bg;
 
-/**
- * 节点行「第二行文案」的装饰。
- *
- * <h3>这一行现在承载两个信息</h3>
- * <ol>
- *   <li><b>是否在并发池里</b>（{@link PoolCache}）：在池里的加前缀 "⚡ "，
- *       用户一眼能看出"这几个在干活"，不用再去首页点「并发 N」下拉。</li>
- *   <li><b>实测出口地区</b>（{@link GeoStore}）：追加 " · 实测 US New York"；没测到就写 " · 地区未测"。</li>
- * </ol>
- *
- * <h3>为什么放在数据构造层，而不是 Compose 渲染层</h3>
- * 节点行的展示位只有第二行 NodeEntry.displayType（原本只显示 "VLESS"），
- * 全工程只有 NodesScreenKt.smali:7880 一处读它用于显示，不参与路由/点击/匹配。
- * 直接改 NodeRow$lambda$0（渲染 lambda）就是 2026-10-21 那次 VerifyError 崩溃的路径；
- * 而在 loadConfigNodes 构造 NodeEntry 时算好，只多一次静态调用，
- * 不碰 Compose 的寄存器，也不影响行内其它逻辑。
- *
- * <h3>诚实原则</h3>
- * 只追加 {@link GeoStore} 里**实测**过的地区；没测到就明说"地区未测"，
- * 绝不拿节点名推断冒充实测（名字本身就是错的：写圣何塞、实际在纽约）。
- * 池标记只在 {@link PoolCache} 有真实数据（已连接且内核在跑并发池）时才出现。
- *
- * <h3>性能</h3>
- * 两个 Store 都只读内存快照，不触发数据库 IO；快照没预热时顺手触发一次后台预热（单飞）。
- */
 public final class NodeDisplay {
 
     /** 前几次装饰写一条诊断日志（定位"为什么没显示实测"用），之后不再刷屏。 */
@@ -52,7 +27,6 @@ public final class NodeDisplay {
 
             String out = display;
 
-            // 1) [S4 2026-10-24] 并发池成员标记已删除（并发功能已移除，PoolCache 随之删除）。
 
             if (tag == null || tag.length() == 0) return out;
             if (out.indexOf("实测") >= 0) return out;
@@ -70,7 +44,6 @@ public final class NodeDisplay {
                 if (DIAG.getAndIncrement() < 3) {
                     diag("节点展示：" + tag + " → 无实测（快照 " + GeoStore.cached().size() + " 条）");
                 }
-                // 【2026-10-22 产品化】"地区未测"而不是"未测"：节点行右侧已有延迟数字，
                 // 只写"未测"会被读成"速度没测"，而这里说的是"实测地区没有"。
                 if (out.indexOf("地区未测") >= 0) return out;
                 return out + " · 地区未测";

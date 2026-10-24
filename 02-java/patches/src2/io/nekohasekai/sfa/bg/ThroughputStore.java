@@ -2,28 +2,6 @@ package io.nekohasekai.sfa.bg;
 
 import io.nekohasekai.sfa.database.Settings;
 
-/**
- * 吞吐测速结果的持久化（改用 putString 存文本）。
- *
- * <p><b>为什么不用 putStringSet —— 这是应用自带的一个真 bug（2026-10-21 实测定位）</b>：
- * <ol>
- *   <li>{@code KeyValueEntity.put(Set)} 写入时，长度前缀用的是
- *       <code>String.length()</code>（<b>字符数</b>）；</li>
- *   <li>{@code KeyValueEntity.getStringSet()} 读取时，用
- *       <code>ByteBuffer.wrap(value)</code> 按 <b>字节数</b> 解析；</li>
- *   <li>两者对纯 ASCII 一致，但节点 tag 全是中文（如「🇺🇸美国圣何塞01 | 三网推荐」），
- *       一个汉字 3 字节、字符数 1 —— 长度对不上，ByteBuffer 立刻错位，
- *       随后读到荒谬的长度值并 <code>new byte[huge]</code>，
- *       实测直接抛 <code>OutOfMemoryError</code>（日志里反复刷「读缓存失败 OutOfMemoryError」）。</li>
- * </ol>
- *
- * <p>所以本类改用 {@code putString}/{@code getString}：那条路径是把字符串整体转 UTF-8
- * 存进 blob（valueType=4），没有长度前缀，也就没有错位风险。
- *
- * <p>存储格式（单行文本，条目用 \n 分隔，字段用 \t 分隔）：
- * <pre>tag \t bps \t 过期时间戳 \t 状态(OK|BAD)</pre>
- * 用 \t 而不是 |，因为节点名里可能出现 |（实测本机场的 tag 就带「| 三网推荐」）。
- */
 final class ThroughputStore {
 
     private static final String KEY = "node_throughput_v2";
@@ -86,10 +64,8 @@ final class ThroughputStore {
         return out;
     }
 
-    // ===== 内存快照（2026-10-22 产品化：节点行展示实测速度） =====
     //
     // 节点列表要在构造 NodeEntry 时给每行拼"实测速度"，如果每次都 load() 就是一行一次
-    // SQLite 同步读（68 行 = 68 次），重演 P1-3「主线程读库」的老问题。
     // 所以这里照 GeoStore 的做法加一份进程内快照：读不到就返回 null 并触发一次后台预热，
     // 本次先不显示速度（不乱标），预热完成后下次列表加载就能看到。
 
@@ -203,12 +179,6 @@ final class ThroughputStore {
         return parts.toArray(new String[0]);
     }
 
-    /**
-     * 合并写入：本轮结果覆盖同名旧条目，其余未过期的旧条目保留。
-     *
-     * @param good tag → bps（测得可用）
-     * @param dead 判死的 tag
-     */
     static void save(java.util.Map<String, Long> good, java.util.List<String> dead) {
         try {
             long exp = System.currentTimeMillis() + TTL_MS;

@@ -419,7 +419,6 @@
     .line 23
     move-result-object v0
 
-    # [S4 2026-10-24] 并发池功能已删除：不再抄 PoolCache。
 
     .line 24
     invoke-interface {v0}, Ljava/util/List;->size()I

@@ -1,7 +1,6 @@
 .class final Lio/nekohasekai/sfa/compose/screen/nodes/StartupAutoTest;
 .super Ljava/lang/Object;
 
-# 2026-10-24 S13：节点列表加载完成后自动跑一轮测速（每进程一次）
 # 由 ConfigLoadResult.<init> 末尾调用；结果写 NodeDelayCache（UI 下次重组/重进页面可见）
 
 # static fields

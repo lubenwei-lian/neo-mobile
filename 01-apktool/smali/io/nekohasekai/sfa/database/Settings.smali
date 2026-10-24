@@ -5548,8 +5548,6 @@
 .method public final getConcurrentRegion()Ljava/lang/String;
     .locals 3
 
-    # [修复 2026-10-22] 原实现恒返回 ""：设置页能写、程序从不读，属"死设置"。
-    # [2026-10-24 审查 P2-1] 下标由 7 改为 5（实测 5=concurrentRegion；7=checkUpdateEnabled）。
     #   当前 PreferenceProxy 按 KProperty 名称读键，传错下标也恰好能工作，属"常量错但静默无害"，先修对。
     sget-object v0, Lio/nekohasekai/sfa/database/Settings;->concurrentRegion$delegate:Lio/nekohasekai/sfa/ktx/PreferenceProxy;
 

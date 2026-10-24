@@ -5322,7 +5322,6 @@
     move-object v9, v1
 
     .line 473
-    # [保留] 「语言」行的参数准备代码 —— 与后续行共用寄存器/Compose 分组，删除会触发 VerifyError（2026-10-20 实测）
 
     .line 474
     .line 475

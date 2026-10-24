@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import io, sys
+import io, sys, os
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-base = r'E:\桌面\deepseekharness工作区【重要】\neo手机版-sing版全新工程-2026-10-19'
+base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 p = base + r'\01-apktool\smali\io\nekohasekai\sfa\compose\screen\dashboard\DashboardViewModel$updateProfile$1.smali'
 # 备份
 import shutil

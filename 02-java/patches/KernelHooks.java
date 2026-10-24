@@ -1,7 +1,7 @@
 package io.neoguard;
 
 /**
- * 2026-10-24 S3：SingBoxKernel 的 version()/subscriptionUserAgentChain() 手写 smali 下沉到 Java facade。
+ * SingBoxKernel 的 version()/subscriptionUserAgentChain() 手写 smali 下沉到 Java facade。
  * 版本号与 UA 链和手写 smali 保持一致（sing-box 1.14.3）。
  */
 public final class KernelHooks {

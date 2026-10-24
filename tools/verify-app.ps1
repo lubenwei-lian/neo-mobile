@@ -1,5 +1,5 @@
 
-# neo 手机版构建产物校验（P1：可复现构建第一步）
+# neo Android 构建产物校验（可复现构建第一步）
 # 用法: pwsh -File .\tools\verify-app.ps1 [-Apk <path>]
 # 校验项：
 #   1) APK 内 classes*.dex 的类清单；
@@ -136,51 +136,51 @@ else {
 $nodesDir = Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\nodes'
 $s13classes = @('StartupAutoTest.smali','StartupAutoTest$Scope.smali','StartupAutoTest$Launch.smali','StartupAutoTest$Sink.smali')
 foreach ($c in $s13classes) {
-    if (-not (Test-Path -LiteralPath (Join-Path $nodesDir $c))) { $fail.Add("S13: 缺少 $c") }
+    if (-not (Test-Path -LiteralPath (Join-Path $nodesDir $c))) { $fail.Add("缺少 $c") }
 }
 $clrFile = Join-Path $nodesDir 'ConfigLoadResult.smali'
 if (Test-Path -LiteralPath $clrFile) {
     $txt = Get-Content -LiteralPath $clrFile -Raw
-    if ($txt -notmatch 'StartupAutoTest;->trigger') { $fail.Add('S13: ConfigLoadResult 构造后没有 StartupAutoTest.trigger 触发点') }
-    else { $ok.Add('S13: ConfigLoadResult 已挂钩 StartupAutoTest.trigger') }
-} else { $fail.Add('S13: 找不到 ConfigLoadResult.smali') }
-# ---- 8. S6: 明文 HTTP / 端口发现 ----
+    if ($txt -notmatch 'StartupAutoTest;->trigger') { $fail.Add('ConfigLoadResult 构造后没有 StartupAutoTest.trigger 触发点') }
+    else { $ok.Add('ConfigLoadResult 已挂钩 StartupAutoTest.trigger') }
+} else { $fail.Add('找不到 ConfigLoadResult.smali') }
+# ---- 8. 明文 HTTP / 端口发现 ----
 $manifest = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\AndroidManifest.xml') -Raw
 if ($manifest -notmatch 'android:networkSecurityConfig="@xml/network_security_config"') {
-    $fail.Add('S6: Manifest 未指向 networkSecurityConfig')
-} else { $ok.Add('S6: Manifest 已使用 networkSecurityConfig') }
-if ($manifest -match 'usesCleartextTraffic') { $fail.Add('S6: Manifest 仍保留全局 usesCleartextTraffic') }
+    $fail.Add('Manifest 未指向 networkSecurityConfig')
+} else { $ok.Add('Manifest 已使用 networkSecurityConfig') }
+if ($manifest -match 'usesCleartextTraffic') { $fail.Add('Manifest 仍保留全局 usesCleartextTraffic') }
 $nscPath = Join-Path $PROJ '01-apktool\res\xml\network_security_config.xml'
-if (-not (Test-Path -LiteralPath $nscPath)) { $fail.Add('S6: 缺少 res/xml/network_security_config.xml') }
+if (-not (Test-Path -LiteralPath $nscPath)) { $fail.Add('缺少 res/xml/network_security_config.xml') }
 else {
     $nscTxt = Get-Content -LiteralPath $nscPath -Raw
-    if ($nscTxt -notmatch 'cleartextTrafficPermitted="false"' -or $nscTxt -notmatch '127\.0\.0\.1') { $fail.Add('S6: networkSecurityConfig 未做到默认禁明文+回环放行') }
-    else { $ok.Add('S6: networkSecurityConfig 默认禁明文、仅放行 127.0.0.1/localhost') }
+    if ($nscTxt -notmatch 'cleartextTrafficPermitted="false"' -or $nscTxt -notmatch '127\.0\.0\.1') { $fail.Add('networkSecurityConfig 未做到默认禁明文+回环放行') }
+    else { $ok.Add('networkSecurityConfig 默认禁明文、仅放行 127.0.0.1/localhost') }
 }
 $dex4 = Join-Path $tmp 'classes4.dex'
 if (Test-Path -LiteralPath $dex4) {
     $disasm = (& $DEXDUMP -d $dex4 2>&1) -join "`n"
-    if ($disasm -notmatch 'readConfigPorts') { $fail.Add('S6: classes4.dex 缺 SubGuard.readConfigPorts（端口发现未打进产物）') }
-    else { $ok.Add('S6: classes4.dex 含 SubGuard.readConfigPorts（方法级校验）') }
-    if ($disasm -notmatch 'clearProfileUsage') { $fail.Add('S3: classes4.dex 缺 SubscriptionUsageHooks.clearProfileUsage') } else { $ok.Add('S3: 订阅缓存清理已下沉 Java（clearProfileUsage）') }
-    if ($disasm -notmatch 'clearIfUrlChanged') { $fail.Add('S3: classes4.dex 缺 SubscriptionUsageHooks.clearIfUrlChanged') } else { $ok.Add('S3: URL 变更判定已下沉 Java（clearIfUrlChanged）') }
-    if ($disasm -notmatch 'subscriptionUserAgentChain') { $fail.Add('S3: classes4.dex 缺 KernelHooks.subscriptionUserAgentChain') } else { $ok.Add('S3: 内核 UA 链已下沉 Java（subscriptionUserAgentChain）') }
-    if ($disasm -notmatch 'KernelHooks;\.version') { $fail.Add('S3: classes4.dex 缺 KernelHooks.version') } else { $ok.Add('S3: 内核版本号已下沉 Java（KernelHooks.version）') }
-    if ($disasm -notmatch 'usageEmptyText') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.usageEmptyText') } else { $ok.Add('S3: 首页空数据文案已下沉 Java（usageEmptyText）') }
-    if ($disasm -notmatch 'usageDisconnectedText') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.usageDisconnectedText') } else { $ok.Add('S3: 首页未连接文案已下沉 Java（usageDisconnectedText）') }
-    if ($disasm -notmatch 'colorGreen') { $fail.Add('S3: classes4.dex 缺 NeoUiHooks.colorGreen') } else { $ok.Add('S3: 首页主题色已下沉 Java（colorGreen/Orange/IdleRing）') }
-    if ($disasm -notmatch 'candidateTags') { $fail.Add('S4: classes4.dex 缺 KernelConfigHooks.candidateTags') } else { $ok.Add('S4: 地区发现 candidateTags 已下沉 Java') }
-    if ($disasm -notmatch 'idleTimeoutMillis') { $fail.Add('S4: classes4.dex 缺 KernelConfigHooks.idleTimeoutMillis') } else { $ok.Add('S4: 空闲超时 idleTimeoutMillis 已下沉 Java') }
-    if ($disasm -notmatch 'https://www\.gstatic\.com/generate_204') { $fail.Add('S6: FailoverGuard TEST_URL 未改为 https') }
-    else { $ok.Add('S6: FailoverGuard TEST_URL 为 https（配合明文限制）') }
-} else { $fail.Add('S6: classes4.dex 未解出，无法做方法级校验') }
+    if ($disasm -notmatch 'readConfigPorts') { $fail.Add('classes4.dex 缺 SubGuard.readConfigPorts（端口发现未打进产物）') }
+    else { $ok.Add('classes4.dex 含 SubGuard.readConfigPorts（方法级校验）') }
+    if ($disasm -notmatch 'clearProfileUsage') { $fail.Add('classes4.dex 缺 SubscriptionUsageHooks.clearProfileUsage') } else { $ok.Add('订阅缓存清理已下沉 Java（clearProfileUsage）') }
+    if ($disasm -notmatch 'clearIfUrlChanged') { $fail.Add('classes4.dex 缺 SubscriptionUsageHooks.clearIfUrlChanged') } else { $ok.Add('URL 变更判定已下沉 Java（clearIfUrlChanged）') }
+    if ($disasm -notmatch 'subscriptionUserAgentChain') { $fail.Add('classes4.dex 缺 KernelHooks.subscriptionUserAgentChain') } else { $ok.Add('内核 UA 链已下沉 Java（subscriptionUserAgentChain）') }
+    if ($disasm -notmatch 'KernelHooks;\.version') { $fail.Add('classes4.dex 缺 KernelHooks.version') } else { $ok.Add('内核版本号已下沉 Java（KernelHooks.version）') }
+    if ($disasm -notmatch 'usageEmptyText') { $fail.Add('classes4.dex 缺 NeoUiHooks.usageEmptyText') } else { $ok.Add('首页空数据文案已下沉 Java（usageEmptyText）') }
+    if ($disasm -notmatch 'usageDisconnectedText') { $fail.Add('classes4.dex 缺 NeoUiHooks.usageDisconnectedText') } else { $ok.Add('首页未连接文案已下沉 Java（usageDisconnectedText）') }
+    if ($disasm -notmatch 'colorGreen') { $fail.Add('classes4.dex 缺 NeoUiHooks.colorGreen') } else { $ok.Add('首页主题色已下沉 Java（colorGreen/Orange/IdleRing）') }
+    if ($disasm -notmatch 'candidateTags') { $fail.Add('classes4.dex 缺 KernelConfigHooks.candidateTags') } else { $ok.Add('地区发现 candidateTags 已下沉 Java') }
+    if ($disasm -notmatch 'idleTimeoutMillis') { $fail.Add('classes4.dex 缺 KernelConfigHooks.idleTimeoutMillis') } else { $ok.Add('空闲超时 idleTimeoutMillis 已下沉 Java') }
+    if ($disasm -notmatch 'https://www\.gstatic\.com/generate_204') { $fail.Add('FailoverGuard TEST_URL 未改为 https') }
+    else { $ok.Add('FailoverGuard TEST_URL 为 https（配合明文限制）') }
+} else { $fail.Add('classes4.dex 未解出，无法做方法级校验') }
 
 $launchFile = Join-Path $nodesDir 'StartupAutoTest$Launch.smali'
 if (Test-Path -LiteralPath $launchFile) {
     $txt = Get-Content -LiteralPath $launchFile -Raw
-    if ($txt -notmatch 'if-eq v0, v1, :resume') { $fail.Add('S13: Launch 协程状态机缺 if-eq 恢复分支（会 crash: resume before invoke）') }
-    else { $ok.Add('S13: Launch 协程状态机恢复分支正常') }
-} else { $fail.Add('S13: 找不到 StartupAutoTest$Launch.smali') }
+    if ($txt -notmatch 'if-eq v0, v1, :resume') { $fail.Add('Launch 协程状态机缺 if-eq 恢复分支（会 crash: resume before invoke）') }
+    else { $ok.Add('Launch 协程状态机恢复分支正常') }
+} else { $fail.Add('找不到 StartupAutoTest$Launch.smali') }
 
 # ---- 9. 0.0.1 版本 / 发布页 / 免责声明 / 配置优化 ----
 $yml = Join-Path $PROJ '01-apktool\apktool.yml'
@@ -215,19 +215,19 @@ if (Test-Path -LiteralPath $dex4) {
     if ($disasm2 -notmatch 'optimizeInner') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.optimize/optimizeInner') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.optimize/optimizeInner') }
     if ($disasm2 -notmatch 'optimizeDns') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.optimizeDns') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.optimizeDns') }
     if ($disasm2 -notmatch 'ensureRoute') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.ensureRoute') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.ensureRoute') }
-    if ($disasm2 -notmatch 'fetchDirectFastOrNull') { $fail.Add('P1-5: classes4.dex 缺 SubGuard.fetchDirectFastOrNull') } else { $ok.Add('P1-5: 订阅直连优先已下沉 Java（fetchDirectFastOrNull）') }
-    if ($disasm2 -notmatch 'hintOfNative') { $fail.Add('M3: classes4.dex 缺 RustBridge.hintOfNative') } else { $ok.Add('M3: RustBridge JNI 方法已打进 classes4.dex') }
-    if ($disasm2 -notmatch 'optimizeConfigNative') { $fail.Add('M3: classes4.dex 缺 RustBridge.optimizeConfigNative') } else { $ok.Add('M3: 配置优化 Rust JNI 已打进 classes4.dex') }
-    if ($disasm2 -notmatch 'RustBridgeSelfTest') { $fail.Add('M3: classes4.dex 缺 RustBridgeSelfTest') } else { $ok.Add('M3: 自检入口 RustBridgeSelfTest 已打进 classes4.dex') }
+    if ($disasm2 -notmatch 'fetchDirectFastOrNull') { $fail.Add('classes4.dex 缺 SubGuard.fetchDirectFastOrNull') } else { $ok.Add('订阅直连优先已下沉 Java（fetchDirectFastOrNull）') }
+    if ($disasm2 -notmatch 'hintOfNative') { $fail.Add('classes4.dex 缺 RustBridge.hintOfNative') } else { $ok.Add('RustBridge JNI 方法已打进 classes4.dex') }
+    if ($disasm2 -notmatch 'optimizeConfigNative') { $fail.Add('classes4.dex 缺 RustBridge.optimizeConfigNative') } else { $ok.Add('配置优化 Rust JNI 已打进 classes4.dex') }
+    if ($disasm2 -notmatch 'RustBridgeSelfTest') { $fail.Add('classes4.dex 缺 RustBridgeSelfTest') } else { $ok.Add('自检入口 RustBridgeSelfTest 已打进 classes4.dex') }
 }
 
-# ---- 10. M3：Rust JNI 库 ----
+# ---- 10. Rust JNI 库 ----
 $zip3 = [System.IO.Compression.ZipFile]::OpenRead($Apk)
 try {
     $so = $zip3.Entries | Where-Object { $_.FullName -eq 'lib/arm64-v8a/libneoguard_jni.so' } | Select-Object -First 1
-    if (-not $so) { $fail.Add('M3: APK 缺 lib/arm64-v8a/libneoguard_jni.so') }
-    elseif ($so.Length -lt 300000) { $fail.Add("M3: libneoguard_jni.so 体积过小（$($so.Length) B）") }
-    else { $ok.Add("M3: 已内置 libneoguard_jni.so（$($so.Length) B）") }
+    if (-not $so) { $fail.Add('APK 缺 lib/arm64-v8a/libneoguard_jni.so') }
+    elseif ($so.Length -lt 300000) { $fail.Add("libneoguard_jni.so 体积过小（$($so.Length) B）") }
+    else { $ok.Add("已内置 libneoguard_jni.so（$($so.Length) B）") }
 } finally { $zip3.Dispose() }
 
 # ---- 输出 ----

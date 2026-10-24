@@ -1,10 +1,5 @@
 package io.neoguard;
 
-/**
- * M3 阶段 1：Rust 纯函数 JNI 桥。
- * 只做无状态计算；libneoguard_jni 加载失败、调用抛异常时立即置 unavailable 并返回 null/-1，
- * 调用方（SubGuard）回退原 Java 实现，保证不影响可用性。
- */
 public final class RustBridge {
 
     private static volatile boolean unavailable;
@@ -87,7 +82,6 @@ public final class RustBridge {
         }
     }
 
-    /** 订阅配置优化（M3 阶段 2）；不可用/异常返回 null，调用方回退 Java 实现。 */
     public static String optimizeConfig(String configJson) {
         if (unavailable) {
             return null;

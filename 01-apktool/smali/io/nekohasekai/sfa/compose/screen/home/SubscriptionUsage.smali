@@ -245,7 +245,6 @@
     .line 44
     .line 45
     :try_start_0
-    # 2026-10-24：流量信息查询改走 SubGuard.open —— 本地代理口（mixed 7891）开着时走代理，
     #   否则直连。原先纯直连在「订阅域名在墙外/直连极慢」时拿不到 subscription-userinfo 头。
     invoke-static {v1}, Lio/neoguard/SubGuard;->open(Ljava/lang/String;)Ljava/net/URLConnection;
 
@@ -253,7 +252,6 @@
     .line 47
     move-result-object v15
 
-    # 2026-10-24 修复：open() 声明返回 URLConnection，后续调用 HttpURLConnection 方法前必须显式转型，
     #   否则 ART 校验报 VerifyError（invoke-virtual on object of type URLConnection）。
     check-cast v15, Ljava/net/HttpURLConnection;
 

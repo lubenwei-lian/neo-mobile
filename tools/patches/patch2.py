@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
-import sys, io, re
+import sys, io, re, os
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
-base = r'E:\桌面\deepseekharness工作区【重要】\neo手机版-sing版全新工程-2026-10-19'
+base = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 bk = base + r'\_work\改前备份-订阅稳健化-2026-10-23'
 p = base + r'\01-apktool\smali\io\nekohasekai\sfa\bg\SubscriptionFetcher.smali'
 

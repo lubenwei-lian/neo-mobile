@@ -2990,7 +2990,6 @@
 
     .line 114
     :cond_6
-    # [S4 B2 2026-10-24] 空闲超时常量下沉 io.neoguard.KernelConfigHooks
     invoke-static {}, Lio/neoguard/KernelConfigHooks;->idleTimeoutMillis()J
 
     .line 117

@@ -1,4 +1,4 @@
-# neo 手机版 — 从 src2 Java 源码重新生成 smali_classes3 产物（S2）
+# neo Android — 从 src2 Java 源码重新生成 smali_classes3 产物
 # 用法:
 #   pwsh -File .\tools\build-src2.ps1            # 只生成到临时目录并比对（不改工程）
 #   pwsh -File .\tools\build-src2.ps1 -Apply     # 用生成结果覆盖 01-apktool\smali_classes3 下对应类

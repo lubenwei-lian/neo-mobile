@@ -391,7 +391,6 @@
     .line 106
     move-result-object p1
 
-    # [S4 B2 2026-10-24] 地区发现 candidateTags 下沉 io.neoguard.KernelConfigHooks
     .line 107
     invoke-static {p1}, Lio/neoguard/KernelConfigHooks;->candidateTags(Ljava/lang/String;)Ljava/util/List;
 

@@ -8,31 +8,6 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import io.nekohasekai.sfa.database.Settings;
 
-/**
- * 节点的**实测真实地区**缓存，供节点页显示用。
- *
- * <h3>要解决的问题</h3>
- * 节点名与实际出口严重不符（2026-10-21 实测）：
- * <pre>
- * 「🇺🇸美国圣何塞02 | 三网推荐」实际出口 207.32.218.93 → US/Arizona/Phoenix
- * 「🇺🇸美国圣何塞07 | 三网推荐」实际出口 134.195.101.193 → US/New York/Syracuse
- * </pre>
- * 所以节点页按名字画国旗等于给用户假信息。
- *
- * <h3>数据来源</h3>
- * 由 {@link NodeGeoProbe} 用 STUN（按 outboundTag）拿到出口 IP，
- * 再用 ip-api 反查 国家/州/市。
- *
- * <h3>存储格式</h3>
- * 单行文本，条目 \n 分隔，字段 \t 分隔：
- * <pre>tag \t cc \t region \t city \t ip \t expire</pre>
- * 用 \t 而不是 |（节点名里带「| 三网推荐」）。
- * 用 putString/getString 而不是 putStringSet（中文 tag 会让 stringSet 抛 OOM，见 ThroughputStore 注释）。
- *
- * <h3>诚实原则</h3>
- * 只存**实测**结果。没测到就不写，节点页继续按名字显示，
- * 绝不把「名字推断」伪装成「实测」。
- */
 public final class GeoStore {
 
     private static final String KEY = "node_geo_v1";
@@ -45,7 +20,6 @@ public final class GeoStore {
 
     // ---------------------------------------------------------------- 内存缓存
     //
-    // 【稳定性修复 2026-10-21】节点页在 Compose 组合里逐行调 countryCodeOf，
     // 而 load() 是 Room 同步读（settings.db 开了 allowMainThreadQueries）
     // + 全表解析。71 行 × 每次重组 = 主线程上几十次 SQLite 读 → 掉帧/ANR 风险。
     // 现在 UI 只读内存快照；没有快照时返回空表并触发一次后台预热，绝不阻塞主线程。
@@ -165,7 +139,6 @@ public final class GeoStore {
     /** 单条查询。找不到返回 null。 */
     public static Entry get(String tag) {
         if (tag == null || tag.length() == 0) return null;
-        // 【修复 2026-10-21】走内存快照（内部按需触发预热），不在调用线程读 DB
         return cached().get(tag);
     }
 
@@ -207,7 +180,6 @@ public final class GeoStore {
             long now = System.currentTimeMillis();
             long exp = now + TTL_MS;
             Map<String, Entry> all = load();
-            // 【修复 2026-10-21】关键：旧条目保留**自己的**过期时间，不再被统一续期。
             // 原实现 exp 只算一次并写给所有条目 → 任何一次 save 都会把旧记录续期，
             // 6 小时 TTL 形同虚设，测过一次的地区会被永久采信。
             for (Entry old : all.values()) {

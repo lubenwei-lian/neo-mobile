@@ -4,21 +4,29 @@
 03-dist/归档-*/
 03-dist/*.idsig
 03-dist/*.keystore
+03-dist/*.xml
+03-dist/diag-*.json
+03-dist/*.apk.bad
 01-apktool/build/
 01-apktool/dist/
 
 # 临时/中间产物
 _work/
+__pycache__/
+*.pyc
 *.log
 *.tmp
 
-# 大体积内核二进制（可从 00-apk 重新抽出，且体积 77MB+）
-# 如需纳入版本，删掉下面这行
+# 大体积内核二进制：不入库，构建前自行放入 01-apktool/lib/arm64-v8a/libbox.so
 04-kernel/*.so
+01-apktool/lib/arm64-v8a/libbox.so
 
 # 反编译 Java（可从 00-apk 用 jadx 再生，9,543 文件）
 # 只忽略反编译产物；02-java/patches（自写补丁源码）与 stubs 必须进版本控制
 02-java/sources/
+
+# 本地工作记录（不随仓库分发）
+planning/
 
 # 系统
 Thumbs.db

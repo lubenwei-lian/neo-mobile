@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 字符串切分工具（【修复 2026-10-22】把"手写切分"统一到一处）。
+ * 字符串切分工具（把"手写切分"统一到一处）。
  *
  * <p>为什么不用 {@code String.split}：Android 上对某些输入会抛
  * {@code NegativeArraySizeException}（本工程实测踩过）。GeoStore / ThroughputStore

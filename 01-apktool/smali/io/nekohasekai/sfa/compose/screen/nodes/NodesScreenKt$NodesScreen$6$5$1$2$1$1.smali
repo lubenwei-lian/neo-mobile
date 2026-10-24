@@ -206,7 +206,6 @@
     const/4 v4, 0x0
 
     .line 31
-    # [S4 2026-10-24 B1] 并发模式分支（BalancerInjector.concurrentEnabled / ConcurrentNodePicker / Toast）已删除：
     #   并发功能已确认死路径（ensure 门闩恒 false），节点点击只走下面正常选择逻辑。
 
     .line 45

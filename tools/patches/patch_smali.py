@@ -2,7 +2,7 @@
 import sys, io, re, shutil, os
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
-base = r'E:\桌面\deepseekharness工作区【重要】\neo手机版-sing版全新工程-2026-10-19\01-apktool\smali\io\nekohasekai\sfa'
+base = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))), '01-apktool', 'smali', 'io', 'nekohasekai', 'sfa')
 
 def read(p):
     with io.open(p, 'r', encoding='utf-8', newline='') as f:

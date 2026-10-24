@@ -5323,8 +5323,7 @@
     .line 56
     .line 57
     .line 58
-    # [已修复] 会话日志详情正文颜色 0x0 -> 0x10(Unspecified)，否则暗色模式显黑（2026-10-20）
-    # [已修复] 正文颜色 = 主题 onSurface（显式取色，避免 Unspecified 回退到黑色）
+    # 正文颜色 = 主题 onSurface（显式取色，避免 Unspecified 回退到黑色）
     sget-object v1, Llo0;->a:Lql1;
     invoke-virtual {v2, v1}, Lrn2;->j(Lif5;)Ljava/lang/Object;
     move-result-object v1

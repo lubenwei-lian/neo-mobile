@@ -1696,7 +1696,6 @@
 
     .line 342
     .line 343
-    # [S4 B2 2026-10-24] 并发注入已移除（BalancerInjector.ensure 门闩恒 false，返回原配置）：此处直接沿用 v3。
 
     .line 349
     invoke-virtual {v2, v3}, Lio/nekohasekai/sfa/bg/PubgRuleInjector;->ensure(Ljava/lang/String;)Ljava/lang/String;
@@ -4554,7 +4553,6 @@
 
     .line 222
     .line 223
-    # [S4 B2 2026-10-24] 并发注入已移除（同 site1）：直接沿用 v0。
 
     .line 229
     invoke-virtual {v2, v0}, Lio/nekohasekai/sfa/bg/PubgRuleInjector;->ensure(Ljava/lang/String;)Ljava/lang/String;

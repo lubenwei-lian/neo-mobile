@@ -24,7 +24,6 @@
     .locals 2
 
     .line 1
-    # [S3 2026-10-24] 主题色下沉 io.neoguard.NeoUiHooks
     invoke-static {}, Lio/neoguard/NeoUiHooks;->colorGreen()J
 
     move-result-wide v0
@@ -11512,7 +11511,6 @@
     .line 1289
     .line 1290
     .line 1291
-    # [2026-10-22 产品化] 副标题补一句「出口 XX IP」；没有新鲜采样数据时退回原文案（HomeText 内部判断）
     invoke-static {}, Lio/nekohasekai/sfa/bg/HomeText;->configSubtitle()Ljava/lang/String;
 
     move-result-object v6

@@ -15189,7 +15189,6 @@
 
     .line 6
     .line 7
-    # [2026-10-22 产品化] 过滤机场塞进节点列表的订阅信息行（剩余流量/套餐到期…）：
     # 只改这一处出口，列表/计数/搜索/排序/测速范围同时一致（NodeFilter 内部按入参身份缓存）。
     invoke-static {p0}, Lio/nekohasekai/sfa/bg/NodeFilter;->apply(Ljava/util/List;)Ljava/util/List;
 
@@ -17809,9 +17808,8 @@
 .method public static final countryOf(Ljava/lang/String;)Ljava/lang/String;
     .locals 3
 
-    # [需求1 2026-10-21] 优先用**实测**地区，而不是从节点名猜。
     #
-    # 实测证据：名字与实际严重不符
+    # 名字可能与实际不符
     #   「🇺🇸美国圣何塞02 | 三网推荐」实际 US/Arizona/Phoenix
     #   「🇺🇸美国圣何塞07 | 三网推荐」实际 US/New York/Syracuse
     # 按名字画国旗等于给用户假信息。GeoStore 里存的是 STUN + ip-api 实测结果，
@@ -24970,7 +24968,6 @@
     .line 332
     move-result-object v13
 
-    # [需求1 2026-10-22] 第二行追加"实测地区"（只读 GeoStore 内存快照，不碰 DB）。
     # 放在 NodeEntry 构造处（loadConfigNodes），不碰 Compose 渲染 lambda —— 避开 44 那次崩溃的雷区。
     # v13 = 原协议名，v15 = 节点 tag，两寄存器此处都已就绪，不新增寄存器。
     invoke-static {v13, v15}, Lio/nekohasekai/sfa/bg/NodeDisplay;->decorate(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;

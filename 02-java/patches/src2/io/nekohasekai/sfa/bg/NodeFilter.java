@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * <h3>为什么在 {@code NodesScreenKt.NodesScreen$lambda$3} 出口过滤</h3>
  * 该方法是节点页**唯一**的列表来源（显示 / 计数 / 搜索 / 排序 / 测速都用它），
  * 在它返回前加一次静态调用，五条路径同时一致，不需要分别改 5 处 UI 逻辑。
- * 相比改 Compose 渲染层（2026-10-21 VerifyError 崩溃的位置），这里只多 2 条指令，且不新增寄存器。
+ * 相比改 Compose 渲染层（此前 VerifyError 崩溃的位置），这里只多 2 条指令，且不新增寄存器。
  *
  * <h3>性能</h3>
  * 该 lambda 每次重组会被调用十几次。用「入参列表对象身份」做缓存：
@@ -85,7 +85,7 @@ public final class NodeFilter {
     /**
      * 入参缓存：同一个列表对象 + 同样长度才复用结果。
      * 加长度校验是因为 Compose/VM 侧存在"复用同一个 List 对象、原地增删"的写法，
-     * 只按对象身份缓存会返回过期结果（2026-10-22 曾怀疑由此引起列表条数不一致）。
+     * 只按对象身份缓存会返回过期结果（曾怀疑由此引起列表条数不一致）。
      */
     private static volatile Object CACHE_IN;
     private static volatile int CACHE_SIZE = -1;

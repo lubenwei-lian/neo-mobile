@@ -5,7 +5,7 @@ import io.nekohasekai.sfa.database.Settings;
 /**
  * 并发模式下「用户点选的节点」的持久化。
  *
- * <p><b>为什么必须独立存储（2026-10-21 实测定位的真根因）</b>：
+ * <p><b>为什么必须独立存储（实测定位的真根因）</b>：
  * 最初的实现把点选结果写进 {@code Settings.setSelectedGroupItems()}，形如
  * {@code {"⚡并发": "🇯🇵AWS日本08 | ..."}}。
  *
@@ -21,7 +21,7 @@ import io.nekohasekai.sfa.database.Settings;
  * if (rebuilt.size != saved.size) Settings.setSelectedGroupItems(rebuilt)   // ← 把丢掉的写回去
  * </pre>
  *
- * <p>第 1 批「全量并发」删光了所有 selector / urltest 组，只剩 balancer {@code ⚡并发}，
+ * <p>并发模式删除后，所有 selector / urltest 组被清空，只剩 balancer {@code ⚡并发}，
  * 而 balancer **不在** {@code groups} 列表里 → 每次都会被判为「找不到组」→ 丢弃 →
  * 再把空 map 写回 DB。
  *
@@ -43,7 +43,7 @@ final class PickStore {
     /**
      * 保存用户点选的节点 tag。空值等同于清除。
      *
-     * <p>【修复 2026-10-21】原来 catch(Throwable ignored) 吞掉失败，
+     * <p>原来 catch(Throwable ignored) 吞掉失败，
      * 导致调用方的"保存失败"分支是死代码 —— 写失败也照样提示成功。
      * 现在返回真实结果，由调用方决定是否 reload / 提示。
      *

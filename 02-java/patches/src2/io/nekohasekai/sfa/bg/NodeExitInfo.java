@@ -15,36 +15,6 @@ import java.util.Map;
 import javax.net.ssl.SSLSocket;
 import javax.net.ssl.SSLSocketFactory;
 
-/**
- * 真实节点信息探测：拿到每个节点的**真实出口 IP + 国家**，而不是只看节点名字。
- *
- * <p><b>为什么必须做</b>（2026-10-21 设备实测）：
- * 机场给的节点名是营销文案，与真实出口经常不符。实测同一个机场：
- * <pre>
- * 节点名：🇺🇸美国圣何塞02 | 三网推荐
- * STUN 出口：104.251.122.9
- * IP 归属：United States / Arizona / Phoenix / 1GSERVERS, LLC
- * </pre>
- * 名字说「圣何塞（加州）」，实际在「凤凰城（亚利桑那）」，差了一个州。
- * 更严重的情况是名字写「日本」实际出口在美国 —— 那会让用户 IP 在国家之间跳，触发风控。
- *
- * <p><b>数据来源（三层，逐层降级）</b>：
- * <ol>
- *   <li><b>L0 cloudflare trace</b>（首选，最省）：走节点访问
- *       {@code https://www.cloudflare.com/cdn-cgi/trace}，响应里有
- *       <code>ip=</code>（真实出口 IP）和 <code>loc=</code>（国家代码）。
- *       一次请求同时拿到 IP 和国家，不需要 STUN、不需要再查归属库。</li>
- *   <li><b>L1 ip-api.com</b>：拿到 IP 后再查详细归属（省/市/ISP），用于判断
- *       「同名不同城」这类细节。免费 45 次/分钟，超了会 429。</li>
- *   <li><b>L2 名字兜底</b>：前两层都失败时，退回节点名解析，并标记为「未验证」。</li>
- * </ol>
- *
- * <p><b>关于 STUN</b>：{@code CommandClient.startSTUNTest(server, outboundTag, handler)}
- * 确实能拿到出口地址（实测圣何塞02 → {@code 104.251.122.9:23102}），
- * 但部分节点所有 STUN 服务器都返回 {@code read STUN response: EOF}（实测
- * 「美国01 | 合适下载使用」三个服务器全失败），成功率不够。
- * 故 STUN 只作为 L0 的补充，不作主判据。
- */
 public final class NodeExitInfo {
 
     /** Cloudflare trace：一次请求拿到出口 IP + 国家代码。 */
@@ -216,7 +186,7 @@ public final class NodeExitInfo {
      * 走 HTTP 代理发 GET。混合端口在 7891。
      *
      * <p>注意：本方法用裸 Socket 手写 HTTP/1.1，而不是 HttpURLConnection ——
-     * 第 2 批实测过，在 VPN 自身进程内访问本机端口时 HttpURLConnection 会失败
+     * 在本机实测：VPN 自身进程内访问本机端口时 HttpURLConnection 会失败
      * （返回 null），裸 Socket 正常。
      *
      * <p>走 https 时在 socket 上套 SSLSocketFactory，并用代理的 CONNECT 建隧道。
@@ -235,7 +205,6 @@ public final class NodeExitInfo {
             raw = new Socket();
             raw.connect(new InetSocketAddress("127.0.0.1", proxyPort), TIMEOUT_MS);
             raw.setSoTimeout(TIMEOUT_MS);
-            // 【修复 2026-10-21】soTimeout 只限制单次 read，逐字节慢速响应仍可长期占线程；
             // 这里再加一个整请求上限。
             long deadline = System.currentTimeMillis() + TIMEOUT_MS * 2L;
 
@@ -261,7 +230,6 @@ public final class NodeExitInfo {
 
                 SSLSocketFactory f = (SSLSocketFactory) SSLSocketFactory.getDefault();
                 SSLSocket ssl = (SSLSocket) f.createSocket(raw, host, port, true);
-                // 【修复 2026-10-21】默认不校验主机名，出口节点可中间人改写 IP/地区并写进 6h 缓存
                 try {
                     // Android 的 SSLSocket 没有 setEndpointIdentificationAlgorithm，
                     // 走 SSLParameters（API 24+）开启主机名校验
@@ -287,7 +255,6 @@ public final class NodeExitInfo {
             } else {
                 // ★ HTTP 代理（mixed 端口）必须用 absolute-form：
                 //   GET http://host/path HTTP/1.1
-                // 实测踩坑（2026-10-21 20:29）：之前对 http:// 目标发的是 origin-form
                 // "GET /json/xxx"，代理认不出目标主机，所有查询全部失败。
                 // trace 用的是 https，走 CONNECT 隧道所以一直正常，掩盖了这个 bug。
                 req = "GET " + url + " HTTP/1.1\r\n"
@@ -326,16 +293,6 @@ public final class NodeExitInfo {
         }
     }
 
-    /**
-     * 读 HTTP 响应体（【2026-10-21 加固】）。
-     *
-     * <p>原实现有三个稳定性缺口：
-     * <ol>
-     *   <li>不校验状态码 —— 429/407/5xx 的错误页也被当成功解析（错误页里的 ip= 会被当出口）；</li>
-     *   <li>Content-Length 分支与 chunked 的 {@code new byte[n]} 都没有上限 —— 可被撑爆内存；</li>
-     *   <li>只有单次 read 的 soTimeout，没有整请求 deadline —— 逐字节慢速响应可长期占用线程。</li>
-     * </ol>
-     */
     private static String readBody(InputStream in, long deadline) {
         try {
             // 状态行：只要 2xx（原实现直接跳头，错误页也会被解析）
@@ -413,13 +370,6 @@ public final class NodeExitInfo {
         }
     }
 
-    /**
-     * 实际可用的本地代理端口（【修复 2026-10-21】原来把 7891 写死）。
-     *
-     * <p>端口一改、或当前配置根本没有 7891 入站时，trace 与 ip-api 两路会全部返回 null，
-     * 而异常统一被吞成 null，日志里看不出原因。现在按候选端口试连并缓存 60 秒，
-     * 实际选中的端口写进诊断日志。
-     */
     private static int mixedPort() {
         long now = System.currentTimeMillis();
         int p = portCache;

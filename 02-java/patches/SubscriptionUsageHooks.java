@@ -1,7 +1,7 @@
 package io.neoguard;
 
 /**
- * 2026-10-24 S3：订阅流量缓存清理逻辑从 smali 下沉到 Java facade。
+ * 订阅流量缓存清理逻辑从 smali 下沉到 Java facade。
  * smali 只保留一行 invoke-static；类访问全部用反射，避免与 R8 混淆名耦合。
  */
 public final class SubscriptionUsageHooks {

@@ -12,7 +12,7 @@ import java.util.Locale;
 import java.util.Set;
 
 /**
- * 2026-10-24 S4 B2：并发注入删除后，BalancerInjector 仍被两处引用的纯函数下沉到 Java：
+ * 并发注入删除后，BalancerInjector 仍被两处引用的纯函数下沉到 Java：
  *  - candidateTags(configJson)：设置页地区发现用（原先调 BalancerInjector.candidateTags）；
  *  - idleTimeoutMillis()：连接详情页空闲超时展示用（原 BalancerInjector.IDLE_TIMEOUT_MILLIS=1800000ms）。
  */

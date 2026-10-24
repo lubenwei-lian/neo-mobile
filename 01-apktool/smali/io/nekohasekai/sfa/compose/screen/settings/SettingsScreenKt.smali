@@ -7686,7 +7686,6 @@
     .line 519
     .line 520
     :cond_8
-    # [S4 2026-10-24] 并发模式入口已删除：ConcurrentModeClick / SwitchState 一并清除（该功能开关已从设置页移除）。
 
     .line 531
     .line 532
@@ -7910,7 +7909,6 @@
     .line 641
     invoke-static/range {v7 .. v14}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
 
-    # [2026-10-23 删除并发模式] 原 ToggleRow 调用已移除（固定单节点，与电脑版对齐）。
 
     .line 642
     .line 643

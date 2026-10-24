@@ -1,7 +1,7 @@
 package io.neoguard;
 
 /**
- * 2026-10-24 S3：SubscriptionUsageHooks 的运行时自检入口。
+ * SubscriptionUsageHooks 的运行时自检入口。
  * 用法（root）：CLASSPATH=<base.apk> app_process /system/bin io.neoguard.HooksSmoke [profileId]
  * 只操作内存缓存（SubscriptionUsage.invalidate），不写数据库、不联网。
  */

@@ -1,5 +1,5 @@
 
-# neo 手机版 — src2 源码与 smali_classes3 产物一致性校验（S2 的第一步）
+# neo Android — src2 源码与 smali_classes3 产物一致性校验
 # 用法: pwsh -File .\tools\verify-src2.ps1 [-Apk <path>]
 # 原理: javac(src2+stub) -> d8 -> dexdump 类清单，与 APK 内 classes3.dex 的类清单对比；
 #       不一致说明「Java 源码改了但 smali 产物没重新生成」（静默漂移）。

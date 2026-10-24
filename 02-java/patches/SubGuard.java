@@ -309,7 +309,6 @@ public final class SubGuard {
         if (s.isEmpty()) {
             return true;
         }
-        // M3 阶段 1：优先用 Rust 纯函数；库不可用/异常时回退 Java 实现。
         int rust = RustBridge.isLocal(s);
         if (rust >= 0) {
             return rust == 1;
@@ -352,7 +351,6 @@ public final class SubGuard {
         } catch (Throwable t) {
             android.util.Log.w("SubGuard", "订阅迁移失败，按原样使用：" + t);
         }
-        // 2026-10-24：国内域名精确判断（本地全量 geosite-cn/geoip-cn）+ 国外域名交给节点解析
         //   + fakeip 仅 A / AAAA NODATA + prefer_ipv4；失败不影响原配置。
         try {
             migrated = optimize(migrated);
@@ -364,7 +362,6 @@ public final class SubGuard {
             android.util.Log.w("SubGuard", problem);
             throw new RuntimeException(problem);
         }
-        // 2026-10-24 修复（审查 P0-2）：迁移"成功"但内核拒绝时，以前直接抛错，
         //   用户侧表现为该订阅永久"更新失败"。现在回退原文再校验一次。
         if (migrated != null && !migrated.equals(content)) {
             if (!kernelAccepts(migrated)) {
@@ -507,7 +504,6 @@ public final class SubGuard {
             }
         }
         dns.put("servers", fresh);
-        // 2026-10-24 修复（审查 P0-2）：只有确实把 legacy fakeip 迁进 servers 时才删顶层 dns.fakeip，
         //   原先无条件 remove 会让 fakeip 配置静默消失。
         boolean fakeipMigrated = false;
         for (int i = 0; i < fresh.length(); i++) {
@@ -526,7 +522,6 @@ public final class SubGuard {
             root.put("route", route);
         }
         if (!route.has("default_domain_resolver")) {
-            // 2026-10-24 修复（审查 P0-2）：只有确实存在 tag=local 的 DNS server 时才写 "local"，
             //   否则 sing-box 1.12+ 会报 default domain resolver not found。
             if (hasServerTag(fresh, "local")) {
                 route.put("default_domain_resolver", "local");
@@ -551,7 +546,6 @@ public final class SubGuard {
         return false;
     }
 
-    // ================= 2026-10-24 路由/DNS 优化（国内精确直连 + 国外交给节点解析） =================
     private static final String RULESET_DIR_NAME = "rulesets";
     private static final String[] RULESET_ASSETS = {"rule-sets/geosite-cn.srs", "rule-sets/geoip-cn.srs"};
     private static final String[] CN_RULESET_TAGS = {"geosite-cn", "geoip-cn"};
@@ -566,7 +560,6 @@ public final class SubGuard {
     }
 
     private static String optimizeInner(String content) throws Exception {
-        // M3 阶段 2：Rust JNI 优先；库不可用/异常返回 null，回退 Java 参考实现。
         String rust = RustBridge.optimizeConfig(content);
         if (rust != null) {
             android.util.Log.i("SubGuard", "配置优化完成（Rust JNI）：prefer_ipv4 + fakeip仅A + 国外域名交给节点解析");

@@ -1,7 +1,7 @@
 package io.neoguard;
 
 /**
- * 2026-10-24 S3：HomeScreenKt 手写 UI 文案下沉到 Java facade（smali 只留 invoke-static + move-result）。
+ * HomeScreenKt 手写 UI 文案下沉到 Java facade（smali 只留 invoke-static + move-result）。
  * 与手写 smali 的字符串保持一致，避免中文在 smali 转义/编码上出错。
  */
 public final class NeoUiHooks {

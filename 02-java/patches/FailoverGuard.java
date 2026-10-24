@@ -13,7 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 断流自动切节点（对标桌面版 FailoverService）。
+ * 断流自动切节点（对应 Windows 版 FailoverService）。
  *
  * 工作方式：
  *   每 20 秒通过 sing-box 的 Clash API 测一次当前出口；
@@ -25,7 +25,7 @@ import java.util.List;
 public final class FailoverGuard {
 
     private static final String TAG = "NeoFailover";
-    // S6：改用 https，配合 networkSecurityConfig 只放行本机回环的明文 HTTP
+    // 使用 https，配合 networkSecurityConfig 只放行本机回环的明文 HTTP
     private static final String TEST_URL = "https://www.gstatic.com/generate_204";
     private static final int INTERVAL_MS = 20000;
     private static final int FAIL_THRESHOLD = 3;
@@ -169,7 +169,6 @@ public final class FailoverGuard {
                 }
                 long now = System.currentTimeMillis();
                 if (now - lastSwitchAt < COOLDOWN_MS) {
-                    // 2026-10-24 修复（审查 P1-4）：冷却期不清零会让每轮都重跑全量探测，这里清零。
                     android.util.Log.w(TAG, "in cooldown, skip switch");
                     fails = 0;
                     continue;
@@ -178,7 +177,6 @@ public final class FailoverGuard {
                 java.util.HashSet<String> groupSet = loadGroupSet(base);
                 String target = pickHealthy(base, group, nowNode, groupSet, 15000, 6);
                 if (target == null) {
-                    // 2026-10-24 修复（审查 P1-4）：找不到候选也清零，下一轮重新从 0 计。
                     android.util.Log.w(TAG, "no healthy node found, keep current");
                     fails = 0;
                     continue;
@@ -186,7 +184,6 @@ public final class FailoverGuard {
                 if (switchTo(base, group, target)) {
                     lastSwitchAt = System.currentTimeMillis();
                     fails = 0;
-                    // 2026-10-24 修复（审查 P1-3）：原出口是自动选择组时，记录并在稳定 5 分钟后还原。
                     if (nowNode != null && nowNode.length() > 0 && groupSet.contains(nowNode)) {
                         restoreGroup = nowNode;
                         restoreAt = lastSwitchAt + RESTORE_AFTER_MS;
@@ -398,11 +395,6 @@ public final class FailoverGuard {
         }
     }
 
-    /**
-     * 从组内候选里挑一个能通的（跳过组与当前节点，从当前节点下一个开始轮询）。
-     * 2026-10-24 修复（审查 P1-4）：加总预算 budgetMs 与每轮最多探测数 maxProbes，
-     *   避免 20 个节点 × 6s 串行探测把一轮拖到 2 分钟。
-     */
     private static String pickHealthy(String base, String group, String now, java.util.HashSet<String> groups,
                                       int budgetMs, int maxProbes) {
         String body = http(base + "/proxies/" + enc(group), "GET", null, 5000);

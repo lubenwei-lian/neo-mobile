@@ -1390,7 +1390,6 @@
 .method public subscriptionUserAgentChain(Ljava/lang/String;)Ljava/util/List;
     .locals 1
 
-    # [S3 2026-10-24] UA 链下沉到 io.neoguard.KernelHooks
     invoke-static {}, Lio/neoguard/KernelHooks;->subscriptionUserAgentChain()Ljava/util/List;
 
     move-result-object v0
@@ -1836,7 +1835,6 @@
 .method public version()Ljava/lang/String;
     .locals 1
 
-    # [S3 2026-10-24] 版本号下沉到 io.neoguard.KernelHooks
     invoke-static {}, Lio/neoguard/KernelHooks;->version()Ljava/lang/String;
 
     move-result-object v0

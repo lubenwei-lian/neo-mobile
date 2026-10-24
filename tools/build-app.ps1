@@ -1,4 +1,4 @@
-# neo 手机版 — 完整构建（含 SubGuard 补丁类）
+# neo Android — 完整构建（含 SubGuard 补丁类）
 # 用法: .\tools\build-app.ps1 [-Install]
 param([switch]$Install)
 $ErrorActionPreference = 'Stop'
@@ -14,10 +14,8 @@ $env:JAVA_HOME = $JDK
 
 if (-not (Test-Path "$ASC\01-apktool")) { throw "junction $ASC 未指向工程" }
 
-# 2026-10-24 审查 P2-3：先清旧 class/dex，避免删/改名后的陈旧 .class 被打进 classes4.dex
 $work = "$ASC\03-dist\_build"
 Remove-Item "$work\classes","$work\dex" -Recurse -Force -ErrorAction SilentlyContinue
-# 2026-10-24：apktool 会复用 01-apktool\build 缓存（apktool.yml 的 versionInfo/资源变更不生效），每次构建前清掉
 Remove-Item "$ASC\01-apktool\build" -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $work,"$work\classes","$work\dex" | Out-Null
 
@@ -66,7 +64,7 @@ if (Test-Path -LiteralPath $verify) {
   if ($LASTEXITCODE -ne 0) { throw "产物校验失败（见上方 [FAIL] 项）" }
 }
 
-# 6. src2 源码与 smali_classes3 产物一致性（S2：防「改了 Java 源但产物没重新生成」的静默漂移）
+# 6. src2 源码与 smali_classes3 产物一致性（防止「改了 Java 源但产物没重新生成」的静默漂移）
 $verifySrc2 = Join-Path $PSScriptRoot 'verify-src2.ps1'
 if (Test-Path -LiteralPath $verifySrc2) {
   & $verifySrc2 -Apk $out

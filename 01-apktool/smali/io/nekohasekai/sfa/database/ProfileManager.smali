@@ -546,7 +546,6 @@
     .line 12
     move-result p0
 
-    # [S3 2026-10-24] 删订阅时清掉它的流量缓存：逻辑已下沉到 io.neoguard.SubscriptionUsageHooks
     invoke-virtual {p1}, Lio/nekohasekai/sfa/database/Profile;->getId()J
 
     move-result-wide v1

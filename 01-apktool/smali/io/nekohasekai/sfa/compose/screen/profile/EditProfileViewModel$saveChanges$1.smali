@@ -481,7 +481,6 @@
     .line 139
     move-result-object v5
 
-    # [修复 2026-10-22] 先记下旧 remoteURL：只有真的换了订阅地址才需要清流量缓存
     # （原实现无条件清，改名字/图标也会清，下次进订阅页强制走网络，失败就显示"流量信息不可用"）
     invoke-virtual {v0}, Lio/nekohasekai/sfa/database/TypedProfile;->getRemoteURL()Ljava/lang/String;
 
@@ -489,7 +488,6 @@
 
     .line 140
     invoke-virtual {v0, v5}, Lio/nekohasekai/sfa/database/TypedProfile;->setRemoteURL(Ljava/lang/String;)V
-    # [S3 2026-10-24] 仅当 remoteURL 变化时清流量缓存：逻辑已下沉到 io.neoguard.SubscriptionUsageHooks
     iget-object v8, v1, Lio/nekohasekai/sfa/compose/screen/profile/EditProfileViewModel$saveChanges$1;->$profile:Lio/nekohasekai/sfa/database/Profile;
 
     invoke-virtual {v8}, Lio/nekohasekai/sfa/database/Profile;->getId()J

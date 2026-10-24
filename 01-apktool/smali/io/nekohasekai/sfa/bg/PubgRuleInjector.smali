@@ -3745,6 +3745,10 @@
 .method public final ensure(Ljava/lang/String;)Ljava/lang/String;
     .locals 7
 
+    invoke-static {p1}, Lio/neoguard/SubGuard;->applyLocalRuleSets(Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object p1
+
     .line 1
     const-string v0, "\u7b56\u7565\u6ce8\u5165\u5b8c\u6210 (urltest\u8865\u53c2="
 

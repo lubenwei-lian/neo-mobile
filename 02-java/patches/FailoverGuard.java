@@ -1,5 +1,8 @@
 package io.neoguard;
 
+import android.content.Context;
+import android.os.PowerManager;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 
@@ -16,7 +19,7 @@ import java.util.List;
  * 断流自动切节点（对应 Windows 版 FailoverService）。
  *
  * 工作方式：
- *   每 20 秒通过 sing-box 的 Clash API 测一次当前出口；
+ *   亮屏每 20 秒、熄屏每 60 秒通过 sing-box 的 Clash API 测一次当前出口（省电自适应）；
  *   连续 3 次失败（超时/非 2xx）→ 在候选节点里找一个能通的，切过去；
  *   切换后 90 秒冷却，避免来回抖。
  *
@@ -27,7 +30,10 @@ public final class FailoverGuard {
     private static final String TAG = "NeoFailover";
     // 使用 https，配合 networkSecurityConfig 只放行本机回环的明文 HTTP
     private static final String TEST_URL = "https://www.gstatic.com/generate_204";
+    /** 亮屏探测间隔（现有行为）。 */
     private static final int INTERVAL_MS = 20000;
+    /** 熄屏探测间隔（省电）：熄屏后系统会限制网络/CPU，60 秒一次足够，避免无谓唤醒。 */
+    private static final int IDLE_INTERVAL_MS = 60000;
     private static final int FAIL_THRESHOLD = 3;
     private static final long COOLDOWN_MS = 90000L;
     /** 切换后若原出口是自动选择组，探测稳定 5 分钟后还原，避免把 urltest 永久钉死。 */
@@ -40,6 +46,10 @@ public final class FailoverGuard {
     private static volatile String cachedBase;
     private static volatile long lastWakeAt;
     private static volatile boolean networkWake;
+    /** 上次使用的探测间隔；只在亮屏/熄屏切换时打一条日志，避免每轮刷日志。 */
+    private static volatile int lastIntervalMs;
+    /** 屏幕状态探测失败只提示一次，避免反射/系统服务异常时刷日志。 */
+    private static volatile boolean screenProbeErrorLogged;
     private static final Object LOCK = new Object();
     /** 每次 start/stop 自增；旧线程发现 gen 变了就退出，避免双 worker。 */
     private static volatile int generation;
@@ -90,7 +100,7 @@ public final class FailoverGuard {
         android.util.Log.i(TAG, "failover guard stopped");
     }
 
-    /** 系统网络切换时由 NetworkWatcher 调用：立即做一次探测，不等下一个 20 秒。 */
+    /** 系统网络切换时由 NetworkWatcher 调用：立即做一次探测，不等下一个探测周期。 */
     public static void onNetworkChanged(String reason) {
         if (!running) {
             return;
@@ -108,12 +118,71 @@ public final class FailoverGuard {
         }
     }
 
+    /**
+     * 当前探测间隔：亮屏 20s、熄屏 60s。只返回常量，任何异常都在内部吞掉并回退 20s，
+     * 保证探测线程不会因反射/系统服务异常而退出。
+     */
+    private static int probeIntervalMs() {
+        try {
+            return isScreenInteractive() ? INTERVAL_MS : IDLE_INTERVAL_MS;
+        } catch (Throwable t) {
+            return INTERVAL_MS;
+        }
+    }
+
+    /** 屏幕是否点亮；取不到 Context/PowerManager 或反射失败时按亮屏处理（即回退 20s）。 */
+    private static boolean isScreenInteractive() {
+        try {
+            Context ctx = appContext();
+            if (ctx == null) {
+                return true;
+            }
+            PowerManager pm = (PowerManager) ctx.getSystemService(Context.POWER_SERVICE);
+            if (pm == null) {
+                return true;
+            }
+            return pm.isInteractive();
+        } catch (Throwable t) {
+            if (!screenProbeErrorLogged) {
+                screenProbeErrorLogged = true;
+                android.util.Log.w(TAG, "screen state check failed, fallback " + INTERVAL_MS + "ms: " + t);
+            }
+            return true;
+        }
+    }
+
+    /** 反射拿 app 的 Application（与 NetworkWatcher.appContext 同口径，避免编译期依赖 app 类）。 */
+    private static Context appContext() {
+        try {
+            Class<?> appCls = Class.forName("io.nekohasekai.sfa.Application");
+            Object companion = appCls.getField("Companion").get(null);
+            Object app = companion.getClass().getMethod("getApplication").invoke(companion);
+            if (app instanceof Context) {
+                return (Context) app;
+            }
+        } catch (Throwable ignored) {
+            // 失败由 isScreenInteractive 统一回退 20s，并只记一次日志。
+        }
+        return null;
+    }
+
     private static void loop(int myGen) {
         int fails = 0;
         int tick = 0;
         while (running && generation == myGen) {
+            int interval;
             try {
-                Thread.sleep(INTERVAL_MS);
+                interval = probeIntervalMs();
+                if (interval != lastIntervalMs) {
+                    android.util.Log.i(TAG, "probe interval -> " + interval + "ms ("
+                            + (interval == IDLE_INTERVAL_MS ? "screen off" : "screen on") + ")");
+                    lastIntervalMs = interval;
+                }
+            } catch (Throwable t) {
+                interval = INTERVAL_MS;
+            }
+            try {
+                Thread.sleep(interval);
             } catch (InterruptedException e) {
                 if (!running || generation != myGen) {
                     break;

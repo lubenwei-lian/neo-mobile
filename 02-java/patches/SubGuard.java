@@ -357,6 +357,11 @@ public final class SubGuard {
         } catch (Throwable t) {
             android.util.Log.w("SubGuard", "配置优化失败，保留迁移结果：" + t);
         }
+        try {
+            migrated = applyLocalRuleSets(migrated);
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "本地规则集改写失败，保留原配置：" + t);
+        }
         String problem = check(migrated);
         if (problem != null) {
             android.util.Log.w("SubGuard", problem);
@@ -550,6 +555,156 @@ public final class SubGuard {
     private static final String[] RULESET_ASSETS = {"rule-sets/geosite-cn.srs", "rule-sets/geoip-cn.srs"};
     private static final String[] CN_RULESET_TAGS = {"geosite-cn", "geoip-cn"};
 
+    /**
+     * 把订阅里的 geosite-cn / geoip-cn 规则集定义改为本机 HTTP 托管。
+     * 内核不支持 local 规则集；remote + 127.0.0.1 URL 实测可正常下载并启动。
+     * 失败时原样返回，不破坏配置。
+     */
+    public static String applyLocalRuleSets(String content) {
+        try {
+            return applyLocalRuleSetsInner(content);
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "本地规则集改写失败，保留原配置：" + t);
+            return content;
+        }
+    }
+
+    private static String applyLocalRuleSetsInner(String content) throws Exception {
+        if (content == null || content.length() == 0) {
+            return content;
+        }
+        int brace = content.indexOf('{');
+        if (brace < 0) {
+            return content;
+        }
+        JSONObject root = new JSONObject(content.substring(brace));
+        JSONObject route = root.optJSONObject("route");
+        if (route == null) {
+            return content;
+        }
+        JSONObject dns = root.optJSONObject("dns");
+        JSONArray routeRules = route.optJSONArray("rules");
+        JSONArray dnsRules = dns == null ? null : dns.optJSONArray("rules");
+        JSONArray sets = route.optJSONArray("rule_set");
+
+        boolean present = hasSetTag(sets, CN_RULESET_TAGS[0]) || hasSetTag(sets, CN_RULESET_TAGS[1]);
+        boolean referenced = hasRuleSetRef(routeRules, CN_RULESET_TAGS[0])
+                || hasRuleSetRef(routeRules, CN_RULESET_TAGS[1])
+                || hasRuleSetRef(dnsRules, CN_RULESET_TAGS[0])
+                || hasRuleSetRef(dnsRules, CN_RULESET_TAGS[1]);
+        if (!present && !referenced) {
+            return content;
+        }
+        if (sets == null) {
+            sets = new JSONArray();
+            route.put("rule_set", sets);
+        }
+        String direct = findDirectOutbound(root);
+        boolean changed = false;
+        for (int t = 0; t < CN_RULESET_TAGS.length; t++) {
+            String tag = CN_RULESET_TAGS[t];
+            boolean need = hasSetTag(sets, tag)
+                    || hasRuleSetRef(routeRules, tag)
+                    || hasRuleSetRef(dnsRules, tag);
+            if (!need) {
+                continue;
+            }
+            String url = LocalRuleSetServer.urlFor(tag);
+            if (url == null) {
+                return content;
+            }
+            JSONObject set = findRuleSet(sets, tag);
+            if (set == null) {
+                set = new JSONObject();
+                set.put("tag", tag);
+                sets.put(set);
+                changed = true;
+            }
+            if (!"remote".equals(set.optString("type", ""))) {
+                set.put("type", "remote");
+                changed = true;
+            }
+            if (!"binary".equals(set.optString("format", ""))) {
+                set.put("format", "binary");
+                changed = true;
+            }
+            if (!url.equals(set.optString("url", ""))) {
+                set.put("url", url);
+                changed = true;
+            }
+            if (set.has("path")) {
+                set.remove("path");
+                changed = true;
+            }
+            if (direct != null) {
+                if (!direct.equals(set.optString("download_detour", ""))) {
+                    set.put("download_detour", direct);
+                    changed = true;
+                }
+            } else if (set.has("download_detour")) {
+                set.remove("download_detour");
+                changed = true;
+            }
+        }
+        if (!changed) {
+            return content;
+        }
+        android.util.Log.i("SubGuard", "CN 规则集已切到本机 HTTP（127.0.0.1）");
+        return root.toString();
+    }
+
+    private static boolean hasSetTag(JSONArray sets, String tag) {
+        return findRuleSet(sets, tag) != null;
+    }
+
+    private static JSONObject findRuleSet(JSONArray sets, String tag) {
+        if (sets == null) {
+            return null;
+        }
+        for (int i = 0; i < sets.length(); i++) {
+            JSONObject s = sets.optJSONObject(i);
+            if (s != null && tag.equals(s.optString("tag", ""))) {
+                return s;
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasRuleSetRef(JSONArray rules, String tag) {
+        if (rules == null) {
+            return false;
+        }
+        for (int i = 0; i < rules.length(); i++) {
+            JSONObject r = rules.optJSONObject(i);
+            if (r != null && containsToken(r.opt("rule_set"), tag)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static String findDirectOutbound(JSONObject root) {
+        JSONArray outbounds = root.optJSONArray("outbounds");
+        if (outbounds == null) {
+            return null;
+        }
+        String fallback = null;
+        for (int i = 0; i < outbounds.length(); i++) {
+            JSONObject o = outbounds.optJSONObject(i);
+            if (o == null || !"direct".equals(o.optString("type", ""))) {
+                continue;
+            }
+            String tag = o.optString("tag", "");
+            if ("direct".equals(tag) || "DIRECT".equals(tag)) {
+                return tag;
+            }
+            if (fallback == null) {
+                fallback = tag;
+            }
+        }
+        return fallback;
+    }
+
     public static String optimize(String content) {
         try {
             return optimizeInner(content);
@@ -584,7 +739,7 @@ public final class SubGuard {
         changed |= stripDomainStrategy(root);
         if (changed) {
             android.util.Log.i("SubGuard", "配置优化完成：prefer_ipv4 + fakeip仅A + 国外域名交给节点解析"
-                    + "（AAAA/HTTPS/SVCB 走节点侧 DNS；本地 binary 规则集实测内核拒绝，已弃用）");
+                    + "（AAAA/HTTPS/SVCB 走节点侧 DNS；CN 规则集由本机 HTTP 托管）");
             return root.toString();
         }
         return content;

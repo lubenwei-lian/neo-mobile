@@ -19,11 +19,13 @@ $DEXDUMP = 'E:\桌面\工具软件\安卓工具\android-sdk\build-tools\37.0.0\d
 $EXPECTED_CLASSES4 = @(
     'Lio/neoguard/FailoverGuard;',
     'Lio/neoguard/FailoverGuard$1;',
+    'Lio/neoguard/LocalRuleSetServer;',
+    'Lio/neoguard/LocalRuleSetServer$1;',
     'Lio/neoguard/NetworkWatcher;',
     'Lio/neoguard/NetworkWatcher$1;',
     'Lio/neoguard/SubGuard;'
 )
-$EXPECTED_HOOKS = 18
+$EXPECTED_HOOKS = 19
 
 if (-not $Apk) { $Apk = Join-Path $PROJ '03-dist\neo-latest.apk' }
 if (-not (Test-Path -LiteralPath $Apk)) { throw "APK 不存在: $Apk" }
@@ -182,15 +184,21 @@ if (Test-Path -LiteralPath $launchFile) {
     else { $ok.Add('Launch 协程状态机恢复分支正常') }
 } else { $fail.Add('找不到 StartupAutoTest$Launch.smali') }
 
-# ---- 9. 0.0.1 版本 / 发布页 / 免责声明 / 配置优化 ----
+# ---- 9. 0.0.2 版本 / 发布页 / 免责声明 / 配置优化 ----
 $yml = Join-Path $PROJ '01-apktool\apktool.yml'
 if (-not (Test-Path -LiteralPath $yml)) { $fail.Add('版本: 找不到 apktool.yml') }
 else {
     $ytxt = Get-Content -LiteralPath $yml -Raw
-    if ($ytxt -notmatch 'versionName: 0\.0\.1') { $fail.Add('版本: versionName 不是 0.0.1') } else { $ok.Add('版本: versionName=0.0.1') }
-    if ($ytxt -notmatch 'versionCode: 1\b') { $fail.Add('版本: versionCode 不是 1') } else { $ok.Add('版本: versionCode=1') }
+    if ($ytxt -notmatch 'versionName: 0.0.2') { $fail.Add('版本: versionName 不是 0.0.2') } else { $ok.Add('版本: versionName=0.0.2') }
+    if ($ytxt -notmatch 'versionCode: 2\b') { $fail.Add('版本: versionCode 不是 2') } else { $ok.Add('版本: versionCode=2') }
 }
-# 本地 binary 规则集实测内核拒绝启动，已改回机场远端规则集；不再要求内置
+$buildCfg = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\BuildConfig.smali') -Raw
+if ($buildCfg -notmatch 'VERSION_NAME:Ljava/lang/String; = "0.0.2"') { $fail.Add('版本: BuildConfig.VERSION_NAME 不是 0.0.2') }
+else { $ok.Add('版本: BuildConfig.VERSION_NAME=0.0.2') }
+$oldVer = @(Get-ChildItem (Join-Path $PROJ '01-apktool\smali') -Recurse -Filter *.smali -File | Select-String -Pattern '"0.0.1"|"v0.0.1')
+if ($oldVer.Count -gt 0) { $fail.Add("版本: 仍残留 $($oldVer.Count) 处 0.0.1 字面量") }
+else { $ok.Add('版本: 无 0.0.1 残留') }
+# CN 规则集改由本机 HTTP 以 remote 形式托管（内核不支持 local 规则集）
 $cs = Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\ComposableSingletons$SettingsScreenKt.smali'
 if (Test-Path -LiteralPath $cs) {
     $ctxt = Get-Content -LiteralPath $cs -Raw
@@ -229,6 +237,46 @@ try {
     elseif ($so.Length -lt 300000) { $fail.Add("libneoguard_jni.so 体积过小（$($so.Length) B）") }
     else { $ok.Add("已内置 libneoguard_jni.so（$($so.Length) B）") }
 } finally { $zip3.Dispose() }
+
+# ---- 11. 0.0.2 本轮改动 ----
+$rsDir = Join-Path $PROJ '01-apktool\assets\rule-sets'
+$geoSite = Join-Path $rsDir 'geosite-cn.srs'
+$geoIp = Join-Path $rsDir 'geoip-cn.srs'
+if (-not (Test-Path -LiteralPath $geoSite)) { $fail.Add('规则集: 缺 assets/rule-sets/geosite-cn.srs') }
+elseif ((Get-Item -LiteralPath $geoSite).Length -lt 400000) { $fail.Add('规则集: geosite-cn.srs 体积过小') }
+else { $ok.Add('规则集: 内置 geosite-cn.srs（' + (Get-Item -LiteralPath $geoSite).Length + ' B）') }
+if (-not (Test-Path -LiteralPath $geoIp)) { $fail.Add('规则集: 缺 assets/rule-sets/geoip-cn.srs') }
+elseif ((Get-Item -LiteralPath $geoIp).Length -lt 20000) { $fail.Add('规则集: geoip-cn.srs 体积过小') }
+else { $ok.Add('规则集: 内置 geoip-cn.srs（' + (Get-Item -LiteralPath $geoIp).Length + ' B）') }
+
+$settingsTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\SettingsScreenKt.smali') -Raw
+if ($settingsTxt -match '\\u5916\\u89c2') { $fail.Add('外观: SettingsScreenKt 仍含外观入口') }
+else { $ok.Add('外观: 设置页外观入口已删除') }
+
+$themeTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\database\Settings.smali') -Raw
+$themeMethod = [regex]::Match($themeTxt, '\.method private static final themeMode_delegate\$lambda\$0\(\).*?\.end method', 'Singleline')
+if (-not $themeMethod.Success -or $themeMethod.Value -notmatch '"dark"') { $fail.Add('主题: themeMode 默认值不是 dark') }
+else { $ok.Add('主题: 默认 dark') }
+$themeStateTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\theme\ThemeState.smali') -Raw
+if ($themeStateTxt -notmatch '"dark"') { $fail.Add('主题: ThemeState 无 dark 回退') }
+else { $ok.Add('主题: ThemeState 回退含 dark') }
+
+$kernelTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\kernel\SingBoxKernel.smali') -Raw
+if ($kernelTxt -notmatch 'const/16 p1, 0x8') { $fail.Add('测速: 并发不是 8') }
+else { $ok.Add('测速: 并发=8') }
+
+$failoverTxt = Get-Content -LiteralPath (Join-Path $PROJ '02-java\patches\FailoverGuard.java') -Raw
+if ($failoverTxt -notmatch 'IDLE_INTERVAL_MS' -or $failoverTxt -notmatch 'isInteractive') { $fail.Add('省电: FailoverGuard 缺熄屏自适应') }
+else { $ok.Add('省电: FailoverGuard 熄屏间隔已下沉') }
+
+if (Test-Path -LiteralPath $dex4) {
+    if ($disasm2 -notmatch 'LocalRuleSetServer') { $fail.Add('规则集: classes4.dex 缺 LocalRuleSetServer') }
+    else { $ok.Add('规则集: classes4.dex 含 LocalRuleSetServer') }
+    if ($disasm2 -notmatch 'applyLocalRuleSets') { $fail.Add('规则集: classes4.dex 缺 SubGuard.applyLocalRuleSets') }
+    else { $ok.Add('规则集: classes4.dex 含 applyLocalRuleSets') }
+    if ($disasm2 -notmatch 'urlFor') { $fail.Add('规则集: classes4.dex 缺 LocalRuleSetServer.urlFor') }
+    else { $ok.Add('规则集: classes4.dex 含 urlFor') }
+}
 
 # ---- 输出 ----
 Write-Host ("校验 APK: " + $Apk)

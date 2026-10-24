@@ -3824,7 +3824,7 @@
 
     .line 38
     .line 39
-    const-string v2, "0.0.1"
+    const-string v2, "0.0.2"
 
     .line 40
     .line 41

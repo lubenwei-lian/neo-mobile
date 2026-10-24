@@ -272,7 +272,7 @@
 
     .line 16
     :cond_0
-    const-string p0, "system"
+    const-string p0, "dark"
 
     .line 17
     .line 18
@@ -510,7 +510,7 @@
 
     .line 13
     :cond_0
-    const-string p1, "system"
+    const-string p1, "dark"
 
     .line 14
     .line 15

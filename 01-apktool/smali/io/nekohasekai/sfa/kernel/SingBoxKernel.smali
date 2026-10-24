@@ -1717,7 +1717,7 @@
 
     .line 133
     .line 134
-    const/4 p1, 0x6
+    const/16 p1, 0x8
 
     .line 135
     invoke-direct {v5, p1}, Lt46;-><init>(I)V

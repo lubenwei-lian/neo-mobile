@@ -4722,7 +4722,7 @@
 
     .line 712
     .line 713
-    const-string v8, "v0.0.1 \u00b7 "
+    const-string v8, "v0.0.2 \u00b7 "
 
     .line 714
     .line 715
@@ -6365,89 +6365,6 @@
     .line 771
     .line 772
     :goto_4
-    sget-object v1, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$SettingsScreenKt;->INSTANCE:Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$SettingsScreenKt;
-
-    .line 773
-    .line 774
-    invoke-virtual {v1}, Lio/nekohasekai/sfa/compose/screen/settings/ComposableSingletons$SettingsScreenKt;->getLambda$19717771$sing_box_neo_0_1_18_otherRelease()Lnm2;
-
-    .line 775
-    .line 776
-    .line 777
-    move-result-object v7
-
-    .line 778
-    invoke-virtual {v10, v0}, Lrn2;->h(Ljava/lang/Object;)Z
-
-    .line 779
-    .line 780
-    .line 781
-    move-result v1
-
-    .line 782
-    invoke-virtual {v10}, Lrn2;->L()Ljava/lang/Object;
-
-    .line 783
-    .line 784
-    .line 785
-    move-result-object v2
-
-    .line 786
-    if-nez v1, :cond_7
-
-    .line 787
-    .line 788
-    if-ne v2, v3, :cond_8
-
-    .line 789
-    .line 790
-    :cond_7
-    new-instance v2, Lwu5;
-
-    .line 791
-    .line 792
-    const/16 v1, 0xb
-
-    .line 793
-    .line 794
-    invoke-direct {v2, v0, v1}, Lwu5;-><init>(Lqh4;I)V
-
-    .line 795
-    .line 796
-    .line 797
-    invoke-virtual {v10, v2}, Lrn2;->h0(Ljava/lang/Object;)V
-
-    .line 798
-    .line 799
-    .line 800
-    :cond_8
-    move-object v9, v2
-
-    .line 801
-    check-cast v9, Lxl2;
-
-    .line 802
-    .line 803
-    const/16 v11, 0x1b0
-
-    .line 804
-    .line 805
-    const/16 v12, 0x8
-
-    .line 806
-    .line 807
-    const-string v6, "\u5916\u89c2"
-
-    .line 808
-    .line 809
-    const/4 v8, 0x0
-
-    .line 810
-    invoke-static/range {v5 .. v12}, Lio/nekohasekai/sfa/compose/screen/settings/SettingsScreenKt;->SettingsRow(Ln63;Ljava/lang/String;Lnm2;ZLxl2;Lrt0;II)V
-
-    .line 811
-    .line 812
-    .line 813
     invoke-virtual {v10, v4}, Lrn2;->p(Z)V
 
     .line 814

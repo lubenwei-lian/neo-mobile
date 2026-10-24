@@ -40,6 +40,8 @@ public final class RustBridge {
 
     private static native String userinfoParseNative(String header);
 
+    private static native String optimizeConfigNative(String configJson);
+
     /** 命中占位关键词返回关键词（无命中返回 ""）；不可用返回 null。 */
     public static String hintOf(String text) {
         if (unavailable) {
@@ -81,6 +83,21 @@ public final class RustBridge {
             unavailable = true;
             loadError = String.valueOf(t);
             android.util.Log.w("RustBridge", "configPorts 失败，回退 Java：" + loadError);
+            return null;
+        }
+    }
+
+    /** 订阅配置优化（M3 阶段 2）；不可用/异常返回 null，调用方回退 Java 实现。 */
+    public static String optimizeConfig(String configJson) {
+        if (unavailable) {
+            return null;
+        }
+        try {
+            return optimizeConfigNative(configJson);
+        } catch (Throwable t) {
+            unavailable = true;
+            loadError = String.valueOf(t);
+            android.util.Log.w("RustBridge", "optimizeConfig 失败，回退 Java：" + loadError);
             return null;
         }
     }

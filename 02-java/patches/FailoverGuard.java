@@ -461,9 +461,36 @@ public final class FailoverGuard {
     }
 
     private static boolean switchTo(String base, String group, String target) {
-        String body = "{\"name\":\"" + target.replace("\\", "\\\\").replace("\"", "\\\"") + "\"}";
+        // P2 修复：节点名可能含换行/控制字符，手拼 JSON 只转义 \ 和 " 会导致 400
+        String body = "{\"name\":\"" + jsonEscape(target) + "\"}";
         String r = http(base + "/proxies/" + enc(group), "PUT", body, 5000);
         return r != null && !r.startsWith("!");
+    }
+
+    private static String jsonEscape(String s) {
+        if (s == null) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(s.length() + 8);
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '\\': sb.append("\\\\"); break;
+                case '"': sb.append("\\\""); break;
+                case '\n': sb.append("\\n"); break;
+                case '\r': sb.append("\\r"); break;
+                case '\t': sb.append("\\t"); break;
+                case '\b': sb.append("\\b"); break;
+                case '\f': sb.append("\\f"); break;
+                default:
+                    if (c < 0x20) {
+                        sb.append(String.format("\\u%04x", (int) c));
+                    } else {
+                        sb.append(c);
+                    }
+            }
+        }
+        return sb.toString();
     }
 
     private static String enc(String s) {

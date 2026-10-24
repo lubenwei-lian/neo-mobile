@@ -217,6 +217,7 @@ if (Test-Path -LiteralPath $dex4) {
     if ($disasm2 -notmatch 'ensureRoute') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.ensureRoute') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.ensureRoute') }
     if ($disasm2 -notmatch 'fetchDirectFastOrNull') { $fail.Add('P1-5: classes4.dex 缺 SubGuard.fetchDirectFastOrNull') } else { $ok.Add('P1-5: 订阅直连优先已下沉 Java（fetchDirectFastOrNull）') }
     if ($disasm2 -notmatch 'hintOfNative') { $fail.Add('M3: classes4.dex 缺 RustBridge.hintOfNative') } else { $ok.Add('M3: RustBridge JNI 方法已打进 classes4.dex') }
+    if ($disasm2 -notmatch 'optimizeConfigNative') { $fail.Add('M3: classes4.dex 缺 RustBridge.optimizeConfigNative') } else { $ok.Add('M3: 配置优化 Rust JNI 已打进 classes4.dex') }
     if ($disasm2 -notmatch 'RustBridgeSelfTest') { $fail.Add('M3: classes4.dex 缺 RustBridgeSelfTest') } else { $ok.Add('M3: 自检入口 RustBridgeSelfTest 已打进 classes4.dex') }
 }
 

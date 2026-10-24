@@ -249,7 +249,29 @@ public final class SubGuard {
             conn.setRequestProperty("Connection", "close");
             int code = conn.getResponseCode();
             if (code < 200 || code >= 300) {
-                throw new RuntimeException("HTTP " + code + " for " + url);
+                // P2 修复：非 2xx 时带上响应体片段，便于定位 401/403/代理错误
+                String body = "";
+                try {
+                    InputStream es = conn.getErrorStream();
+                    if (es != null) {
+                        java.io.ByteArrayOutputStream bos = new java.io.ByteArrayOutputStream();
+                        byte[] ebuf = new byte[1024];
+                        int n;
+                        int total = 0;
+                        while ((n = es.read(ebuf)) > 0 && total < 4096) {
+                            bos.write(ebuf, 0, n);
+                            total += n;
+                        }
+                        es.close();
+                        body = new String(bos.toByteArray(), "UTF-8");
+                    }
+                } catch (Throwable ignored) {
+                }
+                if (body.length() > 200) {
+                    body = body.substring(0, 200);
+                }
+                throw new RuntimeException("HTTP " + code + " for " + url
+                        + (body.isEmpty() ? "" : " : " + body.replace('\n', ' ').replace('\r', ' ')));
             }
             InputStream in = conn.getInputStream();
             BufferedReader br = new BufferedReader(new InputStreamReader(in, "UTF-8"), 16384);
@@ -544,6 +566,17 @@ public final class SubGuard {
     }
 
     private static String optimizeInner(String content) throws Exception {
+        // M3 阶段 2：Rust JNI 优先；库不可用/异常返回 null，回退 Java 参考实现。
+        String rust = RustBridge.optimizeConfig(content);
+        if (rust != null) {
+            android.util.Log.i("SubGuard", "配置优化完成（Rust JNI）：prefer_ipv4 + fakeip仅A + 国外域名交给节点解析");
+            return rust;
+        }
+        return optimizeJavaOnly(content);
+    }
+
+    /** Java 参考实现（Rust 不可用时回退；同时用于真机 parity 自检）。 */
+    static String optimizeJavaOnly(String content) throws Exception {
         if (content == null || content.length() == 0) {
             return content;
         }

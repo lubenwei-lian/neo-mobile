@@ -8,7 +8,9 @@ import java.lang.reflect.Method;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.TreeSet;
 
 /**
  * M3 阶段 1 自检入口（root app_process，不依赖 UI）：
@@ -100,6 +102,62 @@ public final class RustBridgeSelfTest {
         byte[] bytes = Files.readAllBytes(f.toPath());
         return new String(bytes, Charset.forName("UTF-8"));
     }
+
+    private static String canon(Object value) {
+        if (value instanceof JSONObject) {
+            JSONObject obj = (JSONObject) value;
+            TreeSet<String> keys = new TreeSet<String>();
+            java.util.Iterator<String> it = obj.keys();
+            while (it.hasNext()) {
+                keys.add(it.next());
+            }
+            StringBuilder sb = new StringBuilder("{");
+            boolean first = true;
+            for (String key : keys) {
+                if (!first) {
+                    sb.append(',');
+                }
+                first = false;
+                sb.append(JSONObject.quote(key)).append(':').append(canon(obj.opt(key)));
+            }
+            return sb.append('}').toString();
+        }
+        if (value instanceof JSONArray) {
+            JSONArray arr = (JSONArray) value;
+            StringBuilder sb = new StringBuilder("[");
+            for (int i = 0; i < arr.length(); i++) {
+                if (i > 0) {
+                    sb.append(',');
+                }
+                sb.append(canon(arr.opt(i)));
+            }
+            return sb.append(']').toString();
+        }
+        if (value == null || value == JSONObject.NULL) {
+            return "null";
+        }
+        return JSONObject.quote(String.valueOf(value));
+    }
+
+    private static String canonJson(String text) {
+        int brace = text.indexOf('{');
+        if (brace < 0) {
+            return "NON_JSON:" + text;
+        }
+        try {
+            return canon(new JSONObject(text.substring(brace)));
+        } catch (Throwable t) {
+            return "PARSE_FAIL:" + text;
+        }
+    }
+
+    private static final String[] OPTIMIZE_CASES = {
+            "not json at all",
+            "{\"outbounds\":[{\"type\":\"direct\",\"tag\":\"direct\",\"domain_strategy\":\"prefer_ipv4\"}],\"route\":{}}",
+            "{\"dns\":{\"servers\":[{\"tag\":\"fakeip\",\"type\":\"fakeip\",\"inet4_range\":\"198.18.0.0/15\",\"inet6_range\":\"fc00::/18\"}],\"strategy\":\"prefer_ipv6\",\"rules\":[{\"query_type\":[\"A\",\"AAAA\"],\"server\":\"fakeip\"}]},\"route\":{\"rules\":[]},\"outbounds\":[{\"type\":\"direct\",\"tag\":\"direct\",\"domain_strategy\":\"prefer_ipv4\"}]}",
+            "garbage {\"dns\":{\"servers\":[{\"tag\":\"ali_dns\",\"type\":\"https\",\"server\":\"223.6.6.6\"},{\"tag\":\"remote_dns\",\"type\":\"https\",\"server\":\"8.8.8.8\",\"detour\":\"节点选择\"},{\"tag\":\"fakeip\",\"type\":\"fakeip\",\"inet6_range\":\"fc00::/18\"}],\"rules\":[{\"rule_set\":\"geosite-cn\",\"server\":\"ali_dns\"},{\"query_type\":[\"A\",\"AAAA\"],\"server\":\"fakeip\"}]},\"route\":{\"rules\":[{\"action\":\"sniff\"}]},\"outbounds\":[{\"type\":\"direct\",\"tag\":\"direct\",\"domain_strategy\":\"prefer_ipv4\"},{\"type\":\"selector\",\"tag\":\"节点选择\",\"outbounds\":[\"direct\"]}]}",
+            "{\"dns\":{\"servers\":[{\"tag\":\"fakeip\",\"type\":\"fakeip\",\"inet4_range\":\"198.18.0.0/15\"}]},\"route\":{},\"outbounds\":[]}"
+    };
 
     private static void check(List<String> fails, List<String> oks, String name, boolean ok, String detail) {
         if (ok) {
@@ -199,6 +257,43 @@ public final class RustBridgeSelfTest {
             }
             String empty = RustBridge.userinfoParse("foo=bar");
             check(fails, oks, "userinfo[empty]", empty != null && empty.contains("null"), empty);
+        }
+
+        // 5) 配置优化 parity：Rust optimize_config ↔ Java optimizeJavaOnly（逐项 canonical 比较）
+        Method optJava = null;
+        try {
+            optJava = SubGuard.class.getDeclaredMethod("optimizeJavaOnly", String.class);
+            optJava.setAccessible(true);
+        } catch (Throwable t) {
+            fails.add("反射取 SubGuard.optimizeJavaOnly 失败: " + t);
+        }
+        List<String> optCases = new ArrayList<String>();
+        for (String path : args) {
+            File f = new File(path);
+            if (f.isFile() && f.length() < 8L * 1024 * 1024) {
+                try {
+                    optCases.add(readFile(f));
+                } catch (Throwable t) {
+                    fails.add("优化器读取失败 " + path + ": " + t);
+                }
+            }
+        }
+        Collections.addAll(optCases, OPTIMIZE_CASES);
+        for (int i = 0; i < optCases.size(); i++) {
+            String content = optCases.get(i);
+            String rustOut = rust ? RustBridge.optimizeConfig(content) : null;
+            String javaOut = null;
+            if (optJava != null) {
+                try {
+                    javaOut = (String) optJava.invoke(null, content);
+                } catch (Throwable t) {
+                    fails.add("optimizeJavaOnly 异常: " + t);
+                }
+            }
+            if (rust && javaOut != null) {
+                check(fails, oks, "optimize[" + i + "]", canonJson(rustOut).equals(canonJson(javaOut)),
+                        "rust=" + canonJson(rustOut) + " java=" + canonJson(javaOut));
+            }
         }
 
         System.out.println("RUST_JNI_SELFTEST ok=" + oks.size() + " fail=" + fails.size());

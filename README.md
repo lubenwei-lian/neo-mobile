@@ -70,3 +70,9 @@ pwsh tools\build-app.ps1 -Install # 构建并安装到已连接设备
 ## 来源与许可
 
 本项目基于 SFA（sing-box for Android）与 sing-box 修改，遵循其 **GPL-3.0** 许可；分发二进制时请同时遵守上游许可要求。
+## 源码结构
+
+- 01-apktool/ : APK 反编译工程（smali / res / assets）
+- 02-java/patches/ : Java 与 Rust 补丁源码
+- rust/ : JNI 桥接 Rust 源码（neo-core / neo-cli / neo-jni）
+- tools/ : 构建与校验脚本

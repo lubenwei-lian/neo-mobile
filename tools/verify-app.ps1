@@ -276,6 +276,10 @@ if (Test-Path -LiteralPath $dex4) {
     else { $ok.Add('规则集: classes4.dex 含 applyLocalRuleSets') }
     if ($disasm2 -notmatch 'urlFor') { $fail.Add('规则集: classes4.dex 缺 LocalRuleSetServer.urlFor') }
     else { $ok.Add('规则集: classes4.dex 含 urlFor') }
+    if ($disasm2 -notmatch 'firstOpenProxyPort') { $fail.Add('订阅拉取: classes4.dex 缺本地代理优先探测（firstOpenProxyPort）') }
+    else { $ok.Add('订阅拉取: classes4.dex 含本地代理优先探测') }
+    if ($disasm2 -notmatch 'fetchWithProxy') { $fail.Add('订阅拉取: classes4.dex 缺代理/直连共用 HTTP 实现（fetchWithProxy）') }
+    else { $ok.Add('订阅拉取: classes4.dex 含代理/直连 HTTP 实现') }
 }
 
 $fetcherTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\bg\SubscriptionFetcher.smali') -Raw

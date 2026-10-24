@@ -29,12 +29,26 @@ public final class SubGuard {
     }
 
     /**
-     * 订阅更新用：直连优先但限时（3s 连接 / 5s 读取）。
-     * 订阅域名常被墙，直连超时必须短，失败立即回退内核 HTTP（走代理），不能让更新多等 20 秒。
+     * 订阅更新用：对齐 v2rayNG 的顺序。
+     *   1. 已有本地代理在运行 → 代理优先（3s 连接 / 10s 读取）；
+     *   2. 代理不可用/失败 → 直连（8s 连接 / 15s 读取）；
+     *   3. 都失败 → 返回 null，由 SubscriptionFetcher 回退内核 HTTP。
+     * 单次直连不再用 3s/5s，避免慢机场被过早判失败。
      */
     public static String fetchDirectFastOrNull(String url, String ua) {
+        int proxyPort = firstOpenProxyPort();
+        if (proxyPort > 0) {
+            try {
+                String r = fetchWithProxy(url, ua, 3000, 10000, proxyPort);
+                android.util.Log.i("SubGuard", "订阅经本地代理拉取成功 len="
+                        + (r == null ? 0 : r.length()) + " port=" + proxyPort + " url=" + url);
+                return r;
+            } catch (Throwable t) {
+                android.util.Log.i("SubGuard", "订阅经本地代理失败（port=" + proxyPort + "），改直连：" + t);
+            }
+        }
         try {
-            String r = fetchDirectWith(url, ua, 3000, 5000);
+            String r = fetchWithProxy(url, ua, 8000, 15000, 0);
             android.util.Log.i("SubGuard", "订阅直连拉取成功 len=" + (r == null ? 0 : r.length()) + " url=" + url);
             return r;
         } catch (Throwable t) {
@@ -51,6 +65,27 @@ public final class SubGuard {
      */
     /** 最近一次成功的代理端口（跨调用记忆，优先复用）。 */
     private static volatile int lastGoodPort = 0;
+
+    /** 订阅拉取用的本地代理探测结果，5 秒内复用，避免每个 UA 都扫一遍端口。 */
+    private static volatile int lastProxyProbePort = 0;
+    private static volatile long lastProxyProbeAt = 0;
+
+    private static int firstOpenProxyPort() {
+        long now = System.currentTimeMillis();
+        if (now - lastProxyProbeAt < 5000L) {
+            return lastProxyProbePort;
+        }
+        lastProxyProbeAt = now;
+        lastProxyProbePort = 0;
+        int[] ports = discoverPorts();
+        for (int i = 0; i < ports.length; i++) {
+            if (portOpen(ports[i])) {
+                lastProxyProbePort = ports[i];
+                break;
+            }
+        }
+        return lastProxyProbePort;
+    }
 
     public static java.net.URLConnection open(String url) {
         int[] ports = discoverPorts();
@@ -237,9 +272,20 @@ public final class SubGuard {
     }
 
     private static String fetchDirectWith(String url, String ua, int connectMs, int readMs) {
+        return fetchWithProxy(url, ua, connectMs, readMs, 0);
+    }
+
+    private static String fetchWithProxy(String url, String ua, int connectMs, int readMs, int proxyPort) {
         HttpURLConnection conn = null;
         try {
-            conn = (HttpURLConnection) new URL(url).openConnection();
+            java.net.URL target = new URL(url);
+            if (proxyPort > 0) {
+                java.net.Proxy proxy = new java.net.Proxy(java.net.Proxy.Type.HTTP,
+                        new java.net.InetSocketAddress("127.0.0.1", proxyPort));
+                conn = (HttpURLConnection) target.openConnection(proxy);
+            } else {
+                conn = (HttpURLConnection) target.openConnection();
+            }
             conn.setConnectTimeout(connectMs);
             conn.setReadTimeout(readMs);
             conn.setInstanceFollowRedirects(true);

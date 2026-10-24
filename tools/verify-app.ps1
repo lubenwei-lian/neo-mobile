@@ -216,7 +216,18 @@ if (Test-Path -LiteralPath $dex4) {
     if ($disasm2 -notmatch 'optimizeDns') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.optimizeDns') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.optimizeDns') }
     if ($disasm2 -notmatch 'ensureRoute') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.ensureRoute') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.ensureRoute') }
     if ($disasm2 -notmatch 'fetchDirectFastOrNull') { $fail.Add('P1-5: classes4.dex 缺 SubGuard.fetchDirectFastOrNull') } else { $ok.Add('P1-5: 订阅直连优先已下沉 Java（fetchDirectFastOrNull）') }
+    if ($disasm2 -notmatch 'hintOfNative') { $fail.Add('M3: classes4.dex 缺 RustBridge.hintOfNative') } else { $ok.Add('M3: RustBridge JNI 方法已打进 classes4.dex') }
+    if ($disasm2 -notmatch 'RustBridgeSelfTest') { $fail.Add('M3: classes4.dex 缺 RustBridgeSelfTest') } else { $ok.Add('M3: 自检入口 RustBridgeSelfTest 已打进 classes4.dex') }
 }
+
+# ---- 10. M3：Rust JNI 库 ----
+$zip3 = [System.IO.Compression.ZipFile]::OpenRead($Apk)
+try {
+    $so = $zip3.Entries | Where-Object { $_.FullName -eq 'lib/arm64-v8a/libneoguard_jni.so' } | Select-Object -First 1
+    if (-not $so) { $fail.Add('M3: APK 缺 lib/arm64-v8a/libneoguard_jni.so') }
+    elseif ($so.Length -lt 300000) { $fail.Add("M3: libneoguard_jni.so 体积过小（$($so.Length) B）") }
+    else { $ok.Add("M3: 已内置 libneoguard_jni.so（$($so.Length) B）") }
+} finally { $zip3.Dispose() }
 
 # ---- 输出 ----
 Write-Host ("校验 APK: " + $Apk)

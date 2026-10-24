@@ -4122,7 +4122,7 @@
     .line 6
     .line 7
     .line 8
-    const-string v1, "https://github.com/lubenwei-lian/neo-mobile/releases"
+    const-string v1, "https://github.com/lubenwei-lian/neo/releases"
 
     .line 9
     .line 10

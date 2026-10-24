@@ -199,15 +199,15 @@ if (Test-Path -LiteralPath $cs) {
     else { $fail.Add('免责声明: 未找到新/旧正文') }
 } else { $fail.Add('免责声明: 找不到 ComposableSingletons$SettingsScreenKt.smali') }
 $urlChecks = @(
-    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\SettingsScreenKt.smali'); K = 'neo-mobile/releases'; N = '发布页 URL' },
-    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\ProUpdateScreenKt.smali'); K = 'neo-mobile/releases'; N = 'ProUpdate 发布页 URL' },
-    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\vendor\GitHubUpdateChecker.smali'); K = 'api.github.com/repos/lubenwei-lian/neo-mobile/releases'; N = '更新检查 API' }
+    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\SettingsScreenKt.smali'); K = 'neo/releases'; N = '发布页 URL' },
+    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\ProUpdateScreenKt.smali'); K = 'neo/releases'; N = 'ProUpdate 发布页 URL' },
+    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\vendor\GitHubUpdateChecker.smali'); K = 'api.github.com/repos/lubenwei-lian/neo/releases'; N = '更新检查 API' }
 )
 foreach ($u in $urlChecks) {
     if (-not (Test-Path -LiteralPath $u.F)) { $fail.Add("$($u.N): 找不到文件") }
     else {
         $utxt = Get-Content -LiteralPath $u.F -Raw
-        if ($utxt -notmatch [regex]::Escape($u.K)) { $fail.Add("$($u.N): 未指向 neo-mobile") } else { $ok.Add("$($u.N): 已指向 neo-mobile") }
+        if ($utxt -notmatch [regex]::Escape($u.K)) { $fail.Add("$($u.N): 未指向 neo") } else { $ok.Add("$($u.N): 已指向 neo") }
     }
 }
 if (Test-Path -LiteralPath $dex4) {

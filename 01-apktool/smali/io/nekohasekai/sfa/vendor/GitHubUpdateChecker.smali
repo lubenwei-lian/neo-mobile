@@ -21,7 +21,7 @@
 
 .field public static final Companion:Lio/nekohasekai/sfa/vendor/GitHubUpdateChecker$Companion;
 
-.field private static final RELEASES_URL:Ljava/lang/String; = "https://api.github.com/repos/lubenwei-lian/neo-mobile/releases?per_page=20"
+.field private static final RELEASES_URL:Ljava/lang/String; = "https://api.github.com/repos/lubenwei-lian/neo/releases?per_page=20"
 
 
 # instance fields
@@ -151,7 +151,7 @@
     const/4 v1, 0x2
 
     .line 5
-    const-string v2, "https://api.github.com/repos/lubenwei-lian/neo-mobile/releases?per_page=20"
+    const-string v2, "https://api.github.com/repos/lubenwei-lian/neo/releases?per_page=20"
 
     .line 6
     .line 7

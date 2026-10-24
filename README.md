@@ -11,7 +11,7 @@
 
 ## 下载
 
-- GitHub Releases：https://github.com/lubenwei-lian/neo-mobile/releases
+- GitHub Releases：https://github.com/lubenwei-lian/neo/releases
 - 当前版本：0.0.1（versionCode 1）
 
 ## 功能

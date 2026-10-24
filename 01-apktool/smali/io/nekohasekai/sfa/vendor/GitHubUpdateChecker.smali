@@ -830,7 +830,7 @@
 
     .line 121
     .line 122
-    const-string v0, "0.0.2"
+    const-string v0, "0.0.3"
 
     .line 123
     .line 124

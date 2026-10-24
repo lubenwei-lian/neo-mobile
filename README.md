@@ -1,6 +1,6 @@
 # neo Android（sing-box）
 
-基于 sing-box 的 Android 客户端（SFA 分支修改版），当前版本 **0.0.2**。
+基于 sing-box 的 Android 客户端（SFA 分支修改版），当前版本 **0.0.3**。
 
 ## 项目介绍
 
@@ -12,11 +12,12 @@
 ## 下载
 
 - GitHub Releases：https://github.com/lubenwei-lian/neo/releases
-- 当前版本：0.0.2（versionCode 2）
+- 当前版本：0.0.3（versionCode 3）
 
 ## 功能
 
 - 订阅导入与更新、节点列表、延迟/真连测速、自动选择
+- 订阅拉取直连优先，失败自动回退内核 HTTP；首次安装无需已有节点即可直接解析订阅
 - 全局 TUN 代理；流量统计与订阅用量
 - 内置 CN 域名/IP 规则集（本机回环 HTTP 托管），国内直连、国外按订阅策略分流
 - 订阅诊断日志与分享诊断报告
@@ -34,7 +35,7 @@ git clone https://github.com/lubenwei-lian/neo-mobile.git
 git lfs pull
 ```
 
-Release 里的 `neo-0.0.2.apk` 是普通发布资产，不需要 LFS。
+Release 里的 `neo-0.0.3.apk` 是普通发布资产，不需要 LFS。
 
 ## 构建
 

@@ -4722,7 +4722,7 @@
 
     .line 712
     .line 713
-    const-string v8, "v0.0.2 \u00b7 "
+    const-string v8, "v0.0.3 \u00b7 "
 
     .line 714
     .line 715

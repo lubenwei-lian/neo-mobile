@@ -5081,7 +5081,7 @@
     .locals 3
 
     .line 1
-    const-string v0, "0.0.2"
+    const-string v0, "0.0.3"
 
     .line 2
     .line 3

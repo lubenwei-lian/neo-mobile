@@ -164,7 +164,7 @@
 
     move-result-object v0
 
-    if-eqz v0, :cond_fetch_http
+    if-nez v0, :cond_fetch_http
 
     invoke-virtual {v6, v13, v14}, Lio/nekohasekai/sfa/utils/HTTPClient;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 

@@ -184,17 +184,17 @@ if (Test-Path -LiteralPath $launchFile) {
     else { $ok.Add('Launch 协程状态机恢复分支正常') }
 } else { $fail.Add('找不到 StartupAutoTest$Launch.smali') }
 
-# ---- 9. 0.0.2 版本 / 发布页 / 免责声明 / 配置优化 ----
+# ---- 9. 0.0.3 版本 / 发布页 / 免责声明 / 配置优化 ----
 $yml = Join-Path $PROJ '01-apktool\apktool.yml'
 if (-not (Test-Path -LiteralPath $yml)) { $fail.Add('版本: 找不到 apktool.yml') }
 else {
     $ytxt = Get-Content -LiteralPath $yml -Raw
-    if ($ytxt -notmatch 'versionName: 0.0.2') { $fail.Add('版本: versionName 不是 0.0.2') } else { $ok.Add('版本: versionName=0.0.2') }
-    if ($ytxt -notmatch 'versionCode: 2\b') { $fail.Add('版本: versionCode 不是 2') } else { $ok.Add('版本: versionCode=2') }
+    if ($ytxt -notmatch 'versionName: 0.0.3') { $fail.Add('版本: versionName 不是 0.0.3') } else { $ok.Add('版本: versionName=0.0.3') }
+    if ($ytxt -notmatch 'versionCode: 3\b') { $fail.Add('版本: versionCode 不是 3') } else { $ok.Add('版本: versionCode=3') }
 }
 $buildCfg = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\BuildConfig.smali') -Raw
-if ($buildCfg -notmatch 'VERSION_NAME:Ljava/lang/String; = "0.0.2"') { $fail.Add('版本: BuildConfig.VERSION_NAME 不是 0.0.2') }
-else { $ok.Add('版本: BuildConfig.VERSION_NAME=0.0.2') }
+if ($buildCfg -notmatch 'VERSION_NAME:Ljava/lang/String; = "0.0.3"') { $fail.Add('版本: BuildConfig.VERSION_NAME 不是 0.0.3') }
+else { $ok.Add('版本: BuildConfig.VERSION_NAME=0.0.3') }
 $oldVer = @(Get-ChildItem (Join-Path $PROJ '01-apktool\smali') -Recurse -Filter *.smali -File | Select-String -Pattern '"0.0.1"|"v0.0.1')
 if ($oldVer.Count -gt 0) { $fail.Add("版本: 仍残留 $($oldVer.Count) 处 0.0.1 字面量") }
 else { $ok.Add('版本: 无 0.0.1 残留') }
@@ -238,7 +238,7 @@ try {
     else { $ok.Add("已内置 libneoguard_jni.so（$($so.Length) B）") }
 } finally { $zip3.Dispose() }
 
-# ---- 11. 0.0.2 本轮改动 ----
+# ---- 11. 0.0.3 本轮改动 ----
 $rsDir = Join-Path $PROJ '01-apktool\assets\rule-sets'
 $geoSite = Join-Path $rsDir 'geosite-cn.srs'
 $geoIp = Join-Path $rsDir 'geoip-cn.srs'
@@ -277,6 +277,10 @@ if (Test-Path -LiteralPath $dex4) {
     if ($disasm2 -notmatch 'urlFor') { $fail.Add('规则集: classes4.dex 缺 LocalRuleSetServer.urlFor') }
     else { $ok.Add('规则集: classes4.dex 含 urlFor') }
 }
+
+$fetcherTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\bg\SubscriptionFetcher.smali') -Raw
+if ($fetcherTxt -notmatch 'if-nez v0, :cond_fetch_http') { $fail.Add('订阅拉取: 直连失败未回退内核 HTTP（分支反转）') }
+else { $ok.Add('订阅拉取: 直连失败会回退内核 HTTP') }
 
 # ---- 输出 ----
 Write-Host ("校验 APK: " + $Apk)

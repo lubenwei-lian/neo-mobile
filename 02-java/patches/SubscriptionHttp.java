@@ -20,10 +20,10 @@ public final class SubscriptionHttp {
         if (remaining <= 0) {
             throw new RuntimeException("下载阶段超时");
         }
-        int timeoutMs = (int) Math.min(remaining, 15000L);
+        int timeoutMs = (int) Math.min(remaining, 30000L);
         OkHttpClient.Builder builder = new OkHttpClient.Builder()
                 .connectTimeout(Math.min(5000L, timeoutMs), TimeUnit.MILLISECONDS)
-                .readTimeout(Math.min(10000L, timeoutMs), TimeUnit.MILLISECONDS)
+                .readTimeout(Math.min(20000L, timeoutMs), TimeUnit.MILLISECONDS)
                 .callTimeout(timeoutMs, TimeUnit.MILLISECONDS)
                 .followRedirects(true)
                 .followSslRedirects(true)

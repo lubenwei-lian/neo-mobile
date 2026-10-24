@@ -58,7 +58,7 @@ public final class SubGuard {
     }
 
     /**
-     * 订阅拉取的唯一入口：同一 URL 共用一个 15 秒总截止时间。
+     * 订阅拉取的唯一入口：同一 URL 共用一个 30 秒总截止时间。
      * 顺序：本地代理优先 -> 直连 -> HTTP 明文的内核 HTTP 兜底。
      * 超时/失败直接抛异常，不再让上层循环 UA 反复等几分钟。
      */
@@ -96,7 +96,7 @@ public final class SubGuard {
             }
         }
         if (worker.isAlive()) {
-            throw new RuntimeException("订阅拉取超过 15 秒");
+            throw new RuntimeException("订阅拉取超过 30 秒");
         }
         if (err[0] != null) {
             if (err[0] instanceof RuntimeException) {
@@ -105,7 +105,7 @@ public final class SubGuard {
             throw new RuntimeException(err[0]);
         }
         if (out[0] == null || out[0].length() == 0) {
-            throw new RuntimeException("订阅拉取失败（15 秒内未拿到内容）");
+            throw new RuntimeException("订阅拉取失败（30 秒内未拿到内容）");
         }
         clearActiveFetch();
         return out[0];
@@ -119,7 +119,7 @@ public final class SubGuard {
         }
         long remaining = activeFetchDeadline - now;
         if (remaining <= 0) {
-            throw new RuntimeException("订阅拉取超过 15 秒");
+            throw new RuntimeException("订阅拉取超过 30 秒");
         }
         long t0 = System.currentTimeMillis();
         try {
@@ -161,7 +161,7 @@ public final class SubGuard {
                 return r;
             }
         }
-        throw new RuntimeException("订阅拉取失败（下载阶段，15 秒）");
+        throw new RuntimeException("订阅拉取失败（下载阶段，30 秒）");
     }
 
     private static String fetchKernelWithDeadline(String url, String ua, long deadline) {
@@ -220,10 +220,10 @@ public final class SubGuard {
     private static volatile int lastProxyProbePort = 0;
     private static volatile long lastProxyProbeAt = 0;
 
-    /** 同一 URL 的订阅拉取总截止时间（所有 UA/代理/直连共用，最多 15 秒）。 */
+    /** 同一 URL 的订阅拉取总截止时间（所有 UA/代理/直连共用，最多 30 秒）。 */
     private static volatile String activeFetchUrl = null;
     private static volatile long activeFetchDeadline = 0;
-    private static final long SUBSCRIPTION_DEADLINE_MS = 15000L;
+    private static final long SUBSCRIPTION_DEADLINE_MS = 30000L;
 
     private static int firstOpenProxyPort() {
         long now = System.currentTimeMillis();
@@ -449,7 +449,7 @@ public final class SubGuard {
             conn.setRequestProperty("Accept-Encoding", "gzip");
             int code = conn.getResponseCode();
             if (activeFetchDeadline > 0 && System.currentTimeMillis() > activeFetchDeadline) {
-                throw new RuntimeException("订阅拉取超过 15 秒");
+                throw new RuntimeException("订阅拉取超过 30 秒");
             }
             if (code < 200 || code >= 300) {
                 // P2 修复：非 2xx 时带上响应体片段，便于定位 401/403/代理错误
@@ -486,7 +486,7 @@ public final class SubGuard {
             int n;
             while ((n = in.read(buf)) > 0) {
                 if (activeFetchDeadline > 0 && System.currentTimeMillis() > activeFetchDeadline) {
-                    throw new RuntimeException("订阅拉取超过 15 秒");
+                    throw new RuntimeException("订阅拉取超过 30 秒");
                 }
                 bos.write(buf, 0, n);
             }

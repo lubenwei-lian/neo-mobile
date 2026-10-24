@@ -282,8 +282,8 @@ if (Test-Path -LiteralPath $dex4) {
     else { $ok.Add('订阅拉取: classes4.dex 含代理/直连 HTTP 实现') }
     if ($disasm2 -notmatch 'GZIPInputStream') { $fail.Add('订阅拉取: classes4.dex 缺 gzip 解压') }
     else { $ok.Add('订阅拉取: classes4.dex 含 gzip 解压') }
-    if ($disasm2 -notmatch 'fetchSubscriptionOrThrow') { $fail.Add('订阅拉取: classes4.dex 缺 15 秒截止入口') }
-    else { $ok.Add('订阅拉取: classes4.dex 含 15 秒截止入口') }
+    if ($disasm2 -notmatch 'fetchSubscriptionOrThrow') { $fail.Add('订阅拉取: classes4.dex 缺 30 秒截止入口') }
+    else { $ok.Add('订阅拉取: classes4.dex 含 30 秒截止入口') }
     if ($disasm2 -notmatch 'SubscriptionHttp') { $fail.Add('订阅拉取: classes4.dex 缺 OkHttp 订阅下载类') }
     else { $ok.Add('订阅拉取: classes4.dex 含 OkHttp 订阅下载类') }
     if ($disasm2 -notmatch 'okhttp3/OkHttpClient') { $fail.Add('订阅拉取: classes4.dex 缺 OkHttp 运行时') }
@@ -291,8 +291,8 @@ if (Test-Path -LiteralPath $dex4) {
 }
 
 $fetcherTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\bg\SubscriptionFetcher.smali') -Raw
-if ($fetcherTxt -notmatch 'fetchSubscriptionOrThrow') { $fail.Add('订阅拉取: 未使用 15 秒总截止入口（fetchSubscriptionOrThrow）') }
-else { $ok.Add('订阅拉取: 使用 15 秒总截止入口') }
+if ($fetcherTxt -notmatch 'fetchSubscriptionOrThrow') { $fail.Add('订阅拉取: 未使用 30 秒总截止入口（fetchSubscriptionOrThrow）') }
+else { $ok.Add('订阅拉取: 使用 30 秒总截止入口') }
 if ($fetcherTxt -match 'HTTPClient;->getString') { $fail.Add('订阅拉取: 仍保留无超时的内核 HTTP 直接回退') }
 else { $ok.Add('订阅拉取: 已移除无超时的内核 HTTP 直接回退') }
 $profileFetchFiles = @(
@@ -303,8 +303,8 @@ $profileFetchFiles = @(
 foreach ($pf in $profileFetchFiles) {
     $ptxt = Get-Content -LiteralPath (Join-Path $PROJ $pf) -Raw
     if ($ptxt -match 'HTTPClient;->getString') { $fail.Add("订阅拉取: $pf 仍走无超时 HTTPClient") }
-    elseif ($ptxt -notmatch 'fetchSubscriptionOrThrow') { $fail.Add("订阅拉取: $pf 未走 15 秒截止入口") }
-    else { $ok.Add("订阅拉取: $pf 已走 15 秒截止入口") }
+    elseif ($ptxt -notmatch 'fetchSubscriptionOrThrow') { $fail.Add("订阅拉取: $pf 未走 30 秒截止入口") }
+    else { $ok.Add("订阅拉取: $pf 已走 30 秒截止入口") }
 }
 
 # ---- 输出 ----

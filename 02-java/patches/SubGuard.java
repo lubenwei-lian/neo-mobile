@@ -29,6 +29,21 @@ public final class SubGuard {
     }
 
     /**
+     * 订阅更新用：直连优先但限时（3s 连接 / 5s 读取）。
+     * 订阅域名常被墙，直连超时必须短，失败立即回退内核 HTTP（走代理），不能让更新多等 20 秒。
+     */
+    public static String fetchDirectFastOrNull(String url, String ua) {
+        try {
+            String r = fetchDirectWith(url, ua, 3000, 5000);
+            android.util.Log.i("SubGuard", "订阅直连拉取成功 len=" + (r == null ? 0 : r.length()) + " url=" + url);
+            return r;
+        } catch (Throwable t) {
+            android.util.Log.i("SubGuard", "订阅直连失败（改用内核 HTTP）：" + t);
+            return null;
+        }
+    }
+
+    /**
      * 打开 URL 连接：本地代理口开着时优先走代理（流量信息查询用）。
      *   背景：app 自身 socket 不受 TUN 捕获（VpnService 自身 exempt），HttpURLConnection 直连；
      *   而订阅域名在墙外/直连极慢（实测手机 30s 超时、电脑 8.4s），导致「应用导入成功但流量信息查不到」。
@@ -201,11 +216,15 @@ public final class SubGuard {
     }
 
     private static String fetchDirectOnce(String url, String ua) {
+        return fetchDirectWith(url, ua, 8000, 12000);
+    }
+
+    private static String fetchDirectWith(String url, String ua, int connectMs, int readMs) {
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) new URL(url).openConnection();
-            conn.setConnectTimeout(8000);
-            conn.setReadTimeout(12000);
+            conn.setConnectTimeout(connectMs);
+            conn.setReadTimeout(readMs);
             conn.setInstanceFollowRedirects(true);
             conn.setRequestProperty("User-Agent", ua);
             conn.setRequestProperty("Accept", "*/*");

@@ -23,7 +23,7 @@ $EXPECTED_CLASSES4 = @(
     'Lio/neoguard/NetworkWatcher$1;',
     'Lio/neoguard/SubGuard;'
 )
-$EXPECTED_HOOKS = 17
+$EXPECTED_HOOKS = 18
 
 if (-not $Apk) { $Apk = Join-Path $PROJ '03-dist\neo-latest.apk' }
 if (-not (Test-Path -LiteralPath $Apk)) { throw "APK 不存在: $Apk" }
@@ -215,6 +215,7 @@ if (Test-Path -LiteralPath $dex4) {
     if ($disasm2 -notmatch 'optimizeInner') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.optimize/optimizeInner') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.optimize/optimizeInner') }
     if ($disasm2 -notmatch 'optimizeDns') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.optimizeDns') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.optimizeDns') }
     if ($disasm2 -notmatch 'ensureRoute') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.ensureRoute') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.ensureRoute') }
+    if ($disasm2 -notmatch 'fetchDirectFastOrNull') { $fail.Add('P1-5: classes4.dex 缺 SubGuard.fetchDirectFastOrNull') } else { $ok.Add('P1-5: 订阅直连优先已下沉 Java（fetchDirectFastOrNull）') }
 }
 
 # ---- 输出 ----

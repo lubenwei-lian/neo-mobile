@@ -160,12 +160,20 @@
     .line 47
     .line 48
     :try_start_1
+    invoke-static {v13, v14}, Lio/neoguard/SubGuard;->fetchDirectFastOrNull(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v0
+
+    if-eqz v0, :cond_fetch_http
+
     invoke-virtual {v6, v13, v14}, Lio/nekohasekai/sfa/utils/HTTPClient;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
+    move-result-object v0
+
+    :cond_fetch_http
     .line 49
     .line 50
     .line 51
-    move-result-object v0
     :try_end_1
     .catchall {:try_start_1 .. :try_end_1} :catchall_0
 

@@ -121,17 +121,29 @@ public final class SubGuard {
         if (remaining <= 0) {
             throw new RuntimeException("订阅拉取超过 15 秒");
         }
+        long t0 = System.currentTimeMillis();
+        try {
+            String r = SubscriptionHttp.fetch(url, ua, 0, activeFetchDeadline);
+            if (r != null && r.length() > 0) {
+                android.util.Log.i("SubGuard", "订阅 OkHttp 直连成功 len=" + r.length()
+                        + " cost=" + (System.currentTimeMillis() - t0) + "ms");
+                clearActiveFetch();
+                return r;
+            }
+        } catch (Throwable t) {
+            android.util.Log.i("SubGuard", "订阅 OkHttp 直连失败：" + t);
+        }
+        long now2 = System.currentTimeMillis();
+        long remaining2 = activeFetchDeadline - now2;
         int proxyPort = firstOpenProxyPort();
-        now = System.currentTimeMillis();
-        remaining = activeFetchDeadline - now;
-        if (proxyPort > 0 && remaining > 0) {
+        now2 = System.currentTimeMillis();
+        remaining2 = activeFetchDeadline - now2;
+        if (proxyPort > 0 && remaining2 > 0) {
             try {
-                int connect = (int) Math.min(3000L, Math.max(1000L, remaining));
-                int read = (int) Math.min(8000L, Math.max(1000L, remaining));
-                String r = fetchWithProxy(url, ua, connect, read, proxyPort);
+                String r = SubscriptionHttp.fetch(url, ua, proxyPort, activeFetchDeadline);
                 if (r != null && r.length() > 0) {
                     android.util.Log.i("SubGuard", "订阅经本地代理拉取成功 len=" + r.length()
-                            + " port=" + proxyPort + " cost=" + (System.currentTimeMillis() - now) + "ms");
+                            + " port=" + proxyPort);
                     clearActiveFetch();
                     return r;
                 }
@@ -139,27 +151,9 @@ public final class SubGuard {
                 android.util.Log.i("SubGuard", "订阅经本地代理失败（port=" + proxyPort + "）：" + t);
             }
         }
-        now = System.currentTimeMillis();
-        remaining = activeFetchDeadline - now;
-        if (remaining <= 0) {
-            throw new RuntimeException("订阅拉取超过 15 秒");
-        }
-        try {
-            int connect = (int) Math.min(5000L, Math.max(1000L, remaining));
-            int read = (int) Math.min(remaining, 15000L);
-            String r = fetchWithProxy(url, ua, connect, read, 0);
-            if (r != null && r.length() > 0) {
-                android.util.Log.i("SubGuard", "订阅直连拉取成功 len=" + r.length()
-                        + " cost=" + (System.currentTimeMillis() - now) + "ms");
-                clearActiveFetch();
-                return r;
-            }
-        } catch (Throwable t) {
-            android.util.Log.i("SubGuard", "订阅直连失败：" + t);
-        }
-        now = System.currentTimeMillis();
-        remaining = activeFetchDeadline - now;
-        if (url.startsWith("http://") && remaining > 0) {
+        now2 = System.currentTimeMillis();
+        remaining2 = activeFetchDeadline - now2;
+        if (url.startsWith("http://") && remaining2 > 0) {
             String r = fetchKernelWithDeadline(url, ua, activeFetchDeadline);
             if (r != null && r.length() > 0) {
                 android.util.Log.i("SubGuard", "订阅内核 HTTP 兜底成功 len=" + r.length());
@@ -167,7 +161,7 @@ public final class SubGuard {
                 return r;
             }
         }
-        throw new RuntimeException("订阅拉取失败（15 秒内未拿到内容）");
+        throw new RuntimeException("订阅拉取失败（下载阶段，15 秒）");
     }
 
     private static String fetchKernelWithDeadline(String url, String ua, long deadline) {

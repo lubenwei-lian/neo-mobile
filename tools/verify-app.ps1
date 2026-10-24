@@ -284,6 +284,10 @@ if (Test-Path -LiteralPath $dex4) {
     else { $ok.Add('订阅拉取: classes4.dex 含 gzip 解压') }
     if ($disasm2 -notmatch 'fetchSubscriptionOrThrow') { $fail.Add('订阅拉取: classes4.dex 缺 15 秒截止入口') }
     else { $ok.Add('订阅拉取: classes4.dex 含 15 秒截止入口') }
+    if ($disasm2 -notmatch 'SubscriptionHttp') { $fail.Add('订阅拉取: classes4.dex 缺 OkHttp 订阅下载类') }
+    else { $ok.Add('订阅拉取: classes4.dex 含 OkHttp 订阅下载类') }
+    if ($disasm2 -notmatch 'okhttp3/OkHttpClient') { $fail.Add('订阅拉取: classes4.dex 缺 OkHttp 运行时') }
+    else { $ok.Add('订阅拉取: classes4.dex 含 OkHttp 运行时') }
 }
 
 $fetcherTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\bg\SubscriptionFetcher.smali') -Raw

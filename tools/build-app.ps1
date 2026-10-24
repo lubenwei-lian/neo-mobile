@@ -6,6 +6,11 @@ $ASC = 'C:\Users\somew\neo_mobile_asc'
 $PROJ = Split-Path -Parent $PSScriptRoot
 $JDK = 'E:\桌面\工具软件\安卓工具\jdk17\jdk-17.0.19+10'
 $AJ  = 'E:\桌面\工具软件\安卓工具\android-sdk\platforms\android-37.0\android.jar'
+$OKHTTP = Join-Path $PROJ '02-java\libs\okhttp-3.14.9.jar'
+$OKIO = Join-Path $PROJ '02-java\libs\okio-1.17.5.jar'
+if (-not (Test-Path $OKHTTP)) { throw "缺少 OkHttp: $OKHTTP" }
+if (-not (Test-Path $OKIO)) { throw "缺少 Okio: $OKIO" }
+$CP = "$AJ;$OKHTTP;$OKIO"
 $D8  = 'E:\桌面\工具软件\安卓工具\android-sdk\build-tools\37.0.0\d8.bat'
 $BT  = 'E:\桌面\工具软件\安卓工具\android-sdk\build-tools\37.0.0'
 $APKTOOL = 'E:\桌面\工具软件\安卓工具\apktool\apktool_3.0.2.jar'
@@ -22,10 +27,10 @@ New-Item -ItemType Directory -Force -Path $work,"$work\classes","$work\dex" | Ou
 # 1. SubGuard → dex
 $srcs = @(Get-ChildItem (Join-Path $PROJ '02-java\patches') -Filter '*.java' -ErrorAction SilentlyContinue | ForEach-Object { $_.FullName })
 if ($srcs.Count -gt 0) {
-  & "$JDK\bin\javac.exe" -encoding UTF-8 -source 8 -target 8 -bootclasspath $AJ -cp $AJ -d "$work\classes" @srcs 2>&1
+  & "$JDK\bin\javac.exe" -encoding UTF-8 -source 8 -target 8 -bootclasspath $AJ -cp $CP -d "$work\classes" @srcs 2>&1
   if ($LASTEXITCODE -ne 0) { throw "javac 失败" }
   $cls = @(Get-ChildItem "$work\classes\io\neoguard" -Filter '*.class' | ForEach-Object { $_.FullName })
-  & $D8 --lib $AJ --min-api 24 --output "$work\dex" @cls 2>&1
+  & $D8 --lib $AJ --min-api 24 --output "$work\dex" @cls $OKHTTP $OKIO 2>&1
   if ($LASTEXITCODE -ne 0) { throw "d8 失败" }
 } else { throw "缺少 SubGuard.java" }
 

@@ -463,7 +463,7 @@
     const/4 v4, 0x2
 
     .line 132
-    invoke-static {p1, v0, v2, v4, v2}, Lio/nekohasekai/sfa/utils/HTTPClient;->getString$default(Lio/nekohasekai/sfa/utils/HTTPClient;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+    invoke-static {v0, v2}, Lio/neoguard/SubGuard;->fetchSubscriptionOrThrow(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     .line 133
     .line 134

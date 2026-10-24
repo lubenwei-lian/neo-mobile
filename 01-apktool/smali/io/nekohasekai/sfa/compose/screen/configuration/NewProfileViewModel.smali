@@ -1164,7 +1164,7 @@
     .line 466
     .line 467
     :try_start_2
-    invoke-static {v9, v10, v7, v6, v7}, Lio/nekohasekai/sfa/utils/HTTPClient;->getString$default(Lio/nekohasekai/sfa/utils/HTTPClient;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Ljava/lang/String;
+    invoke-static {v10, v7}, Lio/neoguard/SubGuard;->fetchSubscriptionOrThrow(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
 
     .line 468
     .line 469

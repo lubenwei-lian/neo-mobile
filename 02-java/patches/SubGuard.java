@@ -58,6 +58,162 @@ public final class SubGuard {
     }
 
     /**
+     * 订阅拉取的唯一入口：同一 URL 共用一个 15 秒总截止时间。
+     * 顺序：本地代理优先 -> 直连 -> HTTP 明文的内核 HTTP 兜底。
+     * 超时/失败直接抛异常，不再让上层循环 UA 反复等几分钟。
+     */
+    public static String fetchSubscriptionOrThrow(final String url, String ua) {
+        if (url == null || url.length() == 0) {
+            throw new RuntimeException("订阅 URL 为空");
+        }
+        final String finalUa = (ua == null || ua.length() == 0) ? "sing-box/1.14.3" : ua;
+        long now = System.currentTimeMillis();
+        if (!url.equals(activeFetchUrl) || now > activeFetchDeadline + 2000L) {
+            activeFetchUrl = url;
+            activeFetchDeadline = now + SUBSCRIPTION_DEADLINE_MS;
+        }
+        final long deadline = activeFetchDeadline;
+        final String[] out = new String[1];
+        final Throwable[] err = new Throwable[1];
+        Thread worker = new Thread(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    out[0] = fetchSubscriptionInner(url, finalUa);
+                } catch (Throwable t) {
+                    err[0] = t;
+                }
+            }
+        }, "neo-subscription-fetch");
+        worker.setDaemon(true);
+        worker.start();
+        long wait = deadline - System.currentTimeMillis();
+        if (wait > 0) {
+            try {
+                worker.join(wait);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+        if (worker.isAlive()) {
+            throw new RuntimeException("订阅拉取超过 15 秒");
+        }
+        if (err[0] != null) {
+            if (err[0] instanceof RuntimeException) {
+                throw (RuntimeException) err[0];
+            }
+            throw new RuntimeException(err[0]);
+        }
+        if (out[0] == null || out[0].length() == 0) {
+            throw new RuntimeException("订阅拉取失败（15 秒内未拿到内容）");
+        }
+        clearActiveFetch();
+        return out[0];
+    }
+
+    private static String fetchSubscriptionInner(String url, String ua) {
+        long now = System.currentTimeMillis();
+        if (!url.equals(activeFetchUrl) || now > activeFetchDeadline + 2000L) {
+            activeFetchUrl = url;
+            activeFetchDeadline = now + SUBSCRIPTION_DEADLINE_MS;
+        }
+        long remaining = activeFetchDeadline - now;
+        if (remaining <= 0) {
+            throw new RuntimeException("订阅拉取超过 15 秒");
+        }
+        int proxyPort = firstOpenProxyPort();
+        now = System.currentTimeMillis();
+        remaining = activeFetchDeadline - now;
+        if (proxyPort > 0 && remaining > 0) {
+            try {
+                int connect = (int) Math.min(3000L, Math.max(1000L, remaining));
+                int read = (int) Math.min(8000L, Math.max(1000L, remaining));
+                String r = fetchWithProxy(url, ua, connect, read, proxyPort);
+                if (r != null && r.length() > 0) {
+                    android.util.Log.i("SubGuard", "订阅经本地代理拉取成功 len=" + r.length()
+                            + " port=" + proxyPort + " cost=" + (System.currentTimeMillis() - now) + "ms");
+                    clearActiveFetch();
+                    return r;
+                }
+            } catch (Throwable t) {
+                android.util.Log.i("SubGuard", "订阅经本地代理失败（port=" + proxyPort + "）：" + t);
+            }
+        }
+        now = System.currentTimeMillis();
+        remaining = activeFetchDeadline - now;
+        if (remaining <= 0) {
+            throw new RuntimeException("订阅拉取超过 15 秒");
+        }
+        try {
+            int connect = (int) Math.min(5000L, Math.max(1000L, remaining));
+            int read = (int) Math.min(remaining, 15000L);
+            String r = fetchWithProxy(url, ua, connect, read, 0);
+            if (r != null && r.length() > 0) {
+                android.util.Log.i("SubGuard", "订阅直连拉取成功 len=" + r.length()
+                        + " cost=" + (System.currentTimeMillis() - now) + "ms");
+                clearActiveFetch();
+                return r;
+            }
+        } catch (Throwable t) {
+            android.util.Log.i("SubGuard", "订阅直连失败：" + t);
+        }
+        now = System.currentTimeMillis();
+        remaining = activeFetchDeadline - now;
+        if (url.startsWith("http://") && remaining > 0) {
+            String r = fetchKernelWithDeadline(url, ua, activeFetchDeadline);
+            if (r != null && r.length() > 0) {
+                android.util.Log.i("SubGuard", "订阅内核 HTTP 兜底成功 len=" + r.length());
+                clearActiveFetch();
+                return r;
+            }
+        }
+        throw new RuntimeException("订阅拉取失败（15 秒内未拿到内容）");
+    }
+
+    private static String fetchKernelWithDeadline(String url, String ua, long deadline) {
+        try {
+            Object app = application();
+            if (app == null) {
+                return null;
+            }
+            Object companion = app.getClass().getField("Companion").get(null);
+            Object kernel = companion.getClass().getMethod("getKernel").invoke(companion);
+            if (kernel == null) {
+                return null;
+            }
+            final Object k = kernel;
+            final String[] out = new String[1];
+            Thread t = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Class<?> iface = Class.forName("io.nekohasekai.sfa.kernel.NeoKernel");
+                        java.lang.reflect.Method m = iface.getMethod("httpGet", String.class, String.class);
+                        out[0] = (String) m.invoke(k, url, ua);
+                    } catch (Throwable ignored) {
+                    }
+                }
+            }, "neo-sub-kernel-http");
+            t.setDaemon(true);
+            t.start();
+            long wait = deadline - System.currentTimeMillis();
+            if (wait <= 0) {
+                return null;
+            }
+            t.join(wait);
+            return t.isAlive() ? null : out[0];
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "内核 HTTP 兜底异常：" + t);
+            return null;
+        }
+    }
+
+    private static void clearActiveFetch() {
+        activeFetchUrl = null;
+        activeFetchDeadline = 0;
+    }
+
+    /**
      * 打开 URL 连接：本地代理口开着时优先走代理（流量信息查询用）。
      *   背景：app 自身 socket 不受 TUN 捕获（VpnService 自身 exempt），HttpURLConnection 直连；
      *   而订阅域名在墙外/直连极慢（实测手机 30s 超时、电脑 8.4s），导致「应用导入成功但流量信息查不到」。
@@ -69,6 +225,11 @@ public final class SubGuard {
     /** 订阅拉取用的本地代理探测结果，5 秒内复用，避免每个 UA 都扫一遍端口。 */
     private static volatile int lastProxyProbePort = 0;
     private static volatile long lastProxyProbeAt = 0;
+
+    /** 同一 URL 的订阅拉取总截止时间（所有 UA/代理/直连共用，最多 15 秒）。 */
+    private static volatile String activeFetchUrl = null;
+    private static volatile long activeFetchDeadline = 0;
+    private static final long SUBSCRIPTION_DEADLINE_MS = 15000L;
 
     private static int firstOpenProxyPort() {
         long now = System.currentTimeMillis();
@@ -293,6 +454,9 @@ public final class SubGuard {
             conn.setRequestProperty("Accept", "*/*");
             conn.setRequestProperty("Accept-Encoding", "gzip");
             int code = conn.getResponseCode();
+            if (activeFetchDeadline > 0 && System.currentTimeMillis() > activeFetchDeadline) {
+                throw new RuntimeException("订阅拉取超过 15 秒");
+            }
             if (code < 200 || code >= 300) {
                 // P2 修复：非 2xx 时带上响应体片段，便于定位 401/403/代理错误
                 String body = "";
@@ -327,6 +491,9 @@ public final class SubGuard {
             byte[] buf = new byte[8192];
             int n;
             while ((n = in.read(buf)) > 0) {
+                if (activeFetchDeadline > 0 && System.currentTimeMillis() > activeFetchDeadline) {
+                    throw new RuntimeException("订阅拉取超过 15 秒");
+                }
                 bos.write(buf, 0, n);
             }
             in.close();

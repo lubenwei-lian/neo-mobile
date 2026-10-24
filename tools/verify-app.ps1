@@ -25,7 +25,7 @@ $EXPECTED_CLASSES4 = @(
     'Lio/neoguard/NetworkWatcher$1;',
     'Lio/neoguard/SubGuard;'
 )
-$EXPECTED_HOOKS = 19
+$EXPECTED_HOOKS = 22
 
 if (-not $Apk) { $Apk = Join-Path $PROJ '03-dist\neo-latest.apk' }
 if (-not (Test-Path -LiteralPath $Apk)) { throw "APK 不存在: $Apk" }
@@ -282,11 +282,26 @@ if (Test-Path -LiteralPath $dex4) {
     else { $ok.Add('订阅拉取: classes4.dex 含代理/直连 HTTP 实现') }
     if ($disasm2 -notmatch 'GZIPInputStream') { $fail.Add('订阅拉取: classes4.dex 缺 gzip 解压') }
     else { $ok.Add('订阅拉取: classes4.dex 含 gzip 解压') }
+    if ($disasm2 -notmatch 'fetchSubscriptionOrThrow') { $fail.Add('订阅拉取: classes4.dex 缺 15 秒截止入口') }
+    else { $ok.Add('订阅拉取: classes4.dex 含 15 秒截止入口') }
 }
 
 $fetcherTxt = Get-Content -LiteralPath (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\bg\SubscriptionFetcher.smali') -Raw
-if ($fetcherTxt -notmatch 'if-nez v0, :cond_fetch_http') { $fail.Add('订阅拉取: 直连失败未回退内核 HTTP（分支反转）') }
-else { $ok.Add('订阅拉取: 直连失败会回退内核 HTTP') }
+if ($fetcherTxt -notmatch 'fetchSubscriptionOrThrow') { $fail.Add('订阅拉取: 未使用 15 秒总截止入口（fetchSubscriptionOrThrow）') }
+else { $ok.Add('订阅拉取: 使用 15 秒总截止入口') }
+if ($fetcherTxt -match 'HTTPClient;->getString') { $fail.Add('订阅拉取: 仍保留无超时的内核 HTTP 直接回退') }
+else { $ok.Add('订阅拉取: 已移除无超时的内核 HTTP 直接回退') }
+$profileFetchFiles = @(
+    '01-apktool\smali\io\nekohasekai\sfa\compose\screen\dashboard\DashboardViewModel$updateProfile$1.smali',
+    '01-apktool\smali\io\nekohasekai\sfa\compose\screen\profile\EditProfileViewModel$updateRemoteProfile$1.smali',
+    '01-apktool\smali\io\nekohasekai\sfa\compose\screen\configuration\NewProfileViewModel.smali'
+)
+foreach ($pf in $profileFetchFiles) {
+    $ptxt = Get-Content -LiteralPath (Join-Path $PROJ $pf) -Raw
+    if ($ptxt -match 'HTTPClient;->getString') { $fail.Add("订阅拉取: $pf 仍走无超时 HTTPClient") }
+    elseif ($ptxt -notmatch 'fetchSubscriptionOrThrow') { $fail.Add("订阅拉取: $pf 未走 15 秒截止入口") }
+    else { $ok.Add("订阅拉取: $pf 已走 15 秒截止入口") }
+}
 
 # ---- 输出 ----
 Write-Host ("校验 APK: " + $Apk)

@@ -151,7 +151,24 @@ public final class SubGuard {
             return 0;
         }
         try {
-            JSONObject root = new JSONObject(readFile(f));
+            String content = readFile(f);
+            String rustPorts = RustBridge.configPorts(content);
+            if (rustPorts != null) {
+                int n = 0;
+                if (rustPorts.length() > 0) {
+                    for (String part : rustPorts.split(",")) {
+                        try {
+                            int p = Integer.parseInt(part.trim());
+                            if (p > 0 && p < 65536 && out.add(Integer.valueOf(p))) {
+                                n++;
+                            }
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                }
+                return n;
+            }
+            JSONObject root = new JSONObject(content);
             JSONArray inbounds = root.optJSONArray("inbounds");
             if (inbounds == null) {
                 return 0;
@@ -270,12 +287,21 @@ public final class SubGuard {
         if (s.isEmpty()) {
             return true;
         }
-        return s.startsWith("127.") || s.equals("localhost") || s.equals("::1") || s.equals("[::1]") || s.startsWith("0.0.0.0");
+        // M3 阶段 1：优先用 Rust 纯函数；库不可用/异常时回退 Java 实现。
+        int rust = RustBridge.isLocal(s);
+        if (rust >= 0) {
+            return rust == 1;
+        }
+        return s.startsWith("127.") || s.equals("localhost") || s.equals("::1") || s.equals("[::1]") || s.equals("0.0.0.0");
     }
 
     private static String hintOf(String text) {
         if (text == null) {
             return null;
+        }
+        String rust = RustBridge.hintOf(text);
+        if (rust != null) {
+            return rust.isEmpty() ? null : rust;
         }
         for (String h : HINTS) {
             if (text.contains(h)) {

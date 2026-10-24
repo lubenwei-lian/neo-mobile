@@ -734,7 +734,7 @@
 
     .line 66
     .line 67
-    const-string v12, "0.1.18"
+    const-string v12, "0.0.1"
 
     .line 68
     .line 69

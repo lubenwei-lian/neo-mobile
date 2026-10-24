@@ -4722,7 +4722,7 @@
 
     .line 712
     .line 713
-    const-string v8, "v0.1.18 \u00b7 "
+    const-string v8, "v0.0.1 \u00b7 "
 
     .line 714
     .line 715
@@ -9895,7 +9895,7 @@
     .line 6
     .line 7
     .line 8
-    const-string v1, "https://github.com/lubenwei-lian/neo-release"
+    const-string v1, "https://github.com/lubenwei-lian/neo-mobile/releases"
 
     .line 9
     .line 10

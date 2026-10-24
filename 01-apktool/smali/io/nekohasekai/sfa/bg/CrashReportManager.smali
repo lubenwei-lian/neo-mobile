@@ -1465,7 +1465,7 @@
 
     .line 115
     .line 116
-    const-string v0, "0.1.18"
+    const-string v0, "0.0.1"
 
     .line 117
     .line 118

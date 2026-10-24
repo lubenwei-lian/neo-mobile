@@ -182,6 +182,41 @@ if (Test-Path -LiteralPath $launchFile) {
     else { $ok.Add('S13: Launch 协程状态机恢复分支正常') }
 } else { $fail.Add('S13: 找不到 StartupAutoTest$Launch.smali') }
 
+# ---- 9. 0.0.1 版本 / 发布页 / 免责声明 / 配置优化 ----
+$yml = Join-Path $PROJ '01-apktool\apktool.yml'
+if (-not (Test-Path -LiteralPath $yml)) { $fail.Add('版本: 找不到 apktool.yml') }
+else {
+    $ytxt = Get-Content -LiteralPath $yml -Raw
+    if ($ytxt -notmatch 'versionName: 0\.0\.1') { $fail.Add('版本: versionName 不是 0.0.1') } else { $ok.Add('版本: versionName=0.0.1') }
+    if ($ytxt -notmatch 'versionCode: 1\b') { $fail.Add('版本: versionCode 不是 1') } else { $ok.Add('版本: versionCode=1') }
+}
+# 本地 binary 规则集实测内核拒绝启动，已改回机场远端规则集；不再要求内置
+$cs = Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\ComposableSingletons$SettingsScreenKt.smali'
+if (Test-Path -LiteralPath $cs) {
+    $ctxt = Get-Content -LiteralPath $cs -Raw
+    if ($ctxt -match '\\u672c\\u5e94\\u7528\\u57fa\\u4e8e') { $fail.Add('免责声明: 仍是旧的冗长版本') }
+    elseif ($ctxt -match '\\u672c\\u5e94\\u7528\\u4ec5\\u4f9b\\u5b66\\u4e60') { $ok.Add('免责声明: 已改为简洁版') }
+    else { $fail.Add('免责声明: 未找到新/旧正文') }
+} else { $fail.Add('免责声明: 找不到 ComposableSingletons$SettingsScreenKt.smali') }
+$urlChecks = @(
+    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\SettingsScreenKt.smali'); K = 'neo-mobile/releases'; N = '发布页 URL' },
+    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\compose\screen\settings\ProUpdateScreenKt.smali'); K = 'neo-mobile/releases'; N = 'ProUpdate 发布页 URL' },
+    @{ F = (Join-Path $PROJ '01-apktool\smali\io\nekohasekai\sfa\vendor\GitHubUpdateChecker.smali'); K = 'api.github.com/repos/lubenwei-lian/neo-mobile/releases'; N = '更新检查 API' }
+)
+foreach ($u in $urlChecks) {
+    if (-not (Test-Path -LiteralPath $u.F)) { $fail.Add("$($u.N): 找不到文件") }
+    else {
+        $utxt = Get-Content -LiteralPath $u.F -Raw
+        if ($utxt -notmatch [regex]::Escape($u.K)) { $fail.Add("$($u.N): 未指向 neo-mobile") } else { $ok.Add("$($u.N): 已指向 neo-mobile") }
+    }
+}
+if (Test-Path -LiteralPath $dex4) {
+    $disasm2 = (& $DEXDUMP -d $dex4 2>&1) -join "`n"
+    if ($disasm2 -notmatch 'optimizeInner') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.optimize/optimizeInner') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.optimize/optimizeInner') }
+    if ($disasm2 -notmatch 'optimizeDns') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.optimizeDns') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.optimizeDns') }
+    if ($disasm2 -notmatch 'ensureRoute') { $fail.Add('配置优化: classes4.dex 缺 SubGuard.ensureRoute') } else { $ok.Add('配置优化: classes4.dex 含 SubGuard.ensureRoute') }
+}
+
 # ---- 输出 ----
 Write-Host ("校验 APK: " + $Apk)
 foreach ($l in $ok) { Write-Host ("  [OK]   " + $l) }

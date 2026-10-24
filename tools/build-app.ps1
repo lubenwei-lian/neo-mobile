@@ -17,6 +17,8 @@ if (-not (Test-Path "$ASC\01-apktool")) { throw "junction $ASC 未指向工程" 
 # 2026-10-24 审查 P2-3：先清旧 class/dex，避免删/改名后的陈旧 .class 被打进 classes4.dex
 $work = "$ASC\03-dist\_build"
 Remove-Item "$work\classes","$work\dex" -Recurse -Force -ErrorAction SilentlyContinue
+# 2026-10-24：apktool 会复用 01-apktool\build 缓存（apktool.yml 的 versionInfo/资源变更不生效），每次构建前清掉
+Remove-Item "$ASC\01-apktool\build" -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $work,"$work\classes","$work\dex" | Out-Null
 
 # 1. SubGuard → dex

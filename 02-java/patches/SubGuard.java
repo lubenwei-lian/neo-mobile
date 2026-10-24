@@ -285,6 +285,13 @@ public final class SubGuard {
         } catch (Throwable t) {
             android.util.Log.w("SubGuard", "订阅迁移失败，按原样使用：" + t);
         }
+        // 2026-10-24：国内域名精确判断（本地全量 geosite-cn/geoip-cn）+ 国外域名交给节点解析
+        //   + fakeip 仅 A / AAAA NODATA + prefer_ipv4；失败不影响原配置。
+        try {
+            migrated = optimize(migrated);
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "配置优化失败，保留迁移结果：" + t);
+        }
         String problem = check(migrated);
         if (problem != null) {
             android.util.Log.w("SubGuard", problem);
@@ -476,6 +483,323 @@ public final class SubGuard {
         }
         return false;
     }
+
+    // ================= 2026-10-24 路由/DNS 优化（国内精确直连 + 国外交给节点解析） =================
+    private static final String RULESET_DIR_NAME = "rulesets";
+    private static final String[] RULESET_ASSETS = {"rule-sets/geosite-cn.srs", "rule-sets/geoip-cn.srs"};
+    private static final String[] CN_RULESET_TAGS = {"geosite-cn", "geoip-cn"};
+
+    public static String optimize(String content) {
+        try {
+            return optimizeInner(content);
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "配置优化失败，保留原配置：" + t);
+            return content;
+        }
+    }
+
+    private static String optimizeInner(String content) throws Exception {
+        if (content == null || content.length() == 0) {
+            return content;
+        }
+        int brace = content.indexOf('{');
+        if (brace < 0) {
+            return content;
+        }
+        JSONObject root = new JSONObject(content.substring(brace));
+        boolean changed = false;
+        changed |= optimizeDns(root);
+        changed |= ensureRoute(root);
+        changed |= stripDomainStrategy(root);
+        if (changed) {
+            android.util.Log.i("SubGuard", "配置优化完成：prefer_ipv4 + fakeip仅A + 国外域名交给节点解析"
+                    + "（AAAA/HTTPS/SVCB 走节点侧 DNS；本地 binary 规则集实测内核拒绝，已弃用）");
+            return root.toString();
+        }
+        return content;
+    }
+
+    /** 把 APK 内置的全量 CN 规则集释放到 files/rulesets（每次订阅更新刷新，保证随版本升级）。 */
+    private static java.io.File prepareRulesets() {
+        try {
+            Object app = application();
+            if (app == null) {
+                return null;
+            }
+            java.io.File files = (java.io.File) app.getClass().getMethod("getFilesDir").invoke(app);
+            java.io.File dir = new java.io.File(files, RULESET_DIR_NAME);
+            if (!dir.isDirectory() && !dir.mkdirs()) {
+                return null;
+            }
+            Object assets = app.getClass().getMethod("getAssets").invoke(app);
+            java.lang.reflect.Method open = assets.getClass().getMethod("open", String.class);
+            for (int i = 0; i < RULESET_ASSETS.length; i++) {
+                String asset = RULESET_ASSETS[i];
+                String name = asset.substring(asset.lastIndexOf('/') + 1);
+                java.io.File target = new java.io.File(dir, name);
+                InputStream in = (InputStream) open.invoke(assets, asset);
+                java.io.FileOutputStream out = new java.io.FileOutputStream(target);
+                try {
+                    byte[] buf = new byte[16384];
+                    int n;
+                    while ((n = in.read(buf)) > 0) {
+                        out.write(buf, 0, n);
+                    }
+                } finally {
+                    try { out.close(); } catch (Throwable ignored) { }
+                    try { in.close(); } catch (Throwable ignored) { }
+                }
+            }
+            return dir;
+        } catch (Throwable t) {
+            android.util.Log.w("SubGuard", "本地规则集释放失败：" + t);
+            return null;
+        }
+    }
+
+    private static boolean ensureLocalRuleSets(JSONObject root, java.io.File dir) throws Exception {
+        JSONObject route = root.optJSONObject("route");
+        if (route == null) {
+            route = new JSONObject();
+            root.put("route", route);
+        }
+        JSONArray sets = route.optJSONArray("rule_set");
+        if (sets == null) {
+            sets = new JSONArray();
+            route.put("rule_set", sets);
+        }
+        boolean changed = false;
+        for (int t = 0; t < CN_RULESET_TAGS.length; t++) {
+            String tag = CN_RULESET_TAGS[t];
+            JSONObject found = null;
+            for (int i = 0; i < sets.length(); i++) {
+                JSONObject s = sets.optJSONObject(i);
+                if (s != null && tag.equals(s.optString("tag", ""))) {
+                    found = s;
+                    break;
+                }
+            }
+            if (found == null) {
+                found = new JSONObject();
+                sets.put(found);
+                changed = true;
+            }
+            String path = new java.io.File(dir, tag + ".srs").getAbsolutePath();
+            if (!"local".equals(found.optString("type", ""))) { found.put("type", "local"); changed = true; }
+            if (!"binary".equals(found.optString("format", ""))) { found.put("format", "binary"); changed = true; }
+            if (!path.equals(found.optString("path", ""))) { found.put("path", path); changed = true; }
+            if (found.has("url")) { found.remove("url"); changed = true; }
+            if (found.has("download_detour")) { found.remove("download_detour"); changed = true; }
+        }
+        return changed;
+    }
+
+    private static boolean optimizeDns(JSONObject root) throws Exception {
+        JSONObject dns = root.optJSONObject("dns");
+        if (dns == null) {
+            return false;
+        }
+        JSONArray servers = dns.optJSONArray("servers");
+        if (servers == null) {
+            return false;
+        }
+        String fakeipTag = null;
+        String domesticTag = null;
+        String remoteTag = null;
+        boolean changed = false;
+        for (int i = 0; i < servers.length(); i++) {
+            JSONObject s = servers.optJSONObject(i);
+            if (s == null) {
+                continue;
+            }
+            String type = s.optString("type", "");
+            String tag = s.optString("tag", "");
+            if ("fakeip".equals(type)) {
+                fakeipTag = tag;
+                if (s.has("inet6_range")) { s.remove("inet6_range"); changed = true; }
+                if (!s.has("inet4_range")) { s.put("inet4_range", "198.18.0.0/15"); changed = true; }
+            } else if (domesticTag == null && tag.length() > 0 && !s.has("detour")
+                    && ("udp".equals(type) || "https".equals(type) || "tls".equals(type))) {
+                domesticTag = tag;
+            }
+            if (remoteTag == null && tag.length() > 0 && s.has("detour") && !"fakeip".equals(type)) {
+                remoteTag = tag;
+            }
+        }
+        if (fakeipTag == null || fakeipTag.length() == 0) {
+            return changed;
+        }
+        if (!"prefer_ipv4".equals(dns.optString("strategy", ""))) {
+            dns.put("strategy", "prefer_ipv4");
+            changed = true;
+        }
+        JSONArray rules = dns.optJSONArray("rules");
+        JSONArray fresh = new JSONArray();
+        boolean hasCnRule = false;
+        for (int i = 0; rules != null && i < rules.length(); i++) {
+            JSONObject r = rules.optJSONObject(i);
+            if (r == null) {
+                fresh.put(rules.opt(i));
+                continue;
+            }
+            String server = r.optString("server", "");
+            if (containsToken(r.opt("rule_set"), "geosite-cn")) {
+                hasCnRule = true;
+                if (domesticTag != null && !domesticTag.equals(server)) {
+                    r.put("server", domesticTag);
+                    changed = true;
+                }
+                fresh.put(r);
+                continue;
+            }
+            if (fakeipTag.equals(server)) {
+                continue; // 旧 fakeip 规则统一重建（仅 A）
+            }
+            fresh.put(r);
+        }
+        if (!hasCnRule && domesticTag != null) {
+            JSONObject r = new JSONObject();
+            r.put("rule_set", new JSONArray().put("geosite-cn"));
+            r.put("server", domesticTag);
+            fresh.put(r);
+            changed = true;
+        }
+        // 国外 AAAA / HTTPS / SVCB 交给节点侧 DNS 解析（走带 detour 的远端 DNS，不在本地解析）
+        if (remoteTag != null) {
+            JSONObject aaaa = new JSONObject();
+            aaaa.put("query_type", new JSONArray().put("AAAA"));
+            aaaa.put("server", remoteTag);
+            fresh.put(aaaa);
+            JSONObject hs = new JSONObject();
+            hs.put("query_type", new JSONArray().put("HTTPS").put("SVCB"));
+            hs.put("server", remoteTag);
+            fresh.put(hs);
+            changed = true;
+        }
+        JSONObject fake = new JSONObject();
+        fake.put("query_type", new JSONArray().put("A"));
+        fake.put("server", fakeipTag);
+        fresh.put(fake);
+        changed = true;
+        dns.put("rules", fresh);
+        if (remoteTag != null) {
+            dns.put("final", remoteTag);
+        } else if (domesticTag != null) {
+            dns.put("final", domesticTag);
+        }
+        return changed;
+    }
+
+    private static boolean ensureRoute(JSONObject root) throws Exception {
+        JSONObject route = root.optJSONObject("route");
+        if (route == null) {
+            return false;
+        }
+        JSONArray rules = route.optJSONArray("rules");
+        if (rules == null) {
+            rules = new JSONArray();
+            route.put("rules", rules);
+        }
+        boolean hasSniff = false;
+        boolean hasHijack = false;
+        boolean hasPrivate = false;
+        boolean hasCn = false;
+        for (int i = 0; i < rules.length(); i++) {
+            JSONObject r = rules.optJSONObject(i);
+            if (r == null) {
+                continue;
+            }
+            String action = r.optString("action", "");
+            if ("sniff".equals(action)) { hasSniff = true; }
+            if ("hijack-dns".equals(action)) { hasHijack = true; }
+            if (r.optBoolean("ip_is_private", false)) { hasPrivate = true; }
+            if ("direct".equals(r.optString("outbound", ""))
+                    && (containsToken(r.opt("rule_set"), "geosite-cn") || containsToken(r.opt("rule_set"), "geoip-cn"))) {
+                hasCn = true;
+            }
+        }
+        boolean changed = false;
+        if (!hasSniff) {
+            JSONObject r = new JSONObject();
+            r.put("action", "sniff");
+            rules = insertRule(rules, 0, r);
+            route.put("rules", rules);
+            changed = true;
+        }
+        if (!hasHijack) {
+            JSONObject r = new JSONObject();
+            r.put("protocol", "dns");
+            r.put("action", "hijack-dns");
+            rules = insertRule(rules, 1, r);
+            route.put("rules", rules);
+            changed = true;
+        }
+        if (!hasPrivate) {
+            JSONObject r = new JSONObject();
+            r.put("ip_is_private", true);
+            r.put("outbound", "direct");
+            rules.put(r);
+            changed = true;
+        }
+        if (!hasCn) {
+            JSONObject r = new JSONObject();
+            r.put("rule_set", new JSONArray().put("geosite-cn").put("geoip-cn"));
+            r.put("outbound", "direct");
+            rules.put(r);
+            changed = true;
+        }
+        return changed;
+    }
+
+    private static JSONArray insertRule(JSONArray rules, int at, JSONObject rule) throws Exception {
+        JSONArray fresh = new JSONArray();
+        for (int i = 0; i < rules.length(); i++) {
+            if (i == at) {
+                fresh.put(rule);
+            }
+            fresh.put(rules.opt(i));
+        }
+        if (at >= rules.length()) {
+            fresh.put(rule);
+        }
+        return fresh;
+    }
+
+    private static boolean stripDomainStrategy(JSONObject root) {
+        boolean changed = false;
+        String[] keys = {"outbounds", "endpoints"};
+        for (int k = 0; k < keys.length; k++) {
+            JSONArray arr = root.optJSONArray(keys[k]);
+            if (arr == null) {
+                continue;
+            }
+            for (int i = 0; i < arr.length(); i++) {
+                JSONObject o = arr.optJSONObject(i);
+                if (o != null && o.has("domain_strategy")) {
+                    o.remove("domain_strategy");
+                    changed = true;
+                }
+            }
+        }
+        return changed;
+    }
+
+    private static boolean containsToken(Object value, String token) {
+        if (value == null) {
+            return false;
+        }
+        if (value instanceof JSONArray) {
+            JSONArray a = (JSONArray) value;
+            for (int i = 0; i < a.length(); i++) {
+                if (token.equals(a.optString(i))) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        return token.equals(String.valueOf(value));
+    }
+
 
 
     /**

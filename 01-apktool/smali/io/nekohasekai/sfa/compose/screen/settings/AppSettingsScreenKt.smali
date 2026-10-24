@@ -6195,7 +6195,7 @@
     .locals 2
 
     .line 1
-    const-string v0, "0.1.18"
+    const-string v0, "0.0.1"
 
     .line 2
     .line 3

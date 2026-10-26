@@ -1,0 +1,363 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <!-- App -->
+    <string name="app_name" translatable="false">neo</string>
+    <string name="app_version_title">應用程式版本</string>
+    <string name="language">語言</string>
+    <string name="system_default">跟隨系統</string>
+
+    <!-- Common Actions -->
+    <string name="ok">確定</string>
+    <string name="cancel">取消</string>
+    <string name="save">儲存</string>
+    <string name="discard">放棄</string>
+    <string name="close">關閉</string>
+    <string name="dismiss">關閉</string>
+    <string name="stop">停止</string>
+    <string name="clear">清除</string>
+    <string name="search">搜尋</string>
+    <string name="action">操作</string>
+    <string name="action_start">啟動</string>
+    <string name="action_reload">重新載入</string>
+    <string name="action_restart">重新啟動</string>
+    <string name="expand">展開</string>
+    <string name="collapse">收合</string>
+    <string name="expand_all">全部展開</string>
+    <string name="collapse_all">全部收合</string>
+    <string name="previous">上一個</string>
+    <string name="next">下一個</string>
+    <string name="update">更新</string>
+    <string name="no_thanks">不，謝謝</string>
+    <string name="more_options">更多選項</string>
+
+    <!-- Common States -->
+    <string name="enabled">啟用</string>
+    <string name="disabled">停用</string>
+    <string name="success">成功</string>
+    <string name="default_text">預設</string>
+
+    <!-- Navigation Titles -->
+    <string name="title_log">日誌</string>
+    <string name="title_settings">設定</string>
+    <string name="title_app_settings">應用程式</string>
+    <string name="title_new_profile">新增設定檔</string>
+    <string name="title_edit_profile">編輯設定檔</string>
+    <string name="title_edit_configuration">編輯設定</string>
+    <string name="title_groups">群組</string>
+    <string name="title_connections">連線</string>
+
+    <!-- Status -->
+    <string name="status_default">服務未啟動</string>
+    <string name="status_starting">啟動中</string>
+    <string name="status_stopping">停止中</string>
+    <string name="status_started">已啟動</string>
+
+    <!-- Dashboard -->
+    <string name="url_test">測試</string>
+
+    <!-- Connections -->
+    <string name="search_connections">搜尋連線…</string>
+    <string name="close_connections_confirm">關閉所有連線？</string>
+    <string name="connection_state_all">全部</string>
+    <string name="connection_state_active">活動</string>
+    <string name="connection_state_closed">已關閉</string>
+    <string name="connection_empty_all">暫無連線</string>
+    <string name="connection_empty_active">暫無活動連線</string>
+    <string name="connection_empty_closed">暫無已關閉連線</string>
+    <string name="connection_empty_search">沒有匹配的連線</string>
+    <string name="connection_sort_date">日期</string>
+    <string name="connection_sort_traffic">流量</string>
+    <string name="connection_sort_traffic_total">總流量</string>
+    <string name="connection_close">關閉</string>
+    <string name="connection_close_all">全部關閉</string>
+    <string name="connection_state">狀態</string>
+    <string name="connection_details">連線詳情</string>
+    <string name="connection_section_basic">基本資訊</string>
+    <string name="connection_section_metadata">後設資料</string>
+    <string name="connection_section_process">行程資訊</string>
+    <string name="connection_created_at">建立時間</string>
+    <string name="connection_closed_at">關閉時間</string>
+    <string name="connection_duration">持續時間</string>
+    <string name="connection_uplink">上行</string>
+    <string name="connection_downlink">下行</string>
+    <string name="connection_inbound">入站</string>
+    <string name="connection_inbound_type">入站類型</string>
+    <string name="connection_outbound">出站</string>
+    <string name="connection_outbound_type">出站類型</string>
+    <string name="connection_ip_version">IP 版本</string>
+    <string name="connection_network">網路</string>
+    <string name="connection_source">來源</string>
+    <string name="connection_destination">目標</string>
+    <string name="connection_domain">網域</string>
+    <string name="connection_protocol">協定</string>
+    <string name="connection_user">使用者</string>
+    <string name="connection_from_outbound">來自出站</string>
+    <string name="connection_match_rule">比對規則</string>
+    <string name="connection_chain">鏈</string>
+    <string name="connection_process_id">行程 ID</string>
+    <string name="connection_user_id">使用者 ID</string>
+    <string name="connection_user_name">使用者名稱</string>
+    <string name="connection_process_path">行程路徑</string>
+    <string name="connection_package_name">套件名稱</string>
+
+    <!-- Profiles -->
+    <string name="import_remote_profile">匯入遠端設定</string>
+    <string name="import_remote_profile_message">您確定要匯入遠端設定檔 %1$s 嗎？您將連線到 %2$s 以下載設定。</string>
+    <string name="icloud_profile_unsupported">目前平台不支援 iCloud 設定檔</string>
+    <string name="profile_name">名稱</string>
+    <string name="profile_type">類型</string>
+    <string name="profile_source">來源</string>
+    <string name="profile_url" translatable="false">URL</string>
+    <string name="profile_import_file">匯入檔案</string>
+    <string name="profile_create">建立</string>
+    <string name="profile_input_required">必填</string>
+    <string name="profile_update">更新</string>
+    <string name="profile_auto_update">自動更新</string>
+    <string name="profile_auto_update_interval">自動更新間隔 （分）</string>
+    <string name="profile_auto_update_interval_minimum_hint">最低值為 15</string>
+    <string name="profile_type_local">本地</string>
+    <string name="profile_type_remote">遠端</string>
+    <string name="profile_source_create_new">建立新項目</string>
+    <string name="profile_source_import">匯入</string>
+    <string name="profile_add_scan_qr_code">掃描二維碼</string>
+    <string name="basic_information">基本資訊</string>
+    <string name="remote_configuration">遠端設定</string>
+    <string name="last_updated_format">最後更新：%s</string>
+    <string name="content">內容</string>
+    <string name="json_viewer">JSON 檢視器</string>
+    <string name="json_editor">JSON 編輯器</string>
+    <string name="view_configuration">檢視設定</string>
+    <string name="unsaved_changes">未儲存的更改</string>
+    <string name="unsaved_changes_message">您有未儲存的更改。要放棄它們嗎？</string>
+    <string name="import_profile_confirm_title">匯入設定檔</string>
+    <string name="import_profile_confirm_message">匯入設定檔「%s」？</string>
+    <string name="import_action">匯入</string>
+
+    <!-- Groups -->
+    <string name="group_selected_title">已選取</string>
+
+    <!-- Log -->
+    <string name="log_level">日誌等級</string>
+    <string name="filter_label">篩選器：%s</string>
+    <string name="clear_filter">清除</string>
+    <string name="clear_logs">清除日誌</string>
+    <string name="search_logs_placeholder">搜尋日誌…</string>
+    <string name="logs_copied_to_clipboard">日誌已複製到剪貼簿</string>
+    <string name="no_logs_to_copy">沒有日誌可複製</string>
+    <string name="no_logs_to_share">沒有日誌可分享</string>
+    <string name="intent_share_logs">分享日誌</string>
+    <string name="selected_count">已選擇 %d 項</string>
+    <string name="not_selected">未選擇</string>
+    <string name="save_to_clipboard">複製到剪貼簿</string>
+    <string name="save_to_file">儲存到檔案</string>
+
+    <!-- Settings -->
+    <string name="working_directory">工作目錄</string>
+    <string name="cache_size">快取大小</string>
+    <string name="clear_cache">清除快取</string>
+    <string name="notification_settings">通知</string>
+    <string name="enable_notification">啟用通知</string>
+    <string name="dynamic_notification">在通知中顯示即時網速</string>
+    <string name="disable_notification_description">由於 Android 限制，您需要先授權通知權限，然後前往系統設定中關閉通知類別。</string>
+    <string name="disable_notification_description_legacy">由於 Android 限制，您需要先授權通知權限，然後前往應用程式資訊中關閉通知。</string>
+    <string name="update_settings">更新設定</string>
+
+    <!-- Per-App Proxy -->
+    <string name="per_app_proxy_mode">代理模式</string>
+    <string name="per_app_proxy_mode_include">包含</string>
+    <string name="per_app_proxy_mode_exclude">排除</string>
+    <string name="per_app_proxy_mode_exclude_description">選定的應用將從 VPN 中排除</string>
+    <string name="per_app_proxy_action_copy">複製</string>
+    <string name="per_app_proxy_action_copy_package_name">套件名稱</string>
+    <string name="per_app_proxy_action_copy_uid">UID</string>
+    <string name="per_app_proxy_sort_mode">排序</string>
+    <string name="per_app_proxy_sort_mode_name">依名稱</string>
+    <string name="per_app_proxy_sort_mode_package_name">依套件名稱</string>
+    <string name="per_app_proxy_sort_mode_uid">依 UID</string>
+    <string name="per_app_proxy_sort_mode_install_time">依安裝時間</string>
+    <string name="per_app_proxy_sort_mode_update_time">依更新時間</string>
+    <string name="per_app_proxy_sort_mode_reverse">反向排序</string>
+    <string name="per_app_proxy_filter">篩選</string>
+    <string name="per_app_proxy_hide_system_apps">隱藏系統應用程式</string>
+    <string name="per_app_proxy_hide_offline_apps">隱藏離線應用程式</string>
+    <string name="per_app_proxy_hide_disabled_apps">隱藏停用應用程式</string>
+    <string name="per_app_proxy_select">選擇</string>
+    <string name="per_app_proxy_select_all">全選</string>
+    <string name="per_app_proxy_select_none">全部取消選取</string>
+    <string name="per_app_proxy_backup">備份</string>
+    <string name="per_app_proxy_import">從剪貼簿匯入</string>
+    <string name="per_app_proxy_export">匯出到剪貼簿</string>
+    <string name="per_app_proxy_scan">掃描</string>
+    <string name="per_app_proxy_scan_china_apps">中國應用程式</string>
+    <string name="content_description_app_icon">應用程式圖示</string>
+
+    <!-- Permissions -->
+    <string name="location_permission_title">位置權限</string>
+    <string name="location_permission_description">您的設定檔包含 &lt;strong&gt;&lt;tt&gt;wifi_ssid&lt;/tt&gt; 或 &lt;tt&gt;wifi_bssid&lt;/tt&gt; 路由規則&lt;/strong&gt;。為了使它們正常工作，sing-box 在&lt;strong&gt;背景&lt;/strong&gt;使用 &lt;strong&gt;位置&lt;/strong&gt; 權限來取得已連線 Wi-Fi 網路資訊。這些資訊將&lt;strong&gt;僅用於路由&lt;/strong&gt;。</string>
+    <string name="location_permission_background_description">在 Android 10 及更高版本中，需要&lt;strong&gt;背景位置&lt;/strong&gt;權限。選擇&lt;strong&gt;始終允許&lt;/strong&gt;以授予權限。</string>
+    <string name="local_network_permission_title">區域網路權限</string>
+    <string name="local_network_permission_description">Android 17 及更高版本要求區域網路權限才能存取你的 Wi-Fi 或乙太網路。Android 以附近的裝置的名義請求該權限。</string>
+    <string name="notification_permission_title">通知權限</string>
+    <string name="notification_permission_required_description">若未授予通知權限，sing-box 無法顯示即時網速。請先授權，或關閉即時網速通知後再啟動服務。</string>
+
+    <!-- Updates -->
+    <string name="check_update">檢查更新</string>
+    <string name="check_update_automatic">自動檢查更新</string>
+    <string name="check_update_prompt_play">是否啟用從 **Play Store** 自動檢查更新？</string>
+    <string name="check_update_prompt_github">是否啟用從 **GitHub** 自動檢查更新？</string>
+    <string name="update_track">更新通道</string>
+    <string name="update_track_stable">穩定版</string>
+    <string name="update_track_beta">Beta 版</string>
+    <string name="update_track_not_supported">目前通道尚不支援檢查更新</string>
+    <string name="view_release">查看發布</string>
+    <string name="downloading">下載中…</string>
+    <string name="no_updates_available">沒有可用的更新</string>
+    <string name="new_version_available">有新版本可用：%s</string>
+    <string name="auto_update">自動更新</string>
+    <string name="auto_update_description">在背景自動下載並安裝更新</string>
+    <string name="github_token">GitHub Token</string>
+
+    <!-- Silent Install -->
+    <string name="silent_install">靜默安裝</string>
+    <string name="silent_install_description">無需互動即可安裝更新</string>
+    <string name="silent_install_method">安裝方式</string>
+    <string name="silent_install_verify_failed">%s 不可用或權限被拒絕</string>
+    <string name="install_method_package_installer">PackageInstaller</string>
+    <string name="install_method_shizuku">Shizuku</string>
+    <string name="install_method_root">ROOT</string>
+    <string name="package_installer_not_available">未授予安裝權限</string>
+    <string name="grant_install_permission">授予安裝權限</string>
+    <string name="grant_install_permission_description">允許從此來源安裝應用程式</string>
+
+    <!-- Shizuku -->
+    <string name="shizuku_not_available">Shizuku 未安裝或未執行</string>
+    <string name="shizuku_description">Shizuku 允許應用程式以更高權限直接使用系統 API</string>
+    <string name="get_shizuku">獲取 Shizuku</string>
+
+    <!-- Time -->
+    <string name="time_just_now">剛剛</string>
+    <string name="time_yesterday">昨天</string>
+    <string name="time_now">現在</string>
+    <string name="time_yesterday_short">1天</string>
+    <string name="time_minutes_short">%d分</string>
+    <string name="time_hours_short">%d時</string>
+    <string name="time_days_short">%d天</string>
+    <plurals name="time_minutes_ago">
+        <item quantity="one">%d 分鐘前</item>
+        <item quantity="other">%d 分鐘前</item>
+    </plurals>
+    <plurals name="time_hours_ago">
+        <item quantity="one">%d 小時前</item>
+        <item quantity="other">%d 小時前</item>
+    </plurals>
+    <plurals name="time_days_ago">
+        <item quantity="one">%d 天前</item>
+        <item quantity="other">%d 天前</item>
+    </plurals>
+
+    <!-- Menu -->
+    <string name="menu_undo">撤銷</string>
+    <string name="menu_redo">重做</string>
+    <string name="menu_format">格式化</string>
+    <string name="menu_share">分享</string>
+
+    <!-- Errors -->
+    <string name="error_title">錯誤</string>
+    <string name="error_missing_vpn_permission">缺少 VPN 權限</string>
+    <string name="error_empty_configuration">設定為空</string>
+    <string name="error_empty_file">空檔案</string>
+    <string name="error_decode_profile">解碼設定檔失敗：%s</string>
+    <string name="error_invalid_configuration">無效的 sing-box 設定：%s</string>
+    <string name="error_start_command_server">啟動命令伺服器</string>
+    <string name="error_create_service">建立服務</string>
+    <string name="error_start_service">啟動服務</string>
+    <string name="error_deprecated_warning">棄用警告</string>
+    <string name="error_deprecated_documentation">文件</string>
+
+    <!-- Failed Operations -->
+    <string name="failed_save_logs">儲存日誌失敗：%s</string>
+    <string name="failed_share_logs">分享日誌失敗：%s</string>
+    <string name="failed_read_configuration">讀取設定失敗：%s</string>
+
+    <!-- Success Messages -->
+    <string name="success_logs_saved">日誌儲存成功</string>
+    <string name="success_configuration_saved">設定已儲存</string>
+    <string name="copied_to_clipboard">已複製到剪貼簿</string>
+
+    <!-- Toast Messages -->
+
+    <!-- Scanning -->
+    <string name="profile_add_scan_use_front_camera">前鏡頭</string>
+    <string name="profile_add_scan_use_vendor_analyzer">使用 MLKit 掃描</string>
+    <string name="profile_add_scan_enable_torch">手電筒</string>
+
+    <!-- Icon Selection -->
+    <string name="icon">圖示</string>
+    <string name="icon_count_format">%d 個圖示</string>
+    <string name="no_icons_found">未找到圖示</string>
+    <string name="no_icons_match">沒有符合 \"%s\" 的圖示</string>
+    <string name="profile_icon">設定檔圖示</string>
+    <string name="select_icon">選擇圖示</string>
+    <string name="search_icons_placeholder">搜尋圖示...</string>
+    <string name="search_icons">搜尋圖示</string>
+    <string name="close_search">關閉搜尋</string>
+    <string name="current_icon_format">當前：%s</string>
+    <string name="categories">分類</string>
+    <string name="all_icons">所有圖示</string>
+    <string name="back_to_categories">回到分類</string>
+
+    <!-- QR Code -->
+
+    <!-- QR Stream (QRS) -->
+    <string name="qrs_fps">FPS</string>
+    <string name="qrs_slice_size">分片大小</string>
+    <string name="qrs_what_is_qrs">什麼是 QRS</string>
+
+    <!-- Search -->
+    <string name="search_placeholder">在文件中尋找</string>
+
+    <!-- Content Descriptions (Accessibility) -->
+    <string name="content_description_back">返回</string>
+    <string name="content_description_scroll_to_bottom">滾動到底部</string>
+    <string name="content_description_exit_selection_mode">離開選取模式</string>
+    <string name="content_description_copy_selected">複製已選取項目</string>
+    <string name="content_description_clear_search">清除搜尋</string>
+    <string name="content_description_qr_code">QR 碼</string>
+    <string name="content_description_resume_logs">繼續顯示日誌</string>
+    <string name="content_description_pause_logs">暫停日誌</string>
+    <string name="content_description_collapse_search">收合搜尋</string>
+    <string name="content_description_search_logs">搜尋日誌</string>
+
+    <!-- Tools -->
+
+    <!-- STUN Test -->
+    <!-- Tailscale -->
+
+
+    <!-- Tailscale SSH -->
+
+    <!-- Terminal Configuration -->
+
+
+    <!-- Shared Report -->
+    <string name="service_reload_required">需要重新載入服務以套用變更</string>
+    <string name="service_restart_required">需要重新啟動服務以套用變更</string>
+
+    <!-- Crash Report -->
+
+    <!-- OOM Report -->
+
+    <!-- Power Report -->
+
+    <!-- Xposed Module -->
+    <!-- Privileged Enhancement -->
+    <string name="privilege_settings_hook_logs_empty">暫無日誌</string>
+
+    <!-- Remote Control -->
+
+    <!-- Taildrop -->
+    <plurals name="taildrop_file_count">
+        <item quantity="other">%1$d 個檔案</item>
+    </plurals>
+</resources>
+

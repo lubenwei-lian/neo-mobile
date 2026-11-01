@@ -252,24 +252,7 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
             _uiState.update { it.copy(isUpdating = true) }
 
             try {
-                var selectedProfileUpdated = false
-
-                // Fetch remote config
-                val content = HTTPClient().use { it.getString(profile.typed.remoteURL) }
-                Libbox.checkConfig(content)
-
-                // Check if content changed
-                val file = File(profile.typed.path)
-                if (!file.exists() || file.readText() != content) {
-                    file.writeText(content)
-                    if (profile.id == Settings.selectedProfile) {
-                        selectedProfileUpdated = true
-                    }
-                }
-
-                // Update last updated time
-                profile.typed.lastUpdated = Date()
-                ProfileManager.update(profile)
+                check(io.nekohasekai.sfa.bg.SubscriptionRefresher.refresh(profile)) { "订阅更新失败，继续使用当前配置" }
 
                 // Update UI state with success indicator
                 _uiState.update {
@@ -280,14 +263,6 @@ class EditProfileViewModel(application: Application) : AndroidViewModel(applicat
                     )
                 }
 
-                // Reload service if needed
-                if (selectedProfileUpdated) {
-                    try {
-                        Libbox.newStandaloneCommandClient().serviceReload()
-                    } catch (e: Exception) {
-                        // Service reload errors are not critical
-                    }
-                }
             } catch (e: Exception) {
                 _uiState.update {
                     it.copy(

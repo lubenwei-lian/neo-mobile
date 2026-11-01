@@ -194,7 +194,7 @@ class EditProfileContentViewModel(private val profileId: Long, initialIsReadOnly
 
                 // Save to file without validation
                 profile?.let { p ->
-                    File(p.typed.path).writeText(currentContent)
+                    ProfileManager.saveEditedContent(p, currentContent)
                 }
 
                 _uiState.update {

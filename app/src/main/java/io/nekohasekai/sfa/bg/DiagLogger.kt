@@ -34,7 +34,7 @@ object DiagLogger {
             runCatching {
                 val dir = File(baseDir(), dayFmt.format(Date()))
                 dir.mkdirs()
-                val stamp = SimpleDateFormat("HHmmss", Locale.US).format(Date())
+                val stamp = SimpleDateFormat("HHmmss-SSS", Locale.US).format(Date())
                 val sdir = File(dir, "session-$stamp")
                 sdir.mkdirs()
                 sessionDir = sdir
@@ -57,7 +57,7 @@ object DiagLogger {
                 }
                 val now = ts.format(Date())
                 for (e in entries) {
-                    w.write("$now [L${e.level}] ${e.message}")
+                    w.write(io.nekohasekai.sfa.utils.DiagnosticRedactor.redact("$now [L${e.level}] ${e.message}"))
                     w.newLine()
                     kernelLines++
                     if (kernelLines >= MAX_KERNEL_LINES_PER_SESSION) {
@@ -66,7 +66,9 @@ object DiagLogger {
                         return
                     }
                 }
-                if (kernelLines % 100 < entries.size) w.flush()
+                // Flush each callback batch: a failed handshake may only emit
+                // a few lines before the user collects a diagnostic archive.
+                w.flush()
             }.onFailure { Log.w(TAG, "kernel log failed: ${it.message}") }
         }
     }
@@ -97,7 +99,7 @@ object DiagLogger {
         sessionDir?.let { return it }
         val dir = File(baseDir(), dayFmt.format(Date()))
         dir.mkdirs()
-        val stamp = SimpleDateFormat("HHmmss", Locale.US).format(Date())
+        val stamp = SimpleDateFormat("HHmmss-SSS", Locale.US).format(Date())
         val sdir = File(dir, "session-$stamp")
         sdir.mkdirs()
         sessionDir = sdir
@@ -107,7 +109,7 @@ object DiagLogger {
     private fun appendLocked(name: String, line: String) {
         if (name == "session.txt" && sessionLines >= MAX_SESSION_LINES) return
         runCatching {
-            File(sessionDir(), name).appendText(line + "\n")
+            File(sessionDir(), name).appendText(io.nekohasekai.sfa.utils.DiagnosticRedactor.redact(line) + "\n")
             if (name == "session.txt") sessionLines++
         }.onFailure { Log.w(TAG, "diag append failed: ${it.message}") }
     }

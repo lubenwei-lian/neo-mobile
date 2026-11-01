@@ -9,6 +9,10 @@ object UpdateState {
     val hasUpdate = mutableStateOf(false)
     val updateInfo = mutableStateOf<UpdateInfo?>(null)
     val isChecking = mutableStateOf(false)
+    val requestedPrompt = mutableStateOf<UpdateInfo?>(null)
+
+    /** 最近一次检测的失败原因；界面据此区分「已是最新」与「源连不上」。 */
+    val lastCheckError = mutableStateOf<String?>(null)
 
     val isDownloading = mutableStateOf(false)
     val downloadProgress = mutableStateOf<Float?>(null)
@@ -26,9 +30,23 @@ object UpdateState {
     val installStatus = mutableStateOf<InstallStatus>(InstallStatus.Idle)
 
     fun setUpdate(info: UpdateInfo?) {
+        if (info != null && info.versionCode <= BuildConfig.VERSION_CODE) return
+        val previous = updateInfo.value
+        // 版本或下载地址变化时作废旧缓存包，避免装上一版。
+        val switched = info == null || previous == null ||
+            previous.versionCode != info.versionCode ||
+            previous.downloadUrl != info.downloadUrl || previous.sha256 != info.sha256
+        if (switched) dropCachedApk()
         updateInfo.value = info
         hasUpdate.value = info != null
         saveToCache(info)
+    }
+
+    private fun dropCachedApk() {
+        val path = Settings.cachedApkPath
+        if (path.isNotBlank()) runCatching { File(path).delete() }
+        Settings.cachedApkPath = ""
+        cachedApkFile.value = null
     }
 
     fun setInstallStatus(status: InstallStatus) {
@@ -58,6 +76,9 @@ object UpdateState {
 
         val info = UpdateInfo.fromJson(json) ?: return
         if (info.versionCode <= BuildConfig.VERSION_CODE) {
+            updateInfo.value = null
+            hasUpdate.value = false
+            dropCachedApk()
             clearCache()
             return
         }

@@ -8,6 +8,7 @@ import io.nekohasekai.sfa.BuildConfig
 import io.nekohasekai.sfa.bg.ProxyService
 import io.nekohasekai.sfa.bg.VPNService
 import io.nekohasekai.sfa.constant.Path
+import io.nekohasekai.sfa.constant.RoutingMode
 import io.nekohasekai.sfa.constant.ServiceMode
 import io.nekohasekai.sfa.constant.SettingsKey
 import io.nekohasekai.sfa.database.preference.KeyValueDatabase
@@ -21,6 +22,8 @@ import io.nekohasekai.sfa.ktx.stringSet
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.File
 
 object Settings {
@@ -38,11 +41,16 @@ object Settings {
     }
     val dataStore = RoomPreferenceDataStore { instance.keyValuePairDao() }
     var selectedProfile by dataStore.long(SettingsKey.SELECTED_PROFILE) { -1L }
+    var routingMode by dataStore.string(SettingsKey.ROUTING_MODE) { RoutingMode.RULE }
+    var selectedNodeTag by dataStore.string(SettingsKey.SELECTED_NODE_TAG) { "" }
+    var customRouteRulesJson by dataStore.string(SettingsKey.CUSTOM_ROUTE_RULES) { "[]" }
+    var presetRulesEnabled by dataStore.boolean(SettingsKey.PRESET_RULES_ENABLED) { true }
     var serviceMode by dataStore.string(SettingsKey.SERVICE_MODE) { ServiceMode.NORMAL }
     var startedByUser by dataStore.boolean(SettingsKey.STARTED_BY_USER)
 
     var updateSource by dataStore.string(SettingsKey.UPDATE_SOURCE) { "github" }
-    var checkUpdateEnabled by dataStore.boolean(SettingsKey.CHECK_UPDATE_ENABLED) { false }
+    /** 代理启动后自动检查更新（红点提示）。默认开，用户可在设置里关闭。 */
+    var checkUpdateEnabled by dataStore.boolean(SettingsKey.CHECK_UPDATE_ENABLED) { true }
     var updateCheckPrompted by dataStore.boolean(SettingsKey.UPDATE_CHECK_PROMPTED) { false }
     var updateTrack by dataStore.string(SettingsKey.UPDATE_TRACK) {
         val versionName = BuildConfig.VERSION_NAME.lowercase()
@@ -83,6 +91,25 @@ object Settings {
     const val PACKAGE_QUERY_MODE_ROOT = "ROOT"
     var perAppProxyPackageQueryMode by dataStore.string(SettingsKey.PER_APP_PROXY_PACKAGE_QUERY_MODE) { PACKAGE_QUERY_MODE_SHIZUKU }
 
+    val customRouteRules: List<UserRouteRule>
+        get() = runCatching {
+            val array = JSONArray(customRouteRulesJson)
+            (0 until array.length()).mapNotNull { index ->
+                val item = array.optJSONObject(index) ?: return@mapNotNull null
+                val value = item.optString("value").trim()
+                val action = item.optString("action")
+                if (value.isEmpty() || action !in UserRouteRule.ACTIONS) null else UserRouteRule(value, action)
+            }
+        }.getOrDefault(emptyList())
+
+    fun setCustomRouteRules(rules: List<UserRouteRule>) {
+        customRouteRulesJson = JSONArray().apply {
+            rules.forEach { rule ->
+                put(JSONObject().put("value", rule.value).put("action", rule.action))
+            }
+        }.toString()
+    }
+
     fun getEffectivePerAppProxyMode(): Int = if (perAppProxyManagedMode) {
         PER_APP_PROXY_EXCLUDE
     } else {
@@ -118,6 +145,9 @@ object Settings {
     var cachedUpdateInfo by dataStore.string(SettingsKey.CACHED_UPDATE_INFO) { "" }
     var cachedApkPath by dataStore.string(SettingsKey.CACHED_APK_PATH) { "" }
     var lastShownUpdateVersion by dataStore.int(SettingsKey.LAST_SHOWN_UPDATE_VERSION) { 0 }
+
+    /** 上次自动检查更新的时间戳（毫秒），启动检查按此节流。 */
+    var lastUpdateCheckAt by dataStore.long(SettingsKey.LAST_UPDATE_CHECK_AT) { 0L }
 
     fun serviceClass(): Class<*> = when (serviceMode) {
         ServiceMode.VPN -> VPNService::class.java

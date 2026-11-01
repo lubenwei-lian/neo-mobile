@@ -1,0 +1,131 @@
+{
+  "route": {
+    "rules": [
+      {
+        "package_name": [
+          "com.tencent.ig"
+        ],
+        "network": "udp",
+        "ip_cidr": [
+          "119.28.157.14/32"
+        ],
+        "port": [
+          10958
+        ],
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+      {
+        "package_name": [
+          "com.tencent.ig"
+        ],
+        "network": "udp",
+        "ip_cidr": [
+          "43.153.144.186/32"
+        ],
+        "port": [
+          10295
+        ],
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+      {
+        "package_name": [
+          "com.tencent.ig"
+        ],
+        "network": "udp",
+        "ip_cidr": [
+          "43.153.183.208/32"
+        ],
+        "port": [
+          10253
+        ],
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+      {
+        "package_name": [
+          "com.tencent.ig"
+        ],
+        "network": "udp",
+        "ip_cidr": [
+          "43.153.128.0/18"
+        ],
+        "port_range": [
+          "10000:10999"
+        ],
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+      {
+        "package_name": [
+          "com.tencent.ig"
+        ],
+        "network": "udp",
+        "ip_cidr": [
+          "119.28.144.0/20"
+        ],
+        "port_range": [
+          "10000:10999"
+        ],
+        "action": "route",
+        "outbound": "DIRECT"
+      },
+      {
+        "package_name": [
+          "com.tencent.ig"
+        ],
+        "action": "route",
+        "outbound": "🚀节点选择"
+      }
+    ]
+  },
+  "dns": {
+    "servers": [
+      {
+        "type": "local",
+        "detour": null,
+        "tag": "local"
+      },
+      {
+        "type": "fakeip",
+        "detour": null,
+        "tag": "fakeip"
+      },
+      {
+        "type": "udp",
+        "detour": "🚀节点选择",
+        "tag": "remote"
+      },
+      {
+        "type": "https",
+        "detour": "🚀节点选择",
+        "tag": "remote-doh"
+      },
+      {
+        "type": "https",
+        "detour": "🚀节点选择",
+        "tag": "remote-doh1"
+      },
+      {
+        "type": "udp",
+        "detour": null,
+        "tag": "cn"
+      },
+      {
+        "type": "https",
+        "detour": null,
+        "tag": "cn-doh"
+      }
+    ],
+    "rules": [
+      {
+        "package_name": [
+          "com.tencent.ig"
+        ],
+        "action": "route",
+        "server": "remote-doh"
+      }
+    ]
+  }
+}

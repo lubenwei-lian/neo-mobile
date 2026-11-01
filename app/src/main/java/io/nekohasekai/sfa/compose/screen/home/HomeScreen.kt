@@ -9,6 +9,7 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,13 +27,16 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -48,6 +52,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.lerp
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -61,7 +69,15 @@ import io.nekohasekai.sfa.compose.theme.NeoPalette
 import io.nekohasekai.sfa.compose.theme.NeoPanel
 import io.nekohasekai.sfa.compose.topbar.LocalScaffoldPadding
 import io.nekohasekai.sfa.compose.topbar.OverrideTopBar
+import io.nekohasekai.sfa.constant.RoutingMode
 import io.nekohasekai.sfa.constant.Status
+import io.nekohasekai.sfa.bg.HealthVerdict
+import io.nekohasekai.sfa.bg.NetworkHealthRuntime
+import io.nekohasekai.sfa.bg.NetworkHealthState
+import io.nekohasekai.sfa.bg.ConnectionRecoveryRuntime
+import io.nekohasekai.sfa.bg.RecoveryState
+import io.nekohasekai.sfa.bg.ProbeState
+import io.nekohasekai.sfa.compose.theme.NeoAlertDialog
 import kotlinx.coroutines.delay
 
 // Values taken from the original APK (screenshots + decompiled HomeScreen/BlockChart).
@@ -84,6 +100,8 @@ fun HomeScreen(
 ) {
     val state = viewModel?.uiState?.collectAsState()?.value
     val status = state?.serviceStatus ?: serviceStatus
+    val health by io.nekohasekai.sfa.bg.NetworkHealthRuntime.state.collectAsState()
+    val recovery by ConnectionRecoveryRuntime.state.collectAsState()
     val connected = status == Status.Started || status == Status.Starting
     val statusText =
         when (status) {
@@ -111,6 +129,8 @@ fun HomeScreen(
 
     OverrideTopBar {
         HomeTopBar(
+            routingMode = state?.routingMode ?: RoutingMode.RULE,
+            onSelectRoutingMode = { viewModel?.setRoutingMode(it) },
             onOpenLog = onOpenLog,
         )
     }
@@ -133,6 +153,9 @@ fun HomeScreen(
                 onToggle = { viewModel?.toggleService() },
                 onProfileClick = {},
             )
+            if (status == Status.Started) {
+                NetworkHealthStatus(health, recovery)
+            }
         }
         item {
             Row(
@@ -162,10 +185,106 @@ fun HomeScreen(
 }
 
 @Composable
+private fun NetworkHealthStatus(health: NetworkHealthState, recovery: RecoveryState) {
+    val checking = health.verdict == HealthVerdict.CHECKING
+    var showDetails by remember { mutableStateOf(false) }
+    if (showDetails) {
+        fun label(state: ProbeState) = when (state) {
+            ProbeState.OK -> "正常"
+            ProbeState.FAILED -> "未通过"
+            ProbeState.SKIPPED -> "当前模式无需检测"
+            ProbeState.UNKNOWN -> "尚未完成"
+        }
+        NeoAlertDialog(
+            onDismissRequest = { showDetails = false },
+            title = { Text("网络检测") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text(recovery.label ?: health.verdict.label)
+                    Text("国内域名解析：${label(health.directDns)}")
+                    Text("海外域名解析：${label(health.proxyDns)}")
+                    health.targets.forEach { target ->
+                        Text("${target.name}：${if (target.reachable) "可访问" else "访问未通过"}")
+                    }
+                    if (checking) Text("正在检测，请稍候…")
+                    Text("检测结果只代表这些测试服务的可用性；游戏对局还受 UDP、区服和游戏服务器影响。",
+                        style = MaterialTheme.typography.bodySmall, color = TextSecondary)
+                }
+            },
+            confirmButton = {
+                TextButton(enabled = !checking, onClick = {
+                    showDetails = false
+                    NetworkHealthRuntime.checkNow()
+                }) { Text("重新检测") }
+            },
+            dismissButton = { TextButton(onClick = { showDetails = false }) { Text("关闭") } },
+        )
+    }
+    var elapsedSeconds by remember { mutableLongStateOf(0L) }
+    LaunchedEffect(checking, health.checkingStartedAt) {
+        elapsedSeconds = 0L
+        while (checking) {
+            elapsedSeconds = ((System.currentTimeMillis() - health.checkingStartedAt) / 1000L).coerceAtLeast(0L)
+            delay(1000)
+        }
+    }
+    val interactionSource = remember { MutableInteractionSource() }
+    Row(
+        modifier = Modifier.fillMaxWidth()
+            .padding(top = 6.dp)
+            .clip(RoundedCornerShape(16.dp))
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                enabled = !checking,
+                role = Role.Button,
+                onClickLabel = "重新检测网络",
+            ) { NetworkHealthRuntime.checkNow() }
+            .padding(horizontal = 14.dp, vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        if (checking) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(16.dp),
+                color = AccentBlueSoft,
+                strokeWidth = 1.5.dp,
+            )
+        }
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                text = recovery.label ?: if (checking && elapsedSeconds >= 5) "仍在检测网络，请稍候…" else health.verdict.label,
+                color = when (health.verdict) {
+                    HealthVerdict.AVAILABLE -> Color(0xFF4ADE80)
+                    HealthVerdict.CHECKING -> AccentBlueSoft
+                    HealthVerdict.UNCHECKED -> TextSecondary
+                    else -> AccentOrange
+                },
+                fontSize = 12.sp,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+            )
+            Text(
+                text = if (checking) "已用时 ${elapsedSeconds} 秒 · 检测不会中断连接" else "轻触重新检测",
+                color = TextSecondary,
+                fontSize = 10.sp,
+            )
+        }
+        Text("详情", color = AccentBlueSoft, fontSize = 11.sp,
+            modifier = Modifier.clip(RoundedCornerShape(8.dp)).clickable(
+                interactionSource = remember { MutableInteractionSource() }, indication = null,
+                role = Role.Button, onClickLabel = "查看网络检测详情",
+            ) { showDetails = true }.padding(6.dp))
+    }
+}
+
+@Composable
 private fun HomeTopBar(
+    routingMode: String,
+    onSelectRoutingMode: (String) -> Unit,
     onOpenLog: () -> Unit = {},
 ) {
     var showMenu by remember { mutableStateOf(false) }
+    var showModeMenu by remember { mutableStateOf(false) }
     Box(
         modifier = Modifier.fillMaxWidth().height(63.7.dp).padding(horizontal = 16.dp),
     ) {
@@ -175,15 +294,52 @@ private fun HomeTopBar(
             color = TextPrimary,
             modifier = Modifier.align(Alignment.CenterStart),
         )
-        Box(
-            modifier = Modifier
-                .align(Alignment.Center)
-                .clip(CircleShape)
-                .background(AccentBlue.copy(alpha = 0.16f))
-                .border(1.dp, AccentBlue.copy(alpha = 0.28f), CircleShape)
-                .padding(horizontal = 10.dp, vertical = 2.dp),
-        ) {
-            Text("单节点", fontSize = 11.sp, color = AccentBlueSoft)
+        Box(modifier = Modifier.align(Alignment.Center)) {
+            Row(
+                modifier = Modifier
+                    .clip(CircleShape)
+                    .background(AccentBlue.copy(alpha = 0.16f))
+                    .border(1.dp, AccentBlue.copy(alpha = 0.28f), CircleShape)
+                    .clickable { showModeMenu = true }
+                    .padding(start = 12.dp, end = 8.dp, top = 3.dp, bottom = 3.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(RoutingMode.label(routingMode), fontSize = 11.sp, color = AccentBlueSoft)
+                Icon(
+                    Icons.Default.ArrowDropDown,
+                    contentDescription = "切换路由模式",
+                    tint = AccentBlueSoft,
+                    modifier = Modifier.size(16.dp),
+                )
+            }
+            DropdownMenu(
+                expanded = showModeMenu,
+                onDismissRequest = { showModeMenu = false },
+                containerColor = NeoPalette.DarkPanel,
+                shape = RoundedCornerShape(16.dp),
+            ) {
+                RoutingMode.all.forEach { mode ->
+                    DropdownMenuItem(
+                        text = {
+                            Column {
+                                Text(
+                                    RoutingMode.title(mode),
+                                    color = if (mode == routingMode) AccentBlueSoft else TextPrimary,
+                                )
+                                Text(
+                                    RoutingMode.description(mode),
+                                    fontSize = 11.sp,
+                                    color = TextSecondary,
+                                )
+                            }
+                        },
+                        onClick = {
+                            showModeMenu = false
+                            onSelectRoutingMode(mode)
+                        },
+                    )
+                }
+            }
         }
         Box(modifier = Modifier.align(Alignment.CenterEnd)) {
             IconButton(

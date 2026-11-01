@@ -6,6 +6,8 @@ import java.io.ByteArrayInputStream
 import java.io.FileInputStream
 import java.util.Base64
 import java.util.Properties
+import java.security.MessageDigest
+import java.util.zip.ZipFile
 
 plugins {
     id("com.android.application")
@@ -40,6 +42,7 @@ fun getProps(propName: String): String {
     return ""
 }
 
+
 fun getVersionProps(propName: String): String {
     val propsFile = rootProject.file("version.properties")
     if (propsFile.exists()) {
@@ -52,6 +55,32 @@ fun getVersionProps(propName: String): String {
     }
     return ""
 }
+
+val bundledCoreDigest = MessageDigest.getInstance("SHA-256").run {
+    file("libs/libbox.aar").inputStream().use { input ->
+        val bytes = ByteArray(65536)
+        while (true) {
+            val count = input.read(bytes)
+            if (count < 0) break
+            update(bytes, 0, count)
+        }
+    }
+    digest().joinToString("") { "%02x".format(it) }
+}
+val bundledCoreRecord = Properties().apply {
+    file("libs/libbox-version.properties").inputStream().use { load(it) }
+}
+check(bundledCoreRecord.getProperty("AAR_SHA256") == bundledCoreDigest) {
+    "libbox.aar changed: update its verified source-version record before building."
+}
+val bundledCoreVersion = bundledCoreRecord.getProperty("VERSION")
+check(bundledCoreVersion.matches(Regex("[0-9]+\\.[0-9]+\\.[0-9]+(?:[-+][A-Za-z0-9.-]+)?"))) { "Invalid core source version" }
+val bundledCoreAbis = ZipFile(file("libs/libbox.aar")).use { aar ->
+    aar.entries().asSequence().mapNotNull {
+        Regex("jni/([^/]+)/libbox\\.so").matchEntire(it.name)?.groupValues?.get(1)
+    }.toList().sorted()
+}
+check(bundledCoreAbis.isNotEmpty()) { "The bundled core has no supported native architecture" }
 
 android {
     namespace = "io.nekohasekai.sfa"
@@ -74,6 +103,9 @@ android {
         versionCode = getVersionProps("VERSION_CODE").toInt()
         versionName = getVersionProps("VERSION_NAME")
         base.archivesName.set("neo-${versionName}")
+        // Bind the exact AAR digest; a historical annotation is not proof of its runtime version.
+        buildConfigField("String", "BUNDLED_CORE_VERSION", "\"$bundledCoreVersion\"")
+        buildConfigField("String", "BUNDLED_CORE_BUILD", "\"aar-sha256:$bundledCoreDigest\"")
     }
 
     signingConfigs {
@@ -132,7 +164,7 @@ android {
             isEnable = true
             isUniversalApk = true
             reset()
-            include("armeabi-v7a", "arm64-v8a", "x86", "x86_64")
+            include(*bundledCoreAbis.toTypedArray())
         }
     }
 
@@ -157,11 +189,20 @@ android {
     packaging {
         jniLibs {
             useLegacyPackaging = true
+            // A speed-test helper for an ABI is not evidence that libbox supports it.
+            excludes += (setOf("armeabi-v7a", "arm64-v8a", "x86", "x86_64") - bundledCoreAbis.toSet())
+                .map { "**/$it/**" }
         }
     }
 
     lint {
         fatal += "NewApi"
+    }
+
+    testOptions {
+        // JVM 单测里 android.jar 的方法（Log.e 等）默认抛 "not mocked"，
+        // 让它们返回默认值，否则任何带日志的纯逻辑都无法测。
+        unitTests.isReturnDefaultValues = true
     }
 
     applicationVariants.configureEach {
@@ -214,6 +255,11 @@ dependencies {
     implementation("androidx.preference:preference-ktx:1.2.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.11.0")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.11.0")
+
+    // 单元测试。注意：JVM 单测里 android.jar 的 org.json 是空壳实现（调用即抛异常），
+    // 必须用真实 org.json 覆盖，否则 ConfigTlsPatcher / RemoteConfigNormalizer 无法测。
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.json:json:20240303")
     implementation("com.android.tools.smali:smali-dexlib2:3.0.9") {
         exclude(group = "com.google.guava", module = "guava")
     }

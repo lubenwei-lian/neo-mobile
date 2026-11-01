@@ -58,6 +58,10 @@ class Application : Application() {
         @Suppress("OPT_IN_USAGE")
         GlobalScope.launch(Dispatchers.IO) {
             Settings.dataStore.initialize()
+            Vendor.scheduleAutoUpdate() // Cancel periodic jobs left by older versions.
+            kotlinx.coroutines.withContext(Dispatchers.Main) {
+                io.nekohasekai.sfa.update.AppUpdateSession.start()
+            }
             runCatching {
                 setupLibbox()
             }.onFailure {

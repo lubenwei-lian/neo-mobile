@@ -63,6 +63,7 @@ fun GeneralSettingsScreen(navController: NavController) {
     var regionDone by remember { mutableStateOf(0) }
     var regionTotal by remember { mutableStateOf(0) }
     var regionText by remember { mutableStateOf<String?>(null) }
+    var regionSkipCached by remember { mutableStateOf(prefs.getBoolean("region_skip_cached", true)) }
     val scope = rememberCoroutineScope()
     OverrideTopBar {
         TopAppBar(
@@ -194,6 +195,27 @@ fun GeneralSettingsScreen(navController: NavController) {
                     exit = shrinkVertically() + fadeOut(),
                 ) {
                     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 14.dp)) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth().padding(bottom = 10.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Column(Modifier.weight(1f)) {
+                                Text("跳过已检测", style = MaterialTheme.typography.bodyLarge, color = NeoPalette.DarkText1)
+                                Spacer(Modifier.height(2.dp))
+                                Text(
+                                    "只补测没有地区记录的节点；68 个节点全量约 5–8 分钟，补测通常只要几十秒",
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    color = NeoPalette.DarkText2,
+                                )
+                            }
+                            Switch(
+                                checked = regionSkipCached,
+                                onCheckedChange = {
+                                    regionSkipCached = it
+                                    prefs.edit().putBoolean("region_skip_cached", it).apply()
+                                },
+                            )
+                        }
                         Button(
                             enabled = !regionTesting,
                             onClick = {
@@ -213,7 +235,7 @@ fun GeneralSettingsScreen(navController: NavController) {
                                         val content = withContext(Dispatchers.IO) {
                                             runCatching { File(profile.typed.path).readText() }.getOrDefault("")
                                         }
-                                        val outcome = RegionDetector.detect(content) { done, total ->
+                                        val outcome = RegionDetector.detect(content, skipCached = regionSkipCached) { done, total ->
                                             regionDone = done
                                             regionTotal = total
                                         }

@@ -94,27 +94,23 @@ object Vendor : VendorInterface {
 
     override val hasCustomUpdate = true
 
-    override fun checkUpdateAsync(): UpdateInfo? {
-        val track = UpdateTrack.fromString(Settings.updateTrack)
-        return GitHubUpdateChecker().use { checker ->
-            checker.checkUpdate(track, Settings.githubToken)
-        }
-    }
+    override fun checkUpdateAsync(): UpdateInfo? = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) { NeoUpdateChecker().check() }
 
     override fun scheduleAutoUpdate() {
         UpdateWorker.schedule(io.nekohasekai.sfa.Application.application)
     }
 
-    override suspend fun verifySilentInstallMethod(method: String): Boolean =
-        method == "PACKAGE_INSTALLER" && ApkInstaller.canSystemSilentInstall()
-
-    override suspend fun downloadAndInstall(context: android.content.Context, downloadUrl: String) {
-        val cachedApk = UpdateState.cachedApkFile.value
-        val apkFile = if (cachedApk != null && cachedApk.exists() && cachedApk.length() > 0) {
-            cachedApk
-        } else {
-            ApkDownloader().use { it.download(downloadUrl) }
+    override suspend fun prepareUpdate(info: UpdateInfo): java.io.File {
+        val cached = UpdateState.cachedApkFile.value
+        if (cached != null && cached.exists() && cached.length() > 0) {
+            try { ApkValidator.validate(io.nekohasekai.sfa.Application.application, cached, info); return cached }
+            catch (e: Exception) { cached.delete(); UpdateState.cachedApkFile.value = null }
         }
-        ApkInstaller.install(context, apkFile)
+        return ApkDownloader().download(info.downloadUrl, info.sha256, info)
     }
+
+    override suspend fun installPreparedUpdate(context: android.content.Context, file: java.io.File) {
+        ApkInstaller.install(context, file)
+    }
+
 }

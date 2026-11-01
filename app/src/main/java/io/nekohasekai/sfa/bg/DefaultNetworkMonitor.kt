@@ -5,10 +5,13 @@ import android.os.Build
 import io.nekohasekai.libbox.InterfaceUpdateListener
 import io.nekohasekai.sfa.Application
 import java.net.NetworkInterface
+import kotlinx.coroutines.flow.asStateFlow
 
 object DefaultNetworkMonitor {
-
-    var defaultNetwork: Network? = null
+    private val networkChanges = kotlinx.coroutines.flow.MutableStateFlow<Network?>(null)
+    val changes = networkChanges.asStateFlow()
+    @Volatile var defaultNetwork: Network? = null
+        private set(value) { field = value; networkChanges.value = value }
     private var listener: InterfaceUpdateListener? = null
 
     suspend fun start() {
@@ -25,6 +28,8 @@ object DefaultNetworkMonitor {
 
     suspend fun stop() {
         DefaultNetworkListener.stop(this)
+        listener = null
+        defaultNetwork = null
     }
 
     suspend fun require(): Network {

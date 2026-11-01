@@ -23,11 +23,11 @@ object ApkInstaller {
     }
 
     suspend fun install(context: Context, apkFile: File) {
+        kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+            ApkValidator.validate(context, apkFile, io.nekohasekai.sfa.update.UpdateState.updateInfo.value)
+        }
         stopServiceIfRunning()
         SystemPackageInstaller.install(context, apkFile)
     }
 
-    fun canSystemSilentInstall(): Boolean = SystemPackageInstaller.canSystemSilentInstall()
-
-    suspend fun canSilentInstall(): Boolean = canSystemSilentInstall()
 }

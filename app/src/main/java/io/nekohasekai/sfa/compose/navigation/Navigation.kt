@@ -30,6 +30,7 @@ import io.nekohasekai.sfa.compose.screen.profile.EditProfileRoute
 import io.nekohasekai.sfa.compose.screen.settings.AppSettingsScreen
 import io.nekohasekai.sfa.compose.screen.settings.GeneralSettingsScreen
 import io.nekohasekai.sfa.compose.screen.settings.KernelSettingsScreen
+import io.nekohasekai.sfa.compose.screen.settings.RoutingSettingsScreen
 import io.nekohasekai.sfa.compose.screen.settings.SessionLogScreen
 import io.nekohasekai.sfa.compose.screen.settings.SubscriptionDiagScreen
 import io.nekohasekai.sfa.compose.screen.settings.SettingsScreen
@@ -225,6 +226,19 @@ fun NavHost(
             popExitTransition = slideOutToRight,
         ) {
             GeneralSettingsScreen(navController = navController)
+        }
+
+        composable(
+            route = "settings/routing",
+            enterTransition = slideInFromRight,
+            exitTransition = slideOutToLeft,
+            popEnterTransition = slideInFromLeft,
+            popExitTransition = slideOutToRight,
+        ) {
+            RoutingSettingsScreen(
+                navController = navController,
+                dashboardViewModel = dashboardViewModel,
+            )
         }
 
         composable(

@@ -40,6 +40,11 @@ class VPNService :
         service.onDestroy()
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        io.nekohasekai.sfa.update.AppUpdateSession.close()
+        super.onTaskRemoved(rootIntent)
+    }
+
     override fun onRevoke() {
         runBlocking {
             withContext(Dispatchers.Main) {

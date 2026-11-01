@@ -12,8 +12,11 @@ local.properties
 /service-account-credentials.json
 /CLAUDE.md
 /.claude/
+/.android/
+/.build-home/
+/.gradle-user/
 *.keystore
 *.jks
-/app/release.keystore
 *.apk
 *.idsig
+*.log

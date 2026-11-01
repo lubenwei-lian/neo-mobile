@@ -1,116 +1,89 @@
-package io.nekohasekai.sfa.compose.screen.nodes
-
-import io.nekohasekai.sfa.Application
-import io.nekohasekai.sfa.compose.model.Group
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
-import org.json.JSONArray
-import org.json.JSONObject
-import java.io.File
-
-object NodeDelayCache {
-    // [delayMs, testedAt, relaxed(0/1)]；老文件只有前两项，读取时兼容。
-    private val entries = HashMap<String, LongArray>()
-    private val lock = Any()
-    private var loaded = false
-    private var lastSave = 0L
+package io.nekohasekai.sfa.compose.screen.nodes
 
-    /** 放宽标记有效期：服务端换回正常证书后，24 小时内应重新按严格校验测一次。 */
-    private const val RELAX_TTL_SECONDS = 24L * 3600L
-
-    private fun file() = File(Application.application.filesDir, "node_delays.json")
-
-    fun ensureLoaded() {
-        if (loaded) return
-        loaded = true
-        runCatching {
-            val f = file()
-            if (!f.exists()) return@runCatching
-            val jo = JSONObject(f.readText())
-            val loadedMap = HashMap<String, LongArray>()
-            for (key in jo.keys()) {
-                val arr = jo.optJSONArray(key) ?: continue
-                loadedMap[key] = longArrayOf(arr.optLong(0), arr.optLong(1), arr.optLong(2, 0))
-            }
-            synchronized(lock) { entries.putAll(loadedMap) }
-        }
-    }
-
-    fun get(tag: String): LongArray? = synchronized(lock) { entries[tag] }
-
-    fun isRelaxed(tag: String): Boolean = synchronized(lock) {
-        val e = entries[tag] ?: return false
-        isFreshRelaxed(e)
+import io.nekohasekai.sfa.Application
+import io.nekohasekai.sfa.compose.model.Group
+import io.nekohasekai.sfa.database.Settings
+import io.nekohasekai.sfa.utils.AtomicTextFile
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.File
+
+object NodeDelayCache {
+    private val entries = HashMap<String, LongArray>()
+    private val lock = Any()
+    private val saveLock = Mutex()
+    private var loaded = false
+    private var lastSave = 0L
+    private var profileId = -1L
+    private var identities = emptyMap<String, String>()
+    private var insecureTags = emptySet<String>()
+    private fun file() = AtomicTextFile(File(Application.application.filesDir, "node_delays_v2.json"))
+
+    fun ensureLoaded() = synchronized(lock) {
+        if (loaded) return@synchronized
+        // Deliberately do not migrate legacy tag-only delays or their relaxed trust flags.
+        runCatching {
+            val root = file().readOrNull()?.let { JSONObject(it) } ?: return@runCatching
+            root.keys().forEach { key -> root.optJSONArray(key)?.let { a ->
+                entries[key] = longArrayOf(a.optLong(0), seconds(a.optLong(1)))
+            } }
+        }
+        loaded = true
     }
 
-    private fun isFreshRelaxed(e: LongArray): Boolean {
-        if ((e.getOrNull(2) ?: 0L) != 1L) return false
-        val ts = e.getOrNull(1) ?: 0L
-        val seconds = if (ts > 1_000_000_000_000L) ts / 1000 else ts
-        return System.currentTimeMillis() / 1000 - seconds <= RELAX_TTL_SECONDS
-    }
-
-    fun relaxedTags(): Set<String> = synchronized(lock) {
-        entries.filterValues { isFreshRelaxed(it) }.keys.toSet()
-    }
-
-    suspend fun harvest(groups: List<Group>) {
-        var changed = false
-        synchronized(lock) {
-            for (group in groups) {
-                for (item in group.items) {
-                    if (item.urlTestTime <= 0 && item.urlTestDelay <= 0) continue
-                    val existing = entries[item.tag]
-                    if (existing != null && existing[1] > item.urlTestTime) continue
-                    if (existing == null || existing[0] != item.urlTestDelay.toLong() || existing[1] != item.urlTestTime) {
-                        entries[item.tag] = longArrayOf(item.urlTestDelay.toLong(), item.urlTestTime, existing?.getOrNull(2) ?: 0L)
-                        changed = true
-                    }
-                }
-            }
-        }
-        if (changed) saveThrottled()
-    }
-
-    suspend fun record(tag: String, delayMs: Int, relaxed: Boolean = false) {
-        synchronized(lock) {
-            entries[tag] = longArrayOf(
-                if (delayMs > 0) delayMs.toLong() else 0L,
-                System.currentTimeMillis() / 1000,
-                if (relaxed && delayMs > 0) 1L else 0L,
-            )
-        }
-        saveThrottled()
-    }
-
-    suspend fun flush() {
-        val snapshot: HashMap<String, LongArray>
-        synchronized(lock) {
-            snapshot = HashMap(entries)
-            lastSave = System.currentTimeMillis()
-        }
-        write(snapshot)
-    }
-
-    private suspend fun saveThrottled() {
-        val now = System.currentTimeMillis()
-        val snapshot: HashMap<String, LongArray>
-        synchronized(lock) {
-            if (now - lastSave < 3000) return
-            lastSave = now
-            snapshot = HashMap(entries)
-        }
-        write(snapshot)
-    }
-
-    private suspend fun write(snapshot: HashMap<String, LongArray>) =
-        withContext(Dispatchers.IO) {
-            runCatching {
-                val jo = JSONObject()
-                for ((key, value) in snapshot) {
-                    jo.put(key, JSONArray().put(value[0]).put(value[1]).put(value.getOrNull(2) ?: 0L))
-                }
-                file().writeText(jo.toString())
-            }
-        }
-}
+    fun bind(id: Long, content: String) = synchronized(lock) {
+        val outs = JSONObject(content).getJSONArray("outbounds")
+        profileId = id
+        identities = (0 until outs.length()).associate { i -> outs.getJSONObject(i).let {
+            it.getString("tag") to NodeIdentity.key(id, it)
+        } }
+        insecureTags = ConfigTlsPatcher.explicitInsecureTags(content)
+    }
+
+    private fun identity(tag: String): String? = if (profileId == Settings.selectedProfile) identities[tag] else null
+    private fun seconds(value: Long) = if (value > 1_000_000_000_000L) value / 1000 else value
+    fun get(tag: String): LongArray? = synchronized(lock) { identity(tag)?.let { entries[it]?.copyOf() } }
+    fun isInsecure(tag: String): Boolean = synchronized(lock) { profileId == Settings.selectedProfile && tag in insecureTags }
+
+    suspend fun harvest(groups: List<Group>) {
+        synchronized(lock) {
+            for (group in groups) for (item in group.items) {
+                val key = identity(item.tag) ?: continue
+                if (item.urlTestTime <= 0) continue
+                val existing = entries[key]
+                val time = seconds(item.urlTestTime)
+                if (existing != null && existing[1] >= time) continue
+                entries[key] = longArrayOf(item.urlTestDelay.toLong(), time)
+            }
+        }
+        saveThrottled()
+    }
+
+    @Suppress("UNUSED_PARAMETER")
+    suspend fun record(tag: String, delayMs: Int, relaxed: Boolean = false) {
+        synchronized(lock) {
+            val key = identity(tag) ?: return
+            entries[key] = longArrayOf(delayMs.coerceAtLeast(0).toLong(), System.currentTimeMillis() / 1000)
+        }
+        saveThrottled()
+    }
+
+    suspend fun flush() = withContext(Dispatchers.IO) {
+        saveLock.withLock {
+            val json = synchronized(lock) {
+                lastSave = System.currentTimeMillis()
+                JSONObject().apply { entries.forEach { (k, v) -> put(k, JSONArray(v.toList())) } }.toString()
+            }
+            file().write(json)
+        }
+    }
+
+    private suspend fun saveThrottled() {
+        val shouldSave = synchronized(lock) { System.currentTimeMillis() - lastSave >= 3000 }
+        if (shouldSave) flush()
+    }
+}

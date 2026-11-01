@@ -34,7 +34,7 @@ fun UpdateAvailableDialog(updateInfo: UpdateInfo, onDismiss: () -> Unit, onUpdat
 
     NeoAlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(stringResource(R.string.check_update)) },
+        title = { Text("Neo 软件更新") },
         text = {
             Column(
                 modifier = Modifier.verticalScroll(rememberScrollState()),
@@ -69,19 +69,7 @@ fun UpdateAvailableDialog(updateInfo: UpdateInfo, onDismiss: () -> Unit, onUpdat
             }
         },
         dismissButton = {
-            Row {
-                TextButton(onClick = {
-                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(updateInfo.releaseUrl))
-                    context.startActivity(intent)
-                    onDismiss()
-                }) {
-                    Text(stringResource(R.string.view_release))
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-                TextButton(onClick = onDismiss) {
-                    Text(stringResource(android.R.string.cancel))
-                }
-            }
+            TextButton(onClick = onDismiss) { Text("稍后") }
         },
     )
 }

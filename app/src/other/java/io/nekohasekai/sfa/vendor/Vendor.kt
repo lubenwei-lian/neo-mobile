@@ -10,11 +10,14 @@ import io.nekohasekai.sfa.Application
 import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.compose.screen.qrscan.QRCodeCropArea
 import io.nekohasekai.sfa.database.Settings
+import io.nekohasekai.sfa.update.RuleSetUpdateResult
 import io.nekohasekai.sfa.update.UpdateCheckException
 import io.nekohasekai.sfa.update.UpdateInfo
 import io.nekohasekai.sfa.update.UpdateSource
 import io.nekohasekai.sfa.update.UpdateState
 import io.nekohasekai.sfa.update.UpdateTrack
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 
 object Vendor : VendorInterface {
     private const val TAG = "Vendor"
@@ -95,31 +98,49 @@ object Vendor : VendorInterface {
 
     override val hasCustomUpdate = true
 
-    override val updateSources = listOf(UpdateSource.GITHUB)
+    // 渠道切换 UI 放在内核页内，避免影响设置页列表的布局与分组圆角计算
+    override val updateSources = listOf(UpdateSource.NEO)
 
-    override fun checkUpdateAsync(): UpdateInfo? = when (UpdateSource.fromString(Settings.updateSource)) {
-        UpdateSource.GITHUB -> {
-            val track = UpdateTrack.fromString(Settings.updateTrack)
-            GitHubUpdateChecker().use { checker ->
-                checker.checkUpdate(track, Settings.githubToken)
-            }
-        }
-    }
+    override fun checkUpdateAsync(): UpdateInfo? = runCatching {
+        // 不再按用户选的渠道分支：统一走静态清单 + 多源自动降级。
+        // 首源是 GitHub 直连（有代理时最快），失败自动换镜像，用户无感。
+        runBlocking(Dispatchers.IO) { NeoUpdateChecker().check() }
+    }.onFailure {
+        Log.w(TAG, "NeoUpdateChecker failed", it)
+    }.getOrNull()
 
     override fun scheduleAutoUpdate() {
         UpdateWorker.schedule(io.nekohasekai.sfa.Application.application)
     }
 
-    override suspend fun verifySilentInstallMethod(method: String): Boolean =
-        method == "PACKAGE_INSTALLER" && ApkInstaller.canSystemSilentInstall()
-
-    override suspend fun downloadAndInstall(context: android.content.Context, downloadUrl: String) {
-        val cachedApk = UpdateState.cachedApkFile.value
-        val apkFile = if (cachedApk != null && cachedApk.exists() && cachedApk.length() > 0) {
-            cachedApk
-        } else {
-            ApkDownloader().use { it.download(downloadUrl) }
+    override suspend fun prepareUpdate(info: UpdateInfo): java.io.File {
+        val cached = UpdateState.cachedApkFile.value
+        if (cached != null && cached.exists() && cached.length() > 0) {
+            try { ApkValidator.validate(io.nekohasekai.sfa.Application.application, cached, info); return cached }
+            catch (e: Exception) { cached.delete(); UpdateState.cachedApkFile.value = null }
         }
-        ApkInstaller.install(context, apkFile)
+        return ApkDownloader().download(info.downloadUrl, info.sha256, info)
+    }
+
+    override suspend fun installPreparedUpdate(context: android.content.Context, file: java.io.File) {
+        ApkInstaller.install(context, file)
+    }
+
+
+    /**
+     * 单独更新分流规则集。
+     *
+     * 先取一次清单（rulesets 字段在里面），再交给 RuleSetUpdater 下载替换。
+     * 复用 NeoUpdateChecker 的多源降级，所以规则集和版本检查走的是同一套网络路径。
+     */
+    override suspend fun updateRuleSets(): RuleSetUpdateResult = runCatching {
+        val manifest = NeoUpdateChecker().fetchManifest()
+            ?: return@runCatching RuleSetUpdateResult.Failed(
+                UpdateState.lastCheckError.value ?: "无法连接更新服务器",
+            )
+        RuleSetUpdater.update(manifest)
+    }.getOrElse {
+        Log.e(TAG, "updateRuleSets failed", it)
+        RuleSetUpdateResult.Failed(it.message ?: "规则集更新失败")
     }
 }

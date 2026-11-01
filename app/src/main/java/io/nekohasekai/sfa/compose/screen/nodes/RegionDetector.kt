@@ -35,7 +35,11 @@ object RegionDetector {
         "ID" to "印度尼西亚", "AR" to "阿根廷", "ZA" to "南非", "PL" to "波兰", "FI" to "芬兰",
     )
 
-    suspend fun detect(configContent: String, onProgress: (Int, Int) -> Unit): Outcome =
+    suspend fun detect(
+        configContent: String,
+        skipCached: Boolean = true,
+        onProgress: (Int, Int) -> Unit,
+    ): Outcome =
         withContext(Dispatchers.IO) {
             val root = JSONObject(configContent)
             val outbounds = root.optJSONArray("outbounds") ?: JSONArray()
@@ -68,8 +72,17 @@ object RegionDetector {
                 }
             }
             val tag = groupTag ?: error("当前配置没有可用的选择器")
-            val testTags = leafTags.filter { it in groupItems }
+            var testTags = leafTags.filter { it in groupItems }
             if (testTags.isEmpty()) error("选择器里没有可检测的节点")
+            if (skipCached) {
+                NodeRegionCache.ensureLoaded()
+                val before = testTags.size
+                // 已有记录的不再重测：全量 68 个节点要 5–8 分钟，第二次检测通常只需要补新增的
+                testTags = testTags.filter { NodeRegionCache.get(it).isNullOrBlank() }
+                if (testTags.isEmpty()) {
+                    error("这 " + before + " 个节点都已有地区记录；如需全部重新检测，请关闭「跳过已检测」")
+                }
+            }
             val port = localProxyPort(root) ?: error("未找到本地代理端口，请先连接节点")
 
             val previous = querySelected(tag)
@@ -92,6 +105,7 @@ object RegionDetector {
                         }
                         if (exit != null) {
                             regions[nodeTag] = exit.first
+                            NodeRegionCache.put(nodeTag, exit.first)
                             Log.d(TAG, nodeTag + " -> " + exit.second + " " + exit.first)
                         } else {
                             Log.d(TAG, nodeTag + " -> lookup failed")
@@ -182,9 +196,13 @@ object RegionDetector {
 }
 
 object NodeRegionCache {
+    /** 可观察快照：节点页直接订阅它，检测过程中就能实时刷新地区列。 */
+    val entries = androidx.compose.runtime.mutableStateOf<Map<String, String>>(emptyMap())
+
     private val file = File(Application.application.filesDir, "node_regions.json")
     private var loaded = false
     private val regions = HashMap<String, String>()
+    private var lastSave = 0L
 
     fun ensureLoaded(): Map<String, String> {
         if (!loaded) {
@@ -199,17 +217,45 @@ object NodeRegionCache {
                     }
                 }
             }
+            publish()
         }
         return regions
     }
 
-    fun save(map: Map<String, String>) {
-        regions.clear()
-        regions.putAll(map)
+    /** 已缓存的地区；null 表示没测过。 */
+    fun get(tag: String): String? = synchronized(regions) { regions[tag] }
+
+    /** 单个节点测完立即入缓存并节流落盘，避免中途退出丢掉已测结果。 */
+    fun put(tag: String, region: String) {
+        if (tag.isBlank() || region.isBlank()) return
+        synchronized(regions) { regions[tag] = region }
         loaded = true
+        publish()
+        val now = System.currentTimeMillis()
+        if (now - lastSave < 1500L) return
+        lastSave = now
+        persist()
+    }
+
+    /** 合并写入：不清空已有条目，本次未测到的节点保留上一次结果。 */
+    fun save(map: Map<String, String>) {
+        synchronized(regions) {
+            regions.putAll(map)
+            loaded = true
+        }
+        publish()
+        persist()
+    }
+
+    private fun publish() {
+        entries.value = synchronized(regions) { HashMap(regions) }
+    }
+
+    private fun persist() {
+        val snapshot = synchronized(regions) { HashMap(regions) }
         runCatching {
             val o = JSONObject()
-            map.forEach { (k, v) -> o.put(k, v) }
+            snapshot.forEach { (k, v) -> o.put(k, v) }
             file.writeText(o.toString())
         }
     }

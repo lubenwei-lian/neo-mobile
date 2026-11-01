@@ -22,13 +22,14 @@ import go.Seq
 import io.nekohasekai.libbox.CommandServer
 import io.nekohasekai.libbox.CommandServerHandler
 import io.nekohasekai.libbox.Libbox
+import io.nekohasekai.libbox.LogEntry
 import io.nekohasekai.libbox.Notification
 import io.nekohasekai.libbox.OverrideOptions
 import io.nekohasekai.libbox.PlatformInterface
 import io.nekohasekai.libbox.SystemProxyStatus
 import io.nekohasekai.sfa.Application
-import io.nekohasekai.sfa.compose.screen.nodes.ConfigTlsPatcher
-import io.nekohasekai.sfa.compose.screen.nodes.NodeDelayCache
+
+
 import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.compose.MainActivity
 import io.nekohasekai.sfa.constant.Action
@@ -36,13 +37,23 @@ import io.nekohasekai.sfa.constant.Alert
 import io.nekohasekai.sfa.constant.Status
 import io.nekohasekai.sfa.database.ProfileManager
 import io.nekohasekai.sfa.database.Settings
+import io.nekohasekai.sfa.core.CoreBackend
+import io.nekohasekai.sfa.core.BuiltinCoreBackend
+import io.nekohasekai.sfa.core.CoreRuntime
 import io.nekohasekai.sfa.ktx.hasPermission
 import io.nekohasekai.sfa.vendor.Vendor
+import io.nekohasekai.sfa.utils.CommandClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
@@ -79,9 +90,57 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     private val status = MutableLiveData(Status.Stopped)
     private val binder = ServiceBinder(status)
     private val notification = ServiceNotification(status, service)
-    private lateinit var commandServer: CommandServer
+    private lateinit var commandServer: CoreBackend
+    @Volatile private var closing = false
+    private val lifecycleScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val lifecycleLock = Mutex()
+    private var startupJob: Job? = null
     private val idleModeScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val idleModeUpdates = Channel<Boolean>(Channel.UNLIMITED)
+    private val diagnosticScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val diagnosticLock = Any()
+    private var diagnosticClient: CommandClient? = null
+    private var diagnosticEpoch = 0
+
+    // The log screen disconnects when the app enters the background. Keep a
+    // separate service-owned subscription so game failures remain diagnosable.
+    private fun startDiagnosticLogging() {
+        synchronized(diagnosticLock) {
+            val epoch = ++diagnosticEpoch
+            diagnosticClient?.disconnect()
+            DiagLogger.newSession("service start")
+            diagnosticClient = CommandClient(
+                scope = diagnosticScope,
+                connectionType = CommandClient.ConnectionType.Log,
+                handler = object : CommandClient.Handler {
+                    override fun appendLogs(message: List<LogEntry>) {
+                        synchronized(diagnosticLock) {
+                            if (diagnosticClient != null && diagnosticEpoch == epoch) DiagLogger.kernel(message)
+                        }
+                    }
+
+                    override fun onConnectionError(message: String) {
+                        synchronized(diagnosticLock) {
+                            if (diagnosticClient != null && diagnosticEpoch == epoch) {
+                                DiagLogger.event("log subscription: $message")
+                            }
+                        }
+                    }
+                },
+                localOnly = true,
+            ).also { it.connect() }
+        }
+    }
+
+    private fun stopDiagnosticLogging() {
+        synchronized(diagnosticLock) {
+            diagnosticEpoch++
+            val client = diagnosticClient
+            diagnosticClient = null
+            client?.disconnect()
+            DiagLogger.close()
+        }
+    }
 
     init {
         idleModeScope.launch {
@@ -115,52 +174,74 @@ class BoxService(private val service: Service, private val platformInterface: Pl
 
     private fun startCommandServer() {
         Libbox.promoteOOMDraft()
-        val commandServer = CommandServer(this, platformInterface)
-        commandServer.start()
-        this.commandServer = commandServer
+        commandServer = BuiltinCoreBackend(this, platformInterface).also { it.start() }
     }
 
     private var lastProfileName = ""
-
-    /**
-     * 连接前兜底：对 selector 的默认节点做一次严格 URLTest；失败且放宽后能通，就返回放宽后的配置。
-     * 只处理含 TUIC/Hysteria2 的配置，避免给普通节点增加连接延迟。
-     */
-    private suspend fun preflightCertFallback(content: String): String {
-        if (!content.contains("\"tuic\"") && !content.contains("\"hysteria2\"")) return content
-        val tag = runCatching {
-            val outs = org.json.JSONObject(content).optJSONArray("outbounds") ?: return@runCatching ""
-            for (i in 0 until outs.length()) {
-                val o = outs.optJSONObject(i) ?: continue
-                if (o.optString("type") != "selector") continue
-                val d = o.optString("default")
-                if (d.isNotEmpty()) return@runCatching d
-                val m = o.optJSONArray("outbounds")
-                if (m != null && m.length() > 0) return@runCatching m.optString(0)
-            }
-            ""
-        }.getOrDefault("")
-        if (tag.isEmpty()) return content
-        return kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
-            val session = runCatching { io.nekohasekai.libbox.Libbox.newDetachedURLTestSession(content) }.getOrNull()
-                ?: return@withContext content
-            val ms = runCatching { session.test(tag) }.getOrDefault(-1)
-            runCatching { session.close() }
-            if (ms > 0) return@withContext content
-            val patched = ConfigTlsPatcher.relax(content, setOf(tag))
-            if (patched == content) return@withContext content
-            val relaxed = runCatching { io.nekohasekai.libbox.Libbox.newDetachedURLTestSession(patched) }.getOrNull()
-                ?: return@withContext content
-            val ms2 = runCatching { relaxed.test(tag) }.getOrDefault(-1)
-            runCatching { relaxed.close() }
-            if (ms2 > 0) {
-                android.util.Log.w("NeoBoxService", "连接前探测：默认节点证书不受信，已放宽（" + tag + "）")
-                patched
-            } else {
-                content
+    private val healthMonitor = NetworkHealthMonitor(lifecycleScope) {
+        lifecycleLock.withLock {
+            // Native reset keeps the same selected outbound and TUN descriptor.
+            // Never apply a fresh configuration or start a stopped service here.
+            if (!closing && runningConfig != null && ::commandServer.isInitialized) {
+                commandServer.wake()
+                commandServer.resetNetwork()
             }
         }
     }
+    private val healthPorts by lazy {
+        java.net.ServerSocket(0).use { first -> java.net.ServerSocket(0).use { second ->
+            io.nekohasekai.sfa.policy.HealthPorts(first.localPort, second.localPort)
+        } }
+    }
+    private var runningProfileId = -1L
+    private var runningConfig: String? = null
+    private var startupSnapshot: io.nekohasekai.sfa.database.ProfileSnapshotStore? = null
+    private var policyActivated = false
+
+    private fun nativeOptions() = OverrideOptions().apply {
+        autoRedirect = Settings.autoRedirect
+        if (Vendor.isPerAppProxyAvailable() && Settings.perAppProxyEnabled) {
+            val packages = Settings.getEffectivePerAppProxyList()
+            if (Settings.getEffectivePerAppProxyMode() == Settings.PER_APP_PROXY_INCLUDE) {
+                includePackage = PlatformInterfaceWrapper.StringArray((packages + Application.application.packageName).iterator())
+            } else {
+                excludePackage = PlatformInterfaceWrapper.StringArray((packages - Application.application.packageName).iterator())
+            }
+        }
+    }
+
+    private fun prepareConfig(profile: io.nekohasekai.sfa.database.Profile, promote: Boolean): String {
+        val snapshot = ProfileManager.snapshot(profile)
+        RoutingConfigApplier.policies.migrate(snapshot.readActive())
+        if (promote) {
+            RoutingConfigApplier.policies.recoverUnconfirmed()
+            policyActivated = runCatching {
+                RoutingConfigApplier.policies.activateCandidate { bundle ->
+                    Libbox.checkConfig(RoutingConfigApplier.compile(snapshot.readActive(), bundle, healthPorts))
+                }
+            }.getOrDefault(false)
+        }
+        val source = if (promote) snapshot.prepare(ProfileManager.identity(profile)) { candidate ->
+            Libbox.checkConfig(RoutingConfigApplier.apply(candidate, healthPorts))
+        }.also { if (it.promoted) startupSnapshot = snapshot }.content else snapshot.readActive()
+        return RoutingConfigApplier.apply(source, healthPorts).also { Libbox.checkConfig(it) }
+    }
+
+    private fun rollbackStartup(): String? {
+        if (policyActivated) {
+            RoutingConfigApplier.policies.rollback()
+            policyActivated = false
+        }
+        val previous = startupSnapshot?.rollback()
+        startupSnapshot = null
+        return previous
+    }
+
+    private fun confirmStartup() {
+        startupSnapshot?.started(); startupSnapshot = null
+        RoutingConfigApplier.policies.confirmStarted(); policyActivated = false
+    }
+
 
     private suspend fun startService() {
         try {
@@ -176,30 +257,8 @@ class BoxService(private val service: Service, private val platformInterface: Pl
                 return
             }
 
-            var content = File(profile.typed.path).readText()
-            if (content.isBlank()) {
-                stopAndAlert(Alert.EmptyConfiguration)
-                return
-            }
-            // 还没测过速就直接连接：先对默认节点做一次严格探测，只有证书不受信才放宽。
-            runCatching {
-                if (NodeDelayCache.relaxedTags().isEmpty()) {
-                    content = preflightCertFallback(content)
-                }
-            }
-
-            // 测速阶段已确认证书不受信的节点：连接时只对这些 tag 放宽，避免「能测不能连」。
-            runCatching {
-                NodeDelayCache.ensureLoaded()
-                val relaxedTags = NodeDelayCache.relaxedTags()
-                if (relaxedTags.isNotEmpty()) {
-                    val patched = ConfigTlsPatcher.relax(content, relaxedTags)
-                    if (patched != content) {
-                        content = patched
-                        android.util.Log.w("NeoBoxService", "连接配置：已对 " + relaxedTags.size + " 个证书不受信节点放宽校验")
-                    }
-                }
-            }
+            val configStarted = System.nanoTime()
+            var content = prepareConfig(profile, true)
 
             lastProfileName = profile.name
             withContext(Dispatchers.Main) {
@@ -207,27 +266,21 @@ class BoxService(private val service: Service, private val platformInterface: Pl
             }
 
             DefaultNetworkMonitor.start()
+            currentCoroutineContext().ensureActive()
+            if (closing) throw CancellationException("Service is stopping")
 
             try {
-                commandServer.startOrReloadService(
-                    content,
-                    OverrideOptions().apply {
-                        autoRedirect = Settings.autoRedirect
-                        if (Vendor.isPerAppProxyAvailable() && Settings.perAppProxyEnabled) {
-                            val appList = Settings.getEffectivePerAppProxyList()
-                            if (Settings.getEffectivePerAppProxyMode() == Settings.PER_APP_PROXY_INCLUDE) {
-                                includePackage =
-                                    PlatformInterfaceWrapper.StringArray((appList + Application.application.packageName).iterator())
-                            } else {
-                                excludePackage =
-                                    PlatformInterfaceWrapper.StringArray((appList - Application.application.packageName).iterator())
-                            }
-                        }
-                    },
-                )
+                commandServer.startOrReloadService(content, nativeOptions())
             } catch (e: Exception) {
-                stopAndAlert(Alert.CreateService, e.message)
-                return
+                if (e is CancellationException) throw e
+                val hadCandidate = startupSnapshot != null || policyActivated
+                val oldSource = rollbackStartup()
+                if (!hadCandidate) throw e
+                closeService()
+                fileDescriptor?.close(); fileDescriptor = null
+                content = RoutingConfigApplier.apply(oldSource ?: ProfileManager.snapshot(profile).readActive(), healthPorts)
+                Libbox.checkConfig(content)
+                commandServer.startOrReloadService(content, nativeOptions())
             }
 
             if (commandServer.needWIFIState()) {
@@ -243,19 +296,30 @@ class BoxService(private val service: Service, private val platformInterface: Pl
                 }
             }
 
+            currentCoroutineContext().ensureActive()
+            if (closing) throw CancellationException("Service is stopping")
+            confirmStartup()
+            runningProfileId = profile.id
+            runningConfig = content
             status.postValue(Status.Started)
-            runCatching { DiagLogger.newSession("service start") }
+            CoreRuntime.started()
+            runCatching { startDiagnosticLogging() }
+                .onFailure { Log.w(TAG, "diagnostic subscription failed", it) }
             withContext(Dispatchers.Main) {
                 notification.show(lastProfileName, R.string.status_started)
             }
             notification.start()
+            DiagLogger.event("connection ready durationMs=" + (System.nanoTime() - configStarted) / 1000000)
+            healthMonitor.start(healthPorts, Settings.routingMode)
         } catch (e: Exception) {
+            if (e is CancellationException) throw e
             stopAndAlert(Alert.StartService, e.message)
             return
         }
     }
 
     override fun serviceStop() {
+        healthMonitor.stop()
         notification.close()
         status.postValue(Status.Starting)
         val pfd = fileDescriptor
@@ -267,61 +331,44 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     }
 
     override fun serviceReload() {
-        runBlocking {
-            serviceReload0()
-        }
+        runBlocking { lifecycleLock.withLock { serviceReload0() } }
     }
 
     suspend fun serviceReload0() {
-        val selectedProfileId = Settings.selectedProfile
-        if (selectedProfileId == -1L) {
-            stopAndAlert(Alert.EmptyConfiguration)
+        if (closing) return
+        val previous = runningConfig
+        val previousProfileId = runningProfileId
+        val profile = ProfileManager.get(Settings.selectedProfile) ?: return
+        val content = try { prepareConfig(profile, profile.id != runningProfileId) } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            rollbackStartup()
+            binder.broadcast { it.onServiceAlert(Alert.CreateService.ordinal, "新配置无法应用，继续使用当前连接") }
             return
         }
-
-        val profile = ProfileManager.get(selectedProfileId)
-        if (profile == null) {
-            stopAndAlert(Alert.EmptyConfiguration)
-            return
-        }
-
-        val content = File(profile.typed.path).readText()
-        if (content.isBlank()) {
-            stopAndAlert(Alert.EmptyConfiguration)
-            return
-        }
-        lastProfileName = profile.name
+        healthMonitor.stop()
         try {
-            commandServer.startOrReloadService(
-                content,
-                OverrideOptions().apply {
-                    autoRedirect = Settings.autoRedirect
-                    if (Vendor.isPerAppProxyAvailable() && Settings.perAppProxyEnabled) {
-                        val appList = Settings.getEffectivePerAppProxyList()
-                        if (Settings.getEffectivePerAppProxyMode() == Settings.PER_APP_PROXY_INCLUDE) {
-                            includePackage = PlatformInterfaceWrapper.StringArray((appList + Application.application.packageName).iterator())
-                        } else {
-                            excludePackage = PlatformInterfaceWrapper.StringArray((appList - Application.application.packageName).iterator())
-                        }
-                    }
-                },
-            )
+            commandServer.startOrReloadService(content, nativeOptions())
+            confirmStartup()
+            runningConfig = content
+            runningProfileId = profile.id
+            lastProfileName = profile.name
+            healthMonitor.start(healthPorts, Settings.routingMode)
         } catch (e: Exception) {
-            stopAndAlert(Alert.CreateService, e.message)
-            return
-        }
-
-        if (commandServer.needWIFIState()) {
-            val wifiPermission =
-                if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-                    android.Manifest.permission.ACCESS_FINE_LOCATION
-                } else {
-                    android.Manifest.permission.ACCESS_BACKGROUND_LOCATION
+            if (e is CancellationException) throw e
+            rollbackStartup()
+            if (previous != null) {
+                try {
+                    commandServer.startOrReloadService(previous, nativeOptions())
+                    runningConfig = previous
+                    runningProfileId = previousProfileId
+                    healthMonitor.start(healthPorts, Settings.routingMode)
+                    binder.broadcast { it.onServiceAlert(Alert.CreateService.ordinal, "新配置启动失败，已恢复原连接") }
+                    return
+                } catch (restore: Exception) {
+                    if (restore is CancellationException) throw restore
                 }
-            if (!service.hasPermission(wifiPermission)) {
-                stopAndAlert(Alert.RequestLocationPermission)
-                return
             }
+            stopAndAlert(Alert.CreateService, "配置启动失败，请检查节点与设置")
         }
     }
 
@@ -347,14 +394,19 @@ class BoxService(private val service: Service, private val platformInterface: Pl
 
     @OptIn(DelicateCoroutinesApi::class)
     private fun stopService() {
-        if (status.value != Status.Started) return
+        if (status.value != Status.Started && status.value != Status.Starting) return
+        closing = true
+        healthMonitor.stop()
+        startupJob?.cancel()
         status.value = Status.Stopping
         if (receiverRegistered) {
             service.unregisterReceiver(receiver)
             receiverRegistered = false
         }
         notification.close()
-        GlobalScope.launch(Dispatchers.IO) {
+        lifecycleScope.launch {
+            lifecycleLock.withLock {
+            runCatching { rollbackStartup() }
             val pfd = fileDescriptor
             if (pfd != null) {
                 pfd.close()
@@ -362,21 +414,23 @@ class BoxService(private val service: Service, private val platformInterface: Pl
             }
             DefaultNetworkMonitor.stop()
             closeService()
-            commandServer.apply {
-                close()
+            if (::commandServer.isInitialized) commandServer.apply {
+                runCatching { close() }
 //                Seq.destroyRef(refnum)
             }
+            stopDiagnosticLogging()
             Settings.startedByUser = false
             Settings.dataStore.flush()
             withContext(Dispatchers.Main) {
                 status.value = Status.Stopped
-                runCatching { DiagLogger.close() }
                 service.stopSelf()
+            }
             }
         }
     }
 
     private fun closeService() {
+        if (!::commandServer.isInitialized) return
         runCatching {
             commandServer.closeService()
         }.onFailure {
@@ -385,6 +439,11 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     }
 
     private suspend fun stopAndAlert(type: Alert, message: String? = null) {
+        closing = true
+        healthMonitor.stop()
+        CoreRuntime.connecting = false
+        runCatching { rollbackStartup() }
+        stopDiagnosticLogging()
         Settings.startedByUser = false
         Settings.dataStore.flush()
         val pfd = fileDescriptor
@@ -404,7 +463,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
             }
             notification.close()
             binder.broadcast { callback ->
-                callback.onServiceAlert(type.ordinal, message)
+                callback.onServiceAlert(type.ordinal, message?.let(io.nekohasekai.sfa.utils.DiagnosticRedactor::redact))
             }
             status.value = Status.Stopped
             service.stopSelf()
@@ -415,6 +474,8 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     @Suppress("SameReturnValue")
     internal fun onStartCommand(): Int {
         if (status.value != Status.Stopped) return Service.START_NOT_STICKY
+        closing = false
+        CoreRuntime.connecting = true
         status.value = Status.Starting
         notification.show(lastProfileName, R.string.status_starting)
 
@@ -433,16 +494,20 @@ class BoxService(private val service: Service, private val platformInterface: Pl
             receiverRegistered = true
         }
 
-        GlobalScope.launch(Dispatchers.IO) {
+        startupJob = lifecycleScope.launch {
+            lifecycleLock.withLock {
             Settings.startedByUser = true
             try {
                 Application.application.setupLibbox()
                 startCommandServer()
             } catch (e: Exception) {
+                if (e is CancellationException) throw e
                 stopAndAlert(Alert.StartCommandServer, e.message)
-                return@launch
+                return@withLock
             }
+            currentCoroutineContext().ensureActive()
             startService()
+            }
         }
         return Service.START_NOT_STICKY
     }
@@ -450,6 +515,21 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     internal fun onBind(): IBinder = binder
 
     internal fun onDestroy() {
+        closing = true
+        healthMonitor.stop()
+        startupJob?.cancel()
+        CoreRuntime.connecting = false
+        lifecycleScope.launch {
+            lifecycleLock.withLock {
+                runCatching { rollbackStartup() }
+                if (::commandServer.isInitialized) runCatching { commandServer.close() }
+                runCatching { fileDescriptor?.close() }; fileDescriptor = null
+                DefaultNetworkMonitor.stop()
+            }
+            lifecycleScope.cancel()
+        }
+        stopDiagnosticLogging()
+        diagnosticScope.cancel()
         idleModeUpdates.cancel()
         idleModeScope.cancel()
         binder.close()

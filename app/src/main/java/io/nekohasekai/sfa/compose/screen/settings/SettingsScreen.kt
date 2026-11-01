@@ -61,7 +61,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import android.widget.Toast
-import io.nekohasekai.libbox.Libbox
 import io.nekohasekai.sfa.bg.LogExporter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -74,6 +73,7 @@ import io.nekohasekai.sfa.BuildConfig
 import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.compose.topbar.LocalScaffoldPadding
 import io.nekohasekai.sfa.compose.topbar.OverrideTopBar
+import io.nekohasekai.sfa.update.UpdateEndpoints
 import io.nekohasekai.sfa.update.UpdateState
 import io.nekohasekai.sfa.compose.theme.NeoPanel
 
@@ -106,6 +106,17 @@ fun SettingsScreen(navController: NavController) {
             )
             .padding(horizontal = 16.dp),
     ) {
+        val pendingUpdate by UpdateState.updateInfo
+        pendingUpdate?.let { info ->
+            SettingsCard {
+                SettingsRow(
+                    icon = Icons.Outlined.Download,
+                    title = "Neo ${info.versionName} 可更新",
+                    trailingText = "查看更新",
+                ) { UpdateState.requestedPrompt.value = info }
+            }
+            Spacer(Modifier.height(8.dp))
+        }
         SectionTitle("通用")
         SettingsCard {
             SettingsRow(
@@ -154,6 +165,10 @@ fun SettingsScreen(navController: NavController) {
         SectionTitle("进阶")
         SettingsCard {
             SettingsRow(
+                icon = Icons.Outlined.FilterAlt,
+                title = "路由 / 分流",
+            ) { navController.navigate("settings/routing") }
+            SettingsRow(
                 icon = Icons.Outlined.Tune,
                 title = "通用",
             ) { navController.navigate("settings/general") }
@@ -189,7 +204,7 @@ fun SettingsScreen(navController: NavController) {
                 trailingExternal = true,
             ) {
                 val intent = android.content.Intent(android.content.Intent.ACTION_VIEW)
-                intent.data = android.net.Uri.parse("https://github.com/lubenwei-lian/neo/releases")
+                intent.data = android.net.Uri.parse(UpdateEndpoints.releasesPage)
                 context.startActivity(intent)
             }
             SettingsRow(
@@ -211,7 +226,7 @@ fun SettingsScreen(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "v${BuildConfig.VERSION_NAME} · sing-box " + ("${Libbox.version()}".takeIf { it != "unknown" && it.isNotBlank() } ?: "1.14.3"),
+                text = "v${BuildConfig.VERSION_NAME} · sing-box " + io.nekohasekai.sfa.utils.HTTPClient.coreVersion,
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.55f),
             )

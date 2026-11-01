@@ -61,42 +61,16 @@ class UpdateProfileWork {
 
     class UpdateTask(appContext: Context, params: WorkerParameters) : CoroutineWorker(appContext, params) {
         override suspend fun doWork(): Result {
-            var selectedProfileUpdated = false
-            val remoteProfiles =
-                ProfileManager.list()
-                    .filter { it.typed.type == TypedProfile.Type.Remote && it.typed.autoUpdate }
-            if (remoteProfiles.isEmpty()) return Result.success()
+            val remoteProfiles = ProfileManager.list()
+                .filter { it.typed.type == TypedProfile.Type.Remote && it.typed.autoUpdate }
             var success = true
-            val selectedProfile = Settings.selectedProfile
             for (profile in remoteProfiles) {
-                val lastSeconds =
-                    (System.currentTimeMillis() - profile.typed.lastUpdated.time) / 1000L
-                if (lastSeconds < profile.typed.autoUpdateInterval * 60) {
-                    continue
-                }
+                val elapsed = (System.currentTimeMillis() - profile.typed.lastUpdated.time) / 1000L
+                if (elapsed < profile.typed.autoUpdateInterval * 60L) continue
                 try {
-                    val content = HTTPClient().use { it.getString(profile.typed.remoteURL) }
-                    Libbox.checkConfig(content)
-                    SubscriptionDiagLog.record(profile.name, true, SubscriptionDiagLog.successMessage(content.length.toLong()))
-                    val file = File(profile.typed.path)
-                    if (file.readText() != content) {
-                        File(profile.typed.path).writeText(content)
-                        if (profile.id == selectedProfile) {
-                            selectedProfileUpdated = true
-                        }
-                    }
-                    profile.typed.lastUpdated = Date()
-                    ProfileManager.update(profile)
-                } catch (e: Exception) {
-                    Log.e(TAG, "update profile ${profile.name}", e)
-                    runCatching { SubscriptionDiagLog.record(profile.name, false, "订阅获取失败：" + (e.message ?: e.javaClass.simpleName)) }
-                    success = false
-                }
-            }
-            if (selectedProfileUpdated) {
-                runCatching {
-                    Libbox.newStandaloneCommandClient().serviceReload()
-                }
+                    if (!SubscriptionRefresher.refresh(profile)) success = false
+                } catch (e: kotlinx.coroutines.CancellationException) { throw e
+                } catch (e: Exception) { success = false }
             }
             return if (success) {
                 Result.success()

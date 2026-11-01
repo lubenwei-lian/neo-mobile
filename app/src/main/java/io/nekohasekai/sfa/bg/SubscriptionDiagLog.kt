@@ -41,7 +41,7 @@ object SubscriptionDiagLog {
             val arr = read()
             val kind = if (action == "流量查询") "usage" else "subscription"
             val detailObject = JSONObject()
-            details.forEach { (key, value) -> detailObject.put(key, value) }
+            details.forEach { (key, value) -> detailObject.put(key, io.nekohasekai.sfa.utils.DiagnosticRedactor.redact(value)) }
             val obj =
                 JSONObject()
                     .put("id", UUID.randomUUID().toString())
@@ -49,7 +49,7 @@ object SubscriptionDiagLog {
                     .put("kind", kind)
                     .put("profile", profile)
                     .put("success", ok)
-                    .put("verdict", message)
+                    .put("verdict", io.nekohasekai.sfa.utils.DiagnosticRedactor.redact(message))
                     .put("attempts", JSONArray())
                     .put("details", detailObject)
             val out = JSONArray()
@@ -106,7 +106,8 @@ object SubscriptionDiagLog {
     }
 
     fun successMessage(bytes: Long): String =
-        "订阅获取成功（" + io.nekohasekai.sfa.bg.SubscriptionDiagLog.formatSize(bytes) + "） · 标识 sing-box/1.14.3"
+        "订阅获取成功（" + io.nekohasekai.sfa.bg.SubscriptionDiagLog.formatSize(bytes) +
+            "） · 标识 sing-box/" + io.nekohasekai.sfa.utils.HTTPClient.coreVersion
 
     fun formatSize(bytes: Long): String =
         android.text.format.Formatter.formatFileSize(Application.application, bytes)

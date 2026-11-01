@@ -13,6 +13,8 @@ data class UpdateInfo(
     val releaseNotes: String?,
     val isPrerelease: Boolean,
     val fileSize: Long = 0,
+    /** 小写十六进制 sha256；为空表示不校验（兼容旧缓存与 GitHub 渠道） */
+    val sha256: String = "",
 ) {
     fun toJson(): String = Json.encodeToString(this)
 

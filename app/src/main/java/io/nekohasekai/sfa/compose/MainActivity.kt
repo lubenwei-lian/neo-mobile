@@ -19,6 +19,8 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import dev.chrisbanes.haze.hazeSource
 import io.nekohasekai.sfa.compose.theme.LocalNeoHazeState
 import io.nekohasekai.sfa.compose.theme.NeoBackdrop
@@ -28,6 +30,8 @@ import io.nekohasekai.sfa.compose.theme.NeoTopBarContainer
 import io.nekohasekai.sfa.compose.theme.NeoPalette
 import androidx.compose.foundation.interaction.collectIsPressedAsState
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -153,6 +157,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 
 class MainActivity :
@@ -217,6 +222,7 @@ class MainActivity :
             }
         }
     private val pendingNavigationRoute = mutableStateOf<String?>(null)
+    private var updateSessionToken = 0L
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -229,9 +235,13 @@ class MainActivity :
         }
         enableEdgeToEdge()
 
+        // 首次启动时 Application 的异步初始化可能还没完成；这里先同步装载设置缓存，避免 UpdateState 等在主线程序列化写入时触发 Room 主线程断言。
+        runBlocking { Settings.dataStore.initialize() }
+
         connection.reconnect()
 
-        UpdateState.setUpdate(null)
+        UpdateState.loadFromCache()
+        updateSessionToken = io.nekohasekai.sfa.update.AppUpdateSession.open(taskId)
 
         handleIntent(intent)
 
@@ -612,89 +622,80 @@ class MainActivity :
             )
         }
 
-        // Handle update check prompt dialog (shown only once on first launch)
-        var showUpdateCheckPrompt by remember { mutableStateOf(false) }
-        if (showUpdateCheckPrompt) {
-            NeoAlertDialog(
-                onDismissRequest = {
-                    Settings.updateCheckPrompted = true
-                    showUpdateCheckPrompt = false
-                },
-                title = { Text(stringResource(R.string.check_update)) },
-                text = {
-                    MarkdownText(
-                        markdown = stringResource(
-                            if (BuildConfig.FLAVOR == "play") {
-                                R.string.check_update_prompt_play
-                            } else {
-                                R.string.check_update_prompt_github
-                            },
-                        ),
-                        style = MaterialTheme.typography.bodyMedium,
-                    )
-                },
-                confirmButton = {
-                    TextButton(onClick = {
-                        Settings.updateCheckPrompted = true
-                        Settings.checkUpdateEnabled = true
-                        showUpdateCheckPrompt = false
-                        scope.launch(Dispatchers.IO) {
-                            try {
-                                val result = Vendor.checkUpdateAsync()
-                                UpdateState.setUpdate(result)
-                            } catch (_: Exception) {
-                                UpdateState.setUpdate(null)
-                            }
-                        }
-                    }) {
-                        Text(stringResource(R.string.ok))
-                    }
-                },
-                dismissButton = {
-                    TextButton(onClick = {
-                        Settings.updateCheckPrompted = true
-                        showUpdateCheckPrompt = false
-                    }) {
-                        Text(stringResource(R.string.no_thanks))
-                    }
-                },
-            )
+        // Snapshot on navigation only: a background result never opens a dialog.
+        var promptInfo by remember { mutableStateOf<io.nekohasekai.sfa.update.UpdateInfo?>(null) }
+        val requestedPrompt by UpdateState.requestedPrompt
+        LaunchedEffect(currentRoute) {
+            if (currentRoute == Screen.Settings.route) {
+                val info = UpdateState.updateInfo.value
+                if (io.nekohasekai.sfa.update.UpdatePromptPolicy.shouldAnnounce(
+                        info?.versionCode, BuildConfig.VERSION_CODE, Settings.lastShownUpdateVersion)) {
+                    Settings.lastShownUpdateVersion = info!!.versionCode
+                    promptInfo = info
+                }
+            }
         }
-
-        // Handle update available dialog
-        val updateInfo by UpdateState.updateInfo
-        val shouldShowUpdateDialog = updateInfo != null &&
-            updateInfo!!.versionCode > Settings.lastShownUpdateVersion
-        var showUpdateDialog by remember { mutableStateOf(true) }
+        LaunchedEffect(requestedPrompt) {
+            requestedPrompt?.let { info ->
+                if (currentRoute == Screen.Settings.route) promptInfo = info
+                UpdateState.requestedPrompt.value = null
+            }
+        }
 
         // Download dialog state
         var showDownloadDialog by remember { mutableStateOf(false) }
         var downloadJob by remember { mutableStateOf<Job?>(null) }
         var downloadError by remember { mutableStateOf<String?>(null) }
+        var readyApk by remember { mutableStateOf<java.io.File?>(null) }
+        var installing by remember { mutableStateOf(false) }
+        var installError by remember { mutableStateOf<String?>(null) }
 
-        if (showUpdateDialog && shouldShowUpdateDialog) {
+        promptInfo?.let { selectedUpdate ->
             UpdateAvailableDialog(
-                updateInfo = updateInfo!!,
+                updateInfo = selectedUpdate,
                 onDismiss = {
-                    Settings.lastShownUpdateVersion = updateInfo!!.versionCode
-                    showUpdateDialog = false
+                    promptInfo = null
                 },
                 onUpdate = {
                     showDownloadDialog = true
                     downloadError = null
                     downloadJob = scope.launch {
                         try {
-                            withContext(Dispatchers.IO) {
-                                Vendor.downloadAndInstall(
-                                    this@MainActivity,
-                                    updateInfo!!.downloadUrl,
-                                )
-                            }
+                            readyApk = withContext(Dispatchers.IO) { Vendor.prepareUpdate(selectedUpdate) }
                             showDownloadDialog = false
+                        } catch (e: kotlinx.coroutines.CancellationException) {
+                            throw e
                         } catch (e: Exception) {
-                            downloadError = e.message
+                            downloadError = e.message ?: "下载失败，请稍后重试"
                         }
                     }
+                },
+            )
+        }
+
+        readyApk?.let { apk ->
+            NeoAlertDialog(
+                onDismissRequest = { if (!installing) readyApk = null },
+                title = { Text("更新已准备好") },
+                text = { Text(installError ?: "安装会暂时中断连接。你可以现在安装，也可以稍后从设置继续。") },
+                confirmButton = {
+                    TextButton(enabled = !installing, onClick = {
+                        installing = true
+                        installError = null
+                        scope.launch {
+                            try {
+                                Vendor.installPreparedUpdate(this@MainActivity, apk)
+                                readyApk = null
+                            } catch (e: Exception) {
+                                installError = e.message ?: "无法启动安装，请稍后重试"
+                            } finally {
+                                installing = false
+                            }
+                        }
+                    }) { Text(if (installing) "正在准备安装…" else "现在安装") }
+                },
+                dismissButton = {
+                    TextButton(enabled = !installing, onClick = { readyApk = null }) { Text("稍后") }
                 },
             )
         }
@@ -836,12 +837,8 @@ class MainActivity :
         val railScreens =
             buildList {
                 add(Screen.Home)
-                add(Screen.Profiles)
                 add(Screen.Groups)
-                if (showConnectionsInNav) {
-                    add(Screen.Connections)
-                }
-                add(Screen.Log)
+                add(Screen.Profiles)
                 add(Screen.Settings)
             }
 
@@ -1071,7 +1068,7 @@ class MainActivity :
                 Row(modifier = Modifier.fillMaxSize()) {
                     Surface(tonalElevation = 1.dp) {
                         NavigationRail(
-                            modifier = Modifier.fillMaxHeight(),
+                            modifier = Modifier.fillMaxHeight().verticalScroll(rememberScrollState()),
                         ) {
                             val hasUpdate by UpdateState.hasUpdate
                             railScreens.forEach { screen ->
@@ -1159,6 +1156,7 @@ class MainActivity :
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
                                     bottomScreens.forEach { screen ->
+                                        val hasUpdate by UpdateState.hasUpdate
                                         val selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true
                                         val tabInteraction = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
                                         val tabPressed by tabInteraction.collectIsPressedAsState()
@@ -1185,12 +1183,23 @@ class MainActivity :
                                             horizontalAlignment = Alignment.CenterHorizontally,
                                             verticalArrangement = Arrangement.Center,
                                         ) {
-                                            Icon(
-                                                imageVector = screen.icon,
-                                                contentDescription = null,
-                                                modifier = Modifier.size(24.dp),
-                                                tint = if (selected) NeoPalette.DarkAccent else NeoPalette.DarkText2,
-                                            )
+                                            Box {
+                                                Icon(
+                                                    imageVector = screen.icon,
+                                                    contentDescription = null,
+                                                    modifier = Modifier.size(24.dp),
+                                                    tint = if (selected) NeoPalette.DarkAccent else NeoPalette.DarkText2,
+                                                )
+                                                // 有可用更新时，在「设置」图标右上角点一个小圆点
+                                                if (screen == Screen.Settings && hasUpdate) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .align(Alignment.TopEnd)
+                                                            .size(7.dp)
+                                                            .background(NeoPalette.DarkAccent, CircleShape),
+                                                    )
+                                                }
+                                            }
                                             Spacer(Modifier.height(3.dp))
                                             Text(
                                                 text = stringResource(screen.titleRes),
@@ -1419,6 +1428,9 @@ class MainActivity :
     }
 
     override fun onDestroy() {
+        if (isFinishing && !isChangingConfigurations) {
+            io.nekohasekai.sfa.update.AppUpdateSession.close(updateSessionToken)
+        }
         connection.disconnect()
         super.onDestroy()
     }

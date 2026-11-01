@@ -2,6 +2,10 @@ package io.nekohasekai.sfa.constant
 
 object SettingsKey {
     const val SELECTED_PROFILE = "selected_profile"
+    const val ROUTING_MODE = "routing_mode"
+    const val CUSTOM_ROUTE_RULES = "custom_route_rules"
+    const val PRESET_RULES_ENABLED = "preset_rules_enabled"
+    const val SELECTED_NODE_TAG = "selected_node_tag"
     const val SERVICE_MODE = "service_mode"
     const val CHECK_UPDATE_ENABLED = "check_update_enabled"
     const val UPDATE_CHECK_PROMPTED = "update_check_prompted"
@@ -50,4 +54,7 @@ object SettingsKey {
     const val CACHED_UPDATE_INFO = "cached_update_info"
     const val CACHED_APK_PATH = "cached_apk_path"
     const val LAST_SHOWN_UPDATE_VERSION = "last_shown_update_version"
+
+    /** 上次自动检查更新的时间戳（毫秒）。用于启动检查的节流，避免每次切前台都打网络。 */
+    const val LAST_UPDATE_CHECK_AT = "last_update_check_at"
 }

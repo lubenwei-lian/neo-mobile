@@ -1,14 +1,9 @@
 package io.nekohasekai.sfa.compose.screen.home
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateContentSize
-import androidx.compose.animation.core.spring
-import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
-import androidx.compose.animation.slideInVertically
+import io.nekohasekai.sfa.database.ProfileManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,15 +37,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -62,10 +57,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import android.widget.Toast
+import io.nekohasekai.sfa.bg.BoxService
 import io.nekohasekai.sfa.bg.SubscriptionRefresher
 import io.nekohasekai.sfa.bg.SubscriptionUsage
 import io.nekohasekai.sfa.bg.SubscriptionUsageStore
@@ -77,15 +72,17 @@ import io.nekohasekai.sfa.compose.theme.NeoPanel
 import io.nekohasekai.sfa.compose.topbar.LocalScaffoldPadding
 import io.nekohasekai.sfa.compose.topbar.OverrideTopBar
 import io.nekohasekai.sfa.compose.util.RelativeTimeFormatter
+import io.nekohasekai.sfa.constant.Status
 import io.nekohasekai.sfa.database.Profile
+import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.database.TypedProfile
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
-
-private data class BannerMessage(val id: Int, val text: String)
 
 private val TextPrimary = NeoPalette.DarkText1
 private val TextSecondary = NeoPalette.DarkText2
@@ -106,19 +103,23 @@ fun ProfilesScreen(
     val scope = rememberCoroutineScope()
     var deleteStage1 by remember { mutableStateOf<Profile?>(null) }
     var deleteStage2 by remember { mutableStateOf<Profile?>(null) }
-    val banners = remember { mutableStateListOf<BannerMessage>() }
+    var pendingIds by remember { mutableStateOf(emptySet<Long>()) }
+    LaunchedEffect(profiles.map { it.id to it.typed.lastUpdated.time }, state?.serviceStatus) {
+        pendingIds = withContext(Dispatchers.IO) {
+            profiles.filter { runCatching { ProfileManager.snapshot(it).hasPending() }.getOrDefault(false) }
+                .map { it.id }.toSet()
+        }
+    }
+    val snackbarHostState = remember { SnackbarHostState() }
     LaunchedEffect(profiles.map { it.id }) {
         profiles
             .filter { it.typed.type == TypedProfile.Type.Remote && it.typed.remoteURL.isNotBlank() }
             .forEach { SubscriptionUsageStore.refresh(it) }
     }
-    var bannerSeq by remember { mutableIntStateOf(0) }
-    var bannerPush by remember { mutableIntStateOf(0) }
     fun pushBanner(text: String) {
-        bannerSeq += 1
-        bannerPush += 1
-        banners.add(0, BannerMessage(bannerSeq, text))
-        while (banners.size > 5) banners.removeAt(banners.lastIndex)
+        scope.launch {
+            snackbarHostState.showSnackbar(text, duration = SnackbarDuration.Short)
+        }
     }
 
     OverrideTopBar {
@@ -140,7 +141,7 @@ fun ProfilesScreen(
         modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
         contentPadding = PaddingValues(
-            top = scaffoldPadding.calculateTopPadding() + 16.0.dp + if (banners.isNotEmpty()) 46.dp else 0.dp,
+            top = scaffoldPadding.calculateTopPadding() + 16.dp,
             bottom = 168.dp,
         ),
     ) {
@@ -149,12 +150,17 @@ fun ProfilesScreen(
                 profile = profile,
                 enabled = profile.id == selectedId,
                 usage = usageMap[profile.id],
+                pending = profile.id in pendingIds,
                 onRefresh = {
                     scope.launch {
                         val ok = SubscriptionRefresher.refresh(profile) { message -> pushBanner(message) }
-                        SubscriptionUsageStore.refresh(profile, force = true)
                         if (ok) {
-                            Toast.makeText(context, "订阅已更新", Toast.LENGTH_SHORT).show()
+                            SubscriptionUsageStore.refresh(profile, force = true)
+                            val pending = withContext(Dispatchers.IO) { ProfileManager.snapshot(profile).hasPending() }
+                            pendingIds = if (pending) pendingIds + profile.id else pendingIds - profile.id
+                            Toast.makeText(context, if (pending) "订阅已更新，下次连接生效" else "订阅内容未变化", Toast.LENGTH_SHORT).show()
+                        } else {
+                            pushBanner("订阅更新失败，继续使用当前配置")
                         }
                     }
                 },
@@ -164,11 +170,11 @@ fun ProfilesScreen(
         }
     }
 
-    BannerStack(
-        banners = banners,
-        pushVersion = bannerPush,
-        topPadding = scaffoldPadding.calculateTopPadding() + 6.dp,
-        onExpire = { id -> banners.removeAll { it.id == id } },
+    SnackbarHost(
+        hostState = snackbarHostState,
+        modifier = Modifier
+            .align(Alignment.BottomCenter)
+            .padding(horizontal = 16.dp, vertical = 96.dp),
     )
     }
 
@@ -216,6 +222,7 @@ private fun SubscriptionCard(
     profile: Profile,
     enabled: Boolean,
     usage: SubscriptionUsage? = null,
+    pending: Boolean = false,
     onRefresh: () -> Unit = {},
     onSelect: () -> Unit = {},
     onDelete: () -> Unit = {},
@@ -277,6 +284,10 @@ private fun SubscriptionCard(
                         color = TextSecondary,
                     )
                 }
+            }
+            if (pending) {
+                Spacer(Modifier.height(6.dp))
+                Text("订阅已更新，下次连接生效", fontSize = 11.sp, color = Accent)
             }
             TrafficSection(profile = profile, usage = usage)
         }
@@ -398,58 +409,4 @@ private fun formatBytes(bytes: Long): String {
         if (rounded.endsWith(".00")) rounded.dropLast(3) else rounded
     }
     return text + " " + units[i]
-}
-@Composable
-private fun BannerStack(
-    banners: List<BannerMessage>,
-    pushVersion: Int,
-    topPadding: Dp,
-    onExpire: (Int) -> Unit,
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = topPadding)
-            .animateContentSize(spring(dampingRatio = 0.45f, stiffness = 650f)),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        banners.forEach { banner ->
-            key(banner.id) {
-                BannerPill(banner = banner, pushVersion = pushVersion, onExpire = onExpire)
-            }
-        }
-    }
-}
-
-@Composable
-private fun BannerPill(
-    banner: BannerMessage,
-    pushVersion: Int,
-    onExpire: (Int) -> Unit,
-) {
-    var visible by remember { mutableStateOf(true) }
-    LaunchedEffect(banner.id, pushVersion) {
-        visible = true
-        delay(1800)
-        visible = false
-        delay(260)
-        onExpire(banner.id)
-    }
-    AnimatedVisibility(
-        visible = visible,
-        enter = fadeIn(tween(160)) +
-            slideInVertically(animationSpec = spring(dampingRatio = 0.42f, stiffness = 480f)) { -it / 2 } +
-            scaleIn(initialScale = 0.55f, animationSpec = spring(dampingRatio = 0.42f, stiffness = 480f)),
-        exit = fadeOut(tween(160)) + scaleOut(targetScale = 0.85f, animationSpec = tween(220)),
-    ) {
-        NeoPanel(modifier = Modifier, cornerRadius = 18.dp, alpha = 0.94f) {
-            Text(
-                text = banner.text,
-                style = MaterialTheme.typography.bodyMedium,
-                color = TextPrimary,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
-            )
-        }
-    }
 }

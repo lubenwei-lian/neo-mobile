@@ -1,20 +1,22 @@
 package io.nekohasekai.sfa.utils
 
 import io.nekohasekai.libbox.Libbox
+import io.nekohasekai.sfa.BuildConfig
 import io.nekohasekai.sfa.ktx.unwrap
 import java.io.Closeable
 import java.util.Locale
 
 class HTTPClient : Closeable {
     companion object {
-        /** Core version used in UA; Libbox.version() returns "unknown" in this build, which makes
-         *  subscription servers fall back to legacy config formats. Original app used 1.14.3. */
-        val coreVersion: String by lazy {
-            Libbox.version().takeIf { it != "unknown" && it.isNotBlank() } ?: "1.14.3"
-        }
+        /** Runtime report only; a build label must never impersonate a probed kernel version. */
+        val coreVersion: String
+            get() = io.nekohasekai.sfa.core.CoreRuntime.state.value.takeIf { it.running }?.version
+                ?.takeIf { it.isNotBlank() } ?: Libbox.version().takeUnless { it.isBlank() || it.equals("unknown", true) || it == "(devel)" } ?: BuildConfig.BUNDLED_CORE_VERSION
 
         val userAgent by lazy {
-            var userAgent = "SFA (sing-box "
+            // 以前这里写的是 "SFA"，会被机场当成上游 sing-box for Android。
+            // 改成 neo 自身标识，但保留 "sing-box <版本>" 段，兼容按 sing-box 识别的机场。
+            var userAgent = "neo (sing-box "
             userAgent += coreVersion
             userAgent += "; language "
             userAgent += Locale.getDefault().toLanguageTag().replace("-", "_")

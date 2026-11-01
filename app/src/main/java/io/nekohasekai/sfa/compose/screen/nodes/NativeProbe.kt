@@ -26,15 +26,7 @@ import java.net.Socket
 import java.util.UUID
 import java.util.concurrent.ConcurrentHashMap
 
-/**
- * 自带 sing-box CLI 的批量探测。
- *
- * 与桌面对齐的口径：
- *   - 一次进程启动，每节点一个独立 socks 入站；
- *   - 每个节点先发一次不计时的预热请求，再按 DelayPlan.attempts 计时；
- *   - 计时取「已建连后的 HTTP 往返」，多次取最小值（与桌面 RealDelayTester 一致）；
- *   - 超时、次数、并发全部由 DelayTestPlanner 决定（TCP 9s/3/6，UDP 15s/2/4）。
- */
+/** 自带 sing-box CLI 的批量探测，超时/次数/并发由 DelayTestPlanner 决定。 */
 object NativeProbe {
     private const val TAG = "NeoNativeProbe"
 
@@ -137,6 +129,7 @@ object NativeProbe {
             }
             tags.associateWith { results[it] ?: -1 }
         } catch (e: Exception) {
+            if (e is kotlinx.coroutines.CancellationException) throw e
             Log.w(TAG, "batch probe failed: " + e.message)
             tags.associateWith { -1 }
         } finally {
@@ -168,7 +161,7 @@ object NativeProbe {
         }
 
         val inbounds = JSONArray()
-        val outbounds = JSONArray()
+        val outbounds = JSONArray(srcOuts.toString())
         val rules = JSONArray()
         val ports = LinkedHashMap<String, Int>()
         val usedPorts = HashSet<Int>()
@@ -180,7 +173,7 @@ object NativeProbe {
             while (!usedPorts.add(port)) port = freePort()
             ports[tag] = port
             val inTag = "in-" + index
-            val outTag = "out-" + index
+            val outTag = tag
             index++
             inbounds.put(
                 JSONObject()
@@ -189,11 +182,6 @@ object NativeProbe {
                     .put("listen", "127.0.0.1")
                     .put("listen_port", port),
             )
-            val node = JSONObject(src.toString())
-            node.put("tag", outTag)
-            node.remove("domain_resolver")
-            node.remove("detour")
-            outbounds.put(node)
             rules.put(
                 JSONObject()
                     .put("inbound", JSONArray().put(inTag))
@@ -201,37 +189,27 @@ object NativeProbe {
             )
         }
         if (ports.isEmpty()) return null
-        outbounds.put(JSONObject().put("type", "direct").put("tag", "direct"))
 
-        val cfg = JSONObject()
+
+        val cfg = JSONObject(root.toString())
+        cfg.remove("experimental") // A detached probe must never bind the running controller/cache.
         cfg.put("log", JSONObject().put("level", "warn").put("timestamp", false))
         cfg.put("inbounds", inbounds)
         cfg.put("outbounds", outbounds)
         cfg.put(
-            "dns",
-            JSONObject().put(
-                "servers",
-                JSONArray().put(
-                    JSONObject()
-                        .put("tag", "dns-local")
-                        .put("type", "udp")
-                        .put("server", "223.5.5.5"),
-                ),
-            ),
-        )
-        cfg.put(
             "route",
             JSONObject()
                 .put("rules", rules)
-                .put("final", "direct")
-                .put("default_domain_resolver", "dns-local"),
+                .put("rule_set", root.getJSONObject("route").optJSONArray("rule_set") ?: JSONArray())
+                .put("final", root.getJSONObject("route").getString("final"))
+                .put("default_domain_resolver", root.getJSONObject("route").get("default_domain_resolver")),
         )
         return BuiltConfig(cfg.toString(), ports, types)
     }
 
     private fun freePort(): Int = java.net.ServerSocket(0).use { it.localPort }
 
-    /** 与桌面 BatchStartGate 对齐：相邻节点启动间隔 100ms，避免整批同时开连。 */
+    /** 相邻节点启动间隔 100ms，避免整批同时开连。 */
     private suspend fun staggerStart() {
         startGate.withLock {
             val now = System.currentTimeMillis()

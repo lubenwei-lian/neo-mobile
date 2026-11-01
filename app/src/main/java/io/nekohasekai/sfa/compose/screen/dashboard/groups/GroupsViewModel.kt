@@ -8,6 +8,7 @@ import io.nekohasekai.sfa.compose.model.Group
 import io.nekohasekai.sfa.compose.model.GroupItem
 import io.nekohasekai.sfa.compose.model.toList
 import io.nekohasekai.sfa.constant.Status
+import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.utils.AppLifecycleObserver
 import io.nekohasekai.sfa.utils.CommandClient
 import io.nekohasekai.sfa.utils.CommandTarget
@@ -167,6 +168,7 @@ class GroupsViewModel(private val sharedCommandClient: CommandClient? = null) :
             try {
                 // Select the new outbound immediately
                 CommandTarget.standaloneClient().selectOutbound(groupTag, itemTag)
+                Settings.selectedNodeTag = itemTag
 
                 // Update local state and show snackbar
                 withContext(Dispatchers.Main) {

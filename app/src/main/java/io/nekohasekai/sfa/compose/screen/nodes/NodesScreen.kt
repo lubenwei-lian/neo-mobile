@@ -20,14 +20,11 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Sort
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Layers
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.RadioButton
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Public
 import androidx.compose.material.icons.filled.Search
@@ -50,6 +47,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -71,8 +69,6 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewmodel.compose.viewModel
 import io.nekohasekai.sfa.R
-import io.nekohasekai.sfa.compose.model.Group
-import io.nekohasekai.sfa.compose.model.GroupItem
 import io.nekohasekai.sfa.compose.theme.NeoPalette
 import io.nekohasekai.sfa.compose.theme.NeoPanel
 import io.nekohasekai.sfa.compose.screen.dashboard.groups.GroupsViewModel
@@ -115,61 +111,44 @@ fun NodesScreen(
 
     var entries by remember { mutableStateOf<List<NodeEntry>>(emptyList()) }
     var mainGroupTag by remember { mutableStateOf("") }
-    var selectedTag by remember { mutableStateOf("") }
+    var selectedTag by rememberSaveable { mutableStateOf("") }
     var query by remember { mutableStateOf("") }
-    var showOutletSheet by remember { mutableStateOf(false) }
-    var outletGroupTag by remember { mutableStateOf<String?>(null) }
-    var outletGroups by remember { mutableStateOf<List<Group>>(emptyList()) }
     var sortByDelay by remember { mutableStateOf(true) }
     var cacheVersion by remember { mutableStateOf(0) }
     var configContent by remember { mutableStateOf("") }
-    var regions by remember { mutableStateOf<Map<String, String>>(emptyMap()) }
+    val regions by NodeRegionCache.entries
     var testRunning by remember { mutableStateOf(false) }
     var testDone by remember { mutableStateOf(0) }
     var testTotal by remember { mutableStateOf(0) }
     var testNote by remember { mutableStateOf("") }
     val testedTags = remember { mutableSetOf<String>() }
+    val listState = rememberLazyListState()
     val context = LocalContext.current
 
-    LaunchedEffect(Unit) {
-        regions = NodeRegionCache.ensureLoaded().toMap()
+    LaunchedEffect(serviceStatus, Settings.selectedProfile) {
+        NodeRegionCache.ensureLoaded()
         NodeDelayCache.ensureLoaded()
-        val loaded =
-            withContext(Dispatchers.IO) {
-                val result = loadConfigNodes()
-                val saved: Map<String, String> = emptyMap()
-                val chosen = saved[result.mainTag] ?: result.defaultItem
-                val fallback = result.entries.firstOrNull()?.tag ?: ""
-                // 选中的若已被移出列表（如旧数据里的智能组），兜底到第一个真实节点
-                val valid = if (result.entries.any { it.tag == chosen }) chosen else fallback
-                result to valid
-            }
-        entries = loaded.first.entries
-        mainGroupTag = loaded.first.mainTag
-        selectedTag = loaded.second
-        configContent = loaded.first.configContent
-        // 离线解析订阅配置里的 selector 分组（服务未连接时内核订阅无数据）
-        runCatching<Unit> {
-            val root = org.json.JSONObject(configContent)
-            val outs = root.optJSONArray("outbounds") ?: return@runCatching
-            val list = mutableListOf<Group>()
-            for (i in 0 until outs.length()) {
-                val o = outs.optJSONObject(i) ?: continue
-                if (o.optString("type") != "selector") continue
-                val tag = o.optString("tag")
-                val itemsRaw = o.optJSONArray("outbounds") ?: continue
-                val items = (0 until itemsRaw.length()).map { k ->
-                    GroupItem(itemsRaw.optString(k), "", "", 0L, 0)
-                }
-                list.add(Group(tag, "selector", "Selector", selectable = true, selected = "", isExpand = false, items = items))
-            }
-            outletGroups = list
+        val loaded = withContext(Dispatchers.IO) { loadConfigNodes() }
+        val savedTag = withContext(Dispatchers.IO) { Settings.selectedNodeTag }
+        entries = loaded.entries
+        mainGroupTag = loaded.mainTag
+        configContent = loaded.configContent
+        if (savedTag.isNotBlank() && loaded.entries.any { it.tag == savedTag }) {
+            selectedTag = savedTag
         }
     }
     LaunchedEffect(uiState.groups) {
         if (uiState.groups.isNotEmpty()) {
             NodeDelayCache.harvest(uiState.groups)
             cacheVersion++
+        }
+    }
+    // 选中态以内核分组的实际 selected 为准；页面重组、切页返回都从这里恢复，不能用配置里的首个节点兜底。
+    LaunchedEffect(uiState.groups, mainGroupTag, entries) {
+        if (mainGroupTag.isBlank() || entries.isEmpty()) return@LaunchedEffect
+        val actual = uiState.groups.firstOrNull { it.tag == mainGroupTag }?.selected.orEmpty()
+        if (actual.isNotBlank()) {
+            selectedTag = if (entries.any { it.tag == actual }) actual else ""
         }
     }
 
@@ -210,19 +189,28 @@ fun NodesScreen(
         }
     }
 
-    val rows = remember(entries, query, sortByDelay, cacheVersion) {
+    val rows = remember(entries, query, sortByDelay, cacheVersion, selectedTag) {
         val filtered = if (query.isBlank()) entries else entries.filter { it.tag.contains(query, ignoreCase = true) }
-        if (!sortByDelay) {
-            filtered.sortedBy { it.tag }
-        } else {
-            // 列表已无智能条目：有延迟的按延迟升序，没测过的按名字排在后面
-            filtered.sortedWith(
-                compareBy(
-                    { if (nodeDelay(it.tag) > 0) nodeDelay(it.tag) else Int.MAX_VALUE },
-                    { it.tag },
-                ),
-            )
-        }
+        val sorted =
+            if (!sortByDelay) {
+                filtered.sortedBy { it.tag }
+            } else {
+                // 列表已无智能条目：有延迟的按延迟升序，没测过的按名字排在后面
+                filtered.sortedWith(
+                    compareBy(
+                        { if (nodeDelay(it.tag) > 0) nodeDelay(it.tag) else Int.MAX_VALUE },
+                        { it.tag },
+                    ),
+                )
+            }
+        // 当前选中的节点固定置顶；搜索过滤掉时不强行插回来。
+        val pinned = filtered.firstOrNull { it.tag == selectedTag }
+        if (pinned == null) sorted else listOf(pinned) + sorted.filterNot { it.tag == selectedTag }
+    }
+
+    // 选中项置顶后把列表拉回顶部，避免原滚动位置把置顶项留在视口上方。
+    LaunchedEffect(selectedTag, rows.size) {
+        if (selectedTag.isNotBlank() && rows.isNotEmpty()) listState.scrollToItem(0)
     }
 
     val statsText = remember(entries, cacheVersion, testRunning, testDone, testNote) {
@@ -245,11 +233,6 @@ fun NodesScreen(
     OverrideTopBar {
         TopAppBar(
             title = { Text(stringResource(R.string.title_nodes)) },
-            actions = {
-                IconButton(onClick = { showOutletSheet = true }) {
-                    Icon(Icons.Default.Layers, contentDescription = "分组出口")
-                }
-            },
         )
     }
 
@@ -364,6 +347,7 @@ fun NodesScreen(
                     )
                 }
                 LazyColumn(
+                    state = listState,
                     modifier = Modifier.fillMaxSize(),
                     contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 4.dp, bottom = 164.dp),
                     verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -377,6 +361,7 @@ fun NodesScreen(
                             onClick = {
                                 selectedTag = entry.tag
                                 val tag = entry.tag
+                                scope.launch(Dispatchers.IO) { Settings.selectedNodeTag = tag }
                                 if (connected && mainGroupTag.isNotEmpty()) {
                                     actualViewModel.selectGroupItem(mainGroupTag, tag)
                                 } else if (mainGroupTag.isNotEmpty()) {
@@ -418,23 +403,6 @@ fun NodesScreen(
             }
         }
     }
-
-    if (showOutletSheet) {
-        GroupOutletSheet(
-            groups = if (uiState.groups.isNotEmpty()) uiState.groups else outletGroups,
-            initialGroupTag = outletGroupTag,
-            onDismiss = { showOutletSheet = false; outletGroupTag = null },
-            onSelect = { groupTag, itemTag ->
-                if (connected) {
-                    scope.launch(Dispatchers.IO) {
-                        runCatching { actualViewModel.selectGroupItem(groupTag, itemTag) }
-                    }
-                } else {
-                    Toast.makeText(context, "需先连接后再切换分组出口", Toast.LENGTH_SHORT).show()
-                }
-            },
-        )
-    }
 }
 
 private data class NodeEntry(val tag: String, val type: String, val displayType: String, val isGroup: Boolean)
@@ -466,7 +434,6 @@ private fun displayTypeOf(type: String): String =
 private data class ConfigLoadResult(
     val entries: List<NodeEntry>,
     val mainTag: String,
-    val defaultItem: String,
     val configContent: String,
 )
 
@@ -479,11 +446,11 @@ private suspend fun loadConfigNodes(): ConfigLoadResult {
             if (path.isNotBlank()) {
                 val file = File(path)
                 if (file.exists()) {
-                    val configText = file.readText()
+                    val configText = io.nekohasekai.sfa.bg.RoutingConfigApplier.apply(ProfileManager.snapshot(profile).readActive())
+                    NodeDelayCache.bind(profileId, configText)
                     val outbounds = JSONObject(configText).optJSONArray("outbounds") ?: return@runCatching
                     val result = mutableListOf<NodeEntry>()
                     var mainTag = ""
-                    var defaultItem = ""
                     for (i in 0 until outbounds.length()) {
                         val outbound = outbounds.optJSONObject(i) ?: continue
                         val type = outbound.optString("type")
@@ -491,25 +458,19 @@ private suspend fun loadConfigNodes(): ConfigLoadResult {
                         if (tag.isBlank()) continue
                         when {
                             type == "selector" -> {
-                                if (mainTag.isEmpty()) {
-                                    mainTag = tag
-                                    val members = outbound.optJSONArray("outbounds")
-                                    if (members != null && members.length() > 0) {
-                                        defaultItem = members.optString(0)
-                                    }
-                                }
+                                if (mainTag.isEmpty()) mainTag = tag
                             }
 
                             type == "urltest" -> {}
                             proxyTypes.contains(type.lowercase()) -> result.add(NodeEntry(tag, type, displayTypeOf(type), false))
                         }
                     }
-                    return ConfigLoadResult(result, mainTag, defaultItem, configText)
+                    return ConfigLoadResult(result, mainTag, configText)
                 }
             }
         }
     }
-    return ConfigLoadResult(emptyList(), "", "", "")
+    return ConfigLoadResult(emptyList(), "", "")
 }
 
 private fun nodeDelay(tag: String): Int = NodeDelayCache.get(tag)?.get(0)?.toInt() ?: 0
@@ -519,111 +480,6 @@ private fun nodeTime(tag: String): Long = NodeDelayCache.get(tag)?.get(1) ?: 0L
 private fun formatNodeTime(time: Long): String {
     val millis = if (time > 1_000_000_000_000L) time else time * 1000
     return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(millis))
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun GroupOutletSheet(
-    groups: List<Group>,
-    initialGroupTag: String?,
-    onDismiss: () -> Unit,
-    onSelect: (String, String) -> Unit,
-) {
-    val selectable = groups.filter { it.type == "selector" && it.selectable }
-    var expandedTag by remember { mutableStateOf(initialGroupTag ?: selectable.firstOrNull()?.tag) }
-
-    ModalBottomSheet(onDismissRequest = onDismiss) {
-        Text(
-            text = "分组出口",
-            style = MaterialTheme.typography.titleMedium,
-            modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp),
-        )
-        Text(
-            text = "调整订阅分组的出口节点（如登录/商店/AI 分组）",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.padding(horizontal = 20.dp),
-        )
-        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
-        if (selectable.isEmpty()) {
-            Text(
-                text = "当前配置没有可调整的分组",
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(20.dp),
-            )
-        } else {
-            selectable.forEach { group ->
-                Surface(
-                    onClick = { expandedTag = if (expandedTag == group.tag) null else group.tag },
-                    modifier = Modifier.fillMaxWidth(),
-                    color = MaterialTheme.colorScheme.surface,
-                ) {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 12.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(text = group.tag, style = MaterialTheme.typography.bodyLarge)
-                            Text(
-                                text = "当前: ${group.selected}",
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            )
-                        }
-                        Text(
-                            text = if (expandedTag == group.tag) "收起" else "展开",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
-                        )
-                    }
-                }
-                if (expandedTag == group.tag) {
-                    group.items.forEach { item ->
-                        Surface(
-                            onClick = {
-                                onSelect(group.tag, item.tag)
-                                onDismiss()
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            color = MaterialTheme.colorScheme.surfaceVariant,
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(start = 36.dp, end = 20.dp, top = 6.dp, bottom = 6.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                            ) {
-                                RadioButton(
-                                    selected = group.selected == item.tag,
-                                    onClick = {
-                                        onSelect(group.tag, item.tag)
-                                        onDismiss()
-                                    },
-                                )
-                                Text(
-                                    text = item.tag,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    modifier = Modifier.weight(1f),
-                                )
-                                if (item.urlTestDelay > 0) {
-                                    Text(
-                                        text = "${item.urlTestDelay}ms",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
-                    }
-                    HorizontalDivider()
-                }
-            }
-            Spacer(modifier = Modifier.height(24.dp))
-        }
-    }
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -677,11 +533,11 @@ private fun NodeRow(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
                 )
-                val relaxedBadge = NodeDelayCache.isRelaxed(item.tag)
+                val relaxedBadge = NodeDelayCache.isInsecure(item.tag)
                 val udpBlocked = timedOut && (item.type.lowercase() == "tuic" || item.type.lowercase() == "hysteria2")
                 if (relaxedBadge || udpBlocked) {
                     Text(
-                        text = if (relaxedBadge) "证书放宽" else "UDP 可能被限",
+                        text = if (relaxedBadge) "未验证服务器证书" else "连接超时",
                         style = MaterialTheme.typography.labelSmall,
                         color = if (relaxedBadge) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
                     )

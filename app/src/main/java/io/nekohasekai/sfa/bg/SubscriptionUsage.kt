@@ -4,6 +4,7 @@ import androidx.compose.runtime.mutableStateOf
 import io.nekohasekai.sfa.Application
 import io.nekohasekai.sfa.database.Profile
 import io.nekohasekai.sfa.database.TypedProfile
+import io.nekohasekai.sfa.utils.HTTPClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -20,13 +21,7 @@ import java.util.Date
 import java.util.Locale
 import javax.net.ssl.SSLException
 
-/**
- * 订阅流量（服务端套餐额度）缓存与查询。
- *
- * 只用 [HttpURLConnection] 取响应头，因为 libbox 的 HTTPResponse 不暴露 header。
- * 先直连、再走正在运行的服务端口；任何一步拿到 subscription-userinfo 就返回。
- * 拿不到时退回配置里的中文元数据节点名（部分面板不发响应头）。
- */
+/** 订阅流量（服务端套餐额度）缓存与查询，数据来自 subscription-userinfo 响应头。 */
 data class SubscriptionUsage(
     val upload: Long = 0L,
     val download: Long = 0L,
@@ -47,7 +42,8 @@ object SubscriptionUsageStore {
     private const val CONNECT_TIMEOUT_MS = 8_000
     private const val READ_TIMEOUT_MS = 12_000
     private const val CLASH_UA = "ClashforWindows/0.20.39"
-    private const val SINGBOX_UA = "sing-box/1.14.2"
+    // 版本号不再硬编码：跟随实际内核版本，避免与 HTTPClient/SubscriptionRefresher 不一致
+    private val SINGBOX_UA: String get() = "sing-box/" + HTTPClient.coreVersion
 
     private val writeLock = Any()
 

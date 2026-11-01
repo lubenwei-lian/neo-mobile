@@ -1,9 +1,11 @@
 package io.nekohasekai.sfa.vendor
 
 import android.os.Build
+import android.util.Log
 import io.nekohasekai.libbox.Libbox
 import io.nekohasekai.sfa.BuildConfig
 import io.nekohasekai.sfa.ktx.unwrap
+import io.nekohasekai.sfa.update.UpdateEndpoints
 import io.nekohasekai.sfa.update.UpdateInfo
 import io.nekohasekai.sfa.update.UpdateTrack
 import io.nekohasekai.sfa.utils.HTTPClient
@@ -14,7 +16,8 @@ import java.io.Closeable
 
 class GitHubUpdateChecker : Closeable {
     companion object {
-        private const val RELEASES_URL = "https://api.github.com/repos/SagerNet/sing-box/releases"
+        // 仓库名只在 UpdateEndpoints.REPO 定义，勿指向上游仓库。
+        private const val RELEASES_URL = "https://api.github.com/repos/" + UpdateEndpoints.REPO + "/releases"
         private const val METADATA_FILENAME = "SFA-version-metadata.json"
     }
 
@@ -50,17 +53,12 @@ class GitHubUpdateChecker : Closeable {
         if (!Libbox.compareSemver(release.version, BuildConfig.VERSION_NAME)) {
             return null
         }
-        val metadata = downloadMetadata(release) ?: return null
-
-        val isLegacy = Build.VERSION.SDK_INT < Build.VERSION_CODES.M
-        val apkAsset = release.assets.find { asset ->
-            asset.name.endsWith(".apk") &&
-                !asset.name.contains("play") &&
-                asset.name.contains("legacy-android-5") == isLegacy
-        }
+        // 元数据资产可选，缺失时按语义化版本推算 versionCode。
+        val metadata = downloadMetadata(release)
+        val apkAsset = pickAsset(release.assets)
 
         return UpdateInfo(
-            versionCode = metadata.versionCode,
+            versionCode = metadata?.versionCode ?: semverToVersionCode(release.version),
             versionName = release.version,
             downloadUrl = apkAsset?.browserDownloadUrl ?: release.htmlUrl,
             releaseUrl = release.htmlUrl,
@@ -68,6 +66,32 @@ class GitHubUpdateChecker : Closeable {
             isPrerelease = release.prerelease,
             fileSize = apkAsset?.size ?: 0,
         )
+    }
+
+    /** 按设备主 ABI 选包（资产名形如 neo-x.y.z-{abi}.apk）。 */
+    private fun pickAsset(assets: List<GitHubAsset>): GitHubAsset? {
+        val apks = assets.filter { it.name.endsWith(".apk", ignoreCase = true) }
+        if (apks.isEmpty()) return null
+        val abi = runCatching { Build.SUPPORTED_ABIS.firstOrNull()?.lowercase() }.getOrNull()
+        if (abi != null) {
+            // 必须按 "-{abi}.apk" 结尾精确匹配，contains("x86") 会误判 x86_64。
+            apks.firstOrNull { it.name.lowercase().endsWith("-$abi.apk") }?.let { return it }
+        }
+        apks.firstOrNull { it.name.contains("universal", ignoreCase = true) }?.let { return it }
+        // 选错包比不给地址更糟，返回 null 由上层退回 release 页面。
+        Log.w("GitHubUpdateChecker", "没有匹配 $abi 的 APK 资产，退回 release 页面")
+        return null
+    }
+
+    /** "0.0.6" -> 6；"1.2.3" -> 10203。与版本号只增不减的约定一致。 */
+    private fun semverToVersionCode(version: String): Int {
+        val parts = version.removePrefix("v").split('.', '-', '+')
+        val nums = parts.mapNotNull { it.toIntOrNull() }.take(3)
+        if (nums.isEmpty()) return 0
+        val major = nums.getOrElse(0) { 0 }
+        val minor = nums.getOrElse(1) { 0 }
+        val patch = nums.getOrElse(2) { 0 }
+        return major * 10000 + minor * 100 + patch
     }
 
     private fun downloadMetadata(release: GitHubRelease): VersionMetadata? {

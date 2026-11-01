@@ -5,8 +5,10 @@ import io.nekohasekai.libbox.Libbox
 import io.nekohasekai.libbox.OutboundGroup
 import io.nekohasekai.libbox.StatusMessage
 import io.nekohasekai.sfa.bg.BoxService
+import io.nekohasekai.sfa.bg.RemoteConfigNormalizer
 import io.nekohasekai.sfa.compose.base.BaseViewModel
 import io.nekohasekai.sfa.compose.base.UiEvent
+import io.nekohasekai.sfa.constant.RoutingMode
 import io.nekohasekai.sfa.constant.Status
 import io.nekohasekai.sfa.database.Profile
 import io.nekohasekai.sfa.database.ProfileManager
@@ -36,6 +38,7 @@ data class DashboardUiState(
     val profiles: List<Profile> = emptyList(),
     val selectedProfileId: Long = -1L,
     val selectedProfileName: String? = null,
+    val routingMode: String = RoutingMode.RULE,
     val isLoading: Boolean = false,
     val hasGroups: Boolean = false,
     val groupsCount: Int = 0,
@@ -96,6 +99,10 @@ class DashboardViewModel :
     override fun createInitialState(): DashboardUiState = DashboardUiState()
 
     init {
+        viewModelScope.launch(Dispatchers.IO) {
+            val mode = RoutingMode.normalize(Settings.routingMode)
+            withContext(Dispatchers.Main) { updateState { copy(routingMode = mode) } }
+        }
         loadProfiles()
         ProfileManager.registerCallback(::onProfilesChanged)
 
@@ -294,29 +301,7 @@ class DashboardViewModel :
             }
 
             try {
-                // Fetch remote config
-                val content = HTTPClient().use { it.getString(profile.typed.remoteURL) }
-                Libbox.checkConfig(content)
-
-                // Check if content changed
-                val file = File(profile.typed.path)
-                var contentChanged = false
-                if (!file.exists() || file.readText() != content) {
-                    file.writeText(content)
-                    contentChanged = true
-                }
-
-                // Update last updated time
-                profile.typed.lastUpdated = Date()
-                ProfileManager.update(profile)
-
-                if (contentChanged && profile.id == Settings.selectedProfile) {
-                    try {
-                        applySelectedProfile()
-                    } catch (e: Exception) {
-                        sendError(e)
-                    }
-                }
+                check(io.nekohasekai.sfa.bg.SubscriptionRefresher.refresh(profile)) { "订阅更新失败，继续使用当前配置" }
 
                 // Reload profiles
                 loadProfiles()
@@ -487,6 +472,26 @@ class DashboardViewModel :
         }
     }
 
+    fun setRoutingMode(mode: String) {
+        val normalized = RoutingMode.normalize(mode)
+        Settings.routingMode = normalized
+        updateState { copy(routingMode = normalized) }
+        if (_serviceStatus.value != Status.Started) return
+        viewModelScope.launch(Dispatchers.IO) {
+            // 只 reload 不会重建 TUN，切换路由模式必须重启服务。
+            runCatching {
+                BoxService.stop()
+                for (i in 0 until 50) {
+                    if (_serviceStatus.value == Status.Stopped) break
+                    delay(100L)
+                }
+                // 给系统留出拆除 TUN / 清理 DNS 缓存的时间，否则刚启动时仍可能拿到旧解析。
+                delay(3000L)
+                sendGlobalEvent(UiEvent.RequestStartService)
+            }.onFailure { sendError(it) }
+        }
+    }
+
     fun selectClashMode(mode: String) {
         viewModelScope.launch(Dispatchers.IO) {
             try {
@@ -583,9 +588,10 @@ class DashboardViewModel :
 
     override fun updateGroups(newGroups: MutableList<OutboundGroup>) {
         viewModelScope.launch(Dispatchers.Main) {
-            val hasGroups = newGroups.isNotEmpty()
+            // 只有一个节点选择器时，底部不再显示“分组”入口；保留内部 selector 用于切换节点。
+            val selectorCount = newGroups.count { it.type == "Selector" }
             updateState {
-                copy(hasGroups = hasGroups, groupsCount = newGroups.size)
+                copy(hasGroups = selectorCount > 1, groupsCount = selectorCount)
             }
         }
     }

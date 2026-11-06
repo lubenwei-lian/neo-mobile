@@ -1,18 +1,18 @@
 {
-  "versionCode": 13,
-  "versionName": "0.0.4",
-  "releaseUrl": "https://github.com/lubenwei-lian/neo-mobile/releases/tag/v0.0.4",
-  "releaseNotes": "0.0.4\n\n- 网络检测显示进度和各服务结果。\n- 断网后在同一节点上有限恢复，主动断开后不自动连接。\n- 保留国内直连、海外代理和 PUBG 分流。\n- 首次确认节点可用后检查一次更新，在设置入口提示。\n- 安装更新前校验版本、架构、签名和文件摘要，下载期间保持连接。\n- 仅使用内置 sing-box，移除独立内核和规则更新入口。\n- 横屏保留首页、节点、订阅、设置四个入口。\n\n两个安装包均仅支持 arm64-v8a。\n\n已知问题：较长时间锁屏后的转发暂停仍在排查。\n",
+  "versionCode": 14,
+  "versionName": "0.0.5",
+  "releaseUrl": "https://github.com/lubenwei-lian/neo-mobile/releases/tag/v0.0.5",
+  "releaseNotes": "0.0.5\n\n- 调整节点测速流程，减少并发和重复连接。\n- 区分当前测速与历史结果，补充取消和网络切换处理。\n- 补充旧版 Android 的测速兼容处理。\n- 分离出口地区检测与测速，补充地区缓存和失败重试。\n- 修复节点国旗显示。\n- 调整国内直连、海外代理和游戏分流。\n- 补充更新任务的取消、超时和失败退避处理。\n\n两个安装包均仅支持 arm64-v8a。\n\n已知问题：较长时间锁屏后的转发暂停仍在排查。\n",
   "apks": {
     "universal": {
-      "url": "https://github.com/lubenwei-lian/neo-mobile/releases/download/v0.0.4/neo-0.0.4-universal.apk",
-      "size": 50856378,
-      "sha256": "9dfe7c661d86afffb8506ce9882653bf249f037d6f462d10d359e16744831a11"
+      "url": "https://github.com/lubenwei-lian/neo-mobile/releases/download/v0.0.5/neo-0.0.5-universal.apk",
+      "size": 50915766,
+      "sha256": "134f831771b445b0ca47250375e48574eec21461121146bfdb0aea0b12b6a5c7"
     },
     "arm64-v8a": {
-      "url": "https://github.com/lubenwei-lian/neo-mobile/releases/download/v0.0.4/neo-0.0.4-arm64-v8a.apk",
-      "size": 50856378,
-      "sha256": "9dfe7c661d86afffb8506ce9882653bf249f037d6f462d10d359e16744831a11"
+      "url": "https://github.com/lubenwei-lian/neo-mobile/releases/download/v0.0.5/neo-0.0.5-arm64-v8a.apk",
+      "size": 50915766,
+      "sha256": "134f831771b445b0ca47250375e48574eec21461121146bfdb0aea0b12b6a5c7"
     }
   }
 }

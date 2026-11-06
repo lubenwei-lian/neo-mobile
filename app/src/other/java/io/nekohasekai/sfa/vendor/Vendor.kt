@@ -11,11 +11,13 @@ import io.nekohasekai.sfa.R
 import io.nekohasekai.sfa.compose.screen.qrscan.QRCodeCropArea
 import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.update.RuleSetUpdateResult
+import io.nekohasekai.sfa.update.PolicyUpdateResult
 import io.nekohasekai.sfa.update.UpdateCheckException
 import io.nekohasekai.sfa.update.UpdateInfo
 import io.nekohasekai.sfa.update.UpdateSource
 import io.nekohasekai.sfa.update.UpdateState
 import io.nekohasekai.sfa.update.UpdateTrack
+import io.nekohasekai.sfa.update.RoutingRefreshBudget
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 
@@ -109,6 +111,21 @@ object Vendor : VendorInterface {
         Log.w(TAG, "NeoUpdateChecker failed", it)
     }.getOrNull()
 
+    override suspend fun checkUpdateAndRefreshRoutingData(): UpdateInfo? = runCatching {
+        val (info, manifest) = NeoUpdateChecker().checkWithManifest()
+        if (manifest != null) {
+            val completed = RoutingRefreshBudget.run(
+                rules = { val result = RuleSetUpdater.update(manifest); Log.i(TAG, "routing rules=${result.javaClass.simpleName}") },
+                policy = { val result = PolicyUpdater.update(manifest); Log.i(TAG, "routing policy=${result.javaClass.simpleName}") },
+            )
+            if (!completed) Log.i(TAG, "Routing refresh budget exhausted; keeping staged and active data")
+        }
+        info
+    }.onFailure {
+        if (it is kotlinx.coroutines.CancellationException) throw it
+        Log.w(TAG, "checkUpdateAndRefreshRoutingData failed", it)
+    }.getOrNull()
+
     override fun scheduleAutoUpdate() {
         UpdateWorker.schedule(io.nekohasekai.sfa.Application.application)
     }
@@ -142,5 +159,27 @@ object Vendor : VendorInterface {
     }.getOrElse {
         Log.e(TAG, "updateRuleSets failed", it)
         RuleSetUpdateResult.Failed(it.message ?: "规则集更新失败")
+    }
+
+    override suspend fun updatePolicies(): PolicyUpdateResult = runCatching {
+        val manifest = NeoUpdateChecker().fetchManifest()
+            ?: return@runCatching PolicyUpdateResult.Failed(
+                UpdateState.lastCheckError.value ?: "无法连接更新服务器",
+            )
+        PolicyUpdater.update(manifest)
+    }.getOrElse {
+        Log.e(TAG, "updatePolicies failed", it)
+        PolicyUpdateResult.Failed(it.message ?: "策略更新失败")
+    }
+
+    override suspend fun updateRoutingData() {
+        runCatching {
+            val manifest = NeoUpdateChecker().fetchManifest() ?: return
+            val rules = RuleSetUpdater.update(manifest)
+            val policies = PolicyUpdater.update(manifest)
+            Log.i(TAG, "routing data: rules=${rules.javaClass.simpleName}, policies=${policies.javaClass.simpleName}")
+        }.onFailure {
+            Log.w(TAG, "updateRoutingData failed", it)
+        }
     }
 }

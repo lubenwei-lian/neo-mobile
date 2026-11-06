@@ -98,14 +98,18 @@ android {
 
     defaultConfig {
         applicationId = "com.xiaosaik.neo"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         minSdk = 24
         targetSdk = 37
         versionCode = getVersionProps("VERSION_CODE").toInt()
         versionName = getVersionProps("VERSION_NAME")
         base.archivesName.set("neo-${versionName}")
+        manifestPlaceholders["neoAppLabel"] = "@string/app_name"
         // Bind the exact AAR digest; a historical annotation is not proof of its runtime version.
         buildConfigField("String", "BUNDLED_CORE_VERSION", "\"$bundledCoreVersion\"")
         buildConfigField("String", "BUNDLED_CORE_BUILD", "\"aar-sha256:$bundledCoreDigest\"")
+        buildConfigField("boolean", "ROUTING_TEST", "false")
+        buildConfigField("boolean", "FORCE_COMPAT_PROBE", "false")
     }
 
     signingConfigs {
@@ -119,6 +123,17 @@ android {
 
     buildTypes {
         debug {
+            if (providers.gradleProperty("neoCompatProbeTest").orNull == "true") {
+                check(providers.gradleProperty("neoRoutingTest").orNull == "true") {
+                    "Compatibility probe override is restricted to the isolated routing-test application"
+                }
+                buildConfigField("boolean", "FORCE_COMPAT_PROBE", "true")
+            }
+            if (providers.gradleProperty("neoRoutingTest").orNull == "true") {
+                applicationIdSuffix = ".routingtest"
+                manifestPlaceholders["neoAppLabel"] = "Neo 分流测试"
+                buildConfigField("boolean", "ROUTING_TEST", "true")
+            }
             if (getProps("KEYSTORE_PASS").isNotEmpty()) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -382,6 +397,8 @@ dependencies {
     "androidTestOtherImplementation"(composeBom24)
     "androidTestOtherLegacyImplementation"(composeBom21)
     androidTestImplementation("androidx.compose.ui:ui-test-junit4")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
 
     // Common Compose-related libraries
     implementation("dev.chrisbanes.haze:haze:1.6.9")

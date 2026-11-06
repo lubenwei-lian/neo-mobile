@@ -6,12 +6,12 @@
 
 ## 下载
 
-[0.0.4](https://github.com/lubenwei-lian/neo-mobile/releases/tag/v0.0.4)
+[0.0.5](https://github.com/lubenwei-lian/neo-mobile/releases/tag/v0.0.5)
 
-- `neo-0.0.4-arm64-v8a.apk`
-- `neo-0.0.4-universal.apk`
+- `neo-0.0.5-arm64-v8a.apk`
+- `neo-0.0.5-universal.apk`
 
-两个安装包均仅支持 arm64-v8a，最低 Android 7.0。版本号为 0.0.4，versionCode 为 13。
+两个安装包均仅支持 arm64-v8a，最低 Android 7.0。版本号为 0.0.5，versionCode 为 14。
 
 ## 功能
 
@@ -32,6 +32,10 @@
 ```
 
 `app/libs/libbox.aar`、对应版本记录和 `libneoexec.so` 随仓库提供。当前 AAR 仅含 arm64-v8a 内核。发版步骤见 [RELEASE-GUIDE.md](RELEASE-GUIDE.md)，更新机制见 [UPDATE-FLOW.md](UPDATE-FLOW.md)。
+
+出口地区检测架构与验证记录见 [EXIT-REGION.md](rules/EXIT-REGION.md)。
+
+后续计划见 [ROADMAP.md](rules/ROADMAP.md)，热点与 VPN 共存验证见 [HOTSPOT-COMPAT.md](rules/HOTSPOT-COMPAT.md)。
 
 ## 已知问题
 

@@ -20,10 +20,11 @@ class LegacyGamePolicyMigrationTest {
         assertEquals(1, active.games.size)
         val game = active.games.single()
         assertEquals(listOf("com.tencent.ig"), game.packages)
-        assertEquals(5, game.matches.size)
+        assertEquals("builtin-2026.11.04", game.version)
+        assertEquals("device-verified", game.verification)
+        assertEquals(1, game.matches.size)
         assertEquals(PolicyAction.PROXY, game.fallback)
-        assertFalse(game.json().toString().contains("remote-doh"))
-        assertFalse(game.json().toString().contains("17500"))
+        assertTrue(game.matches.single().packageWide)
     }
 
     @Test fun partialOrMoreRestrictedExperimentsAreNotPromoted() {
@@ -41,7 +42,7 @@ class LegacyGamePolicyMigrationTest {
         repo.confirmStarted()
         assertEquals("new-release", repo.active().games.single().version)
         assertTrue(repo.rollback())
-        assertEquals("device-2026.11.01", repo.active().games.single().version)
+        assertEquals("builtin-2026.11.04", repo.active().games.single().version)
     }
 
     @Test fun unconfirmedPolicyActivationIsRecoveredOnNextConnection() {

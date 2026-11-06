@@ -78,6 +78,11 @@ import io.nekohasekai.sfa.constant.Status
 import io.nekohasekai.sfa.database.ProfileManager
 import io.nekohasekai.sfa.database.Settings
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
@@ -116,16 +121,106 @@ fun NodesScreen(
     var sortByDelay by remember { mutableStateOf(true) }
     var cacheVersion by remember { mutableStateOf(0) }
     var configContent by remember { mutableStateOf("") }
-    val regions by NodeRegionCache.entries
+    val regions by NodeRegionCache.entries.collectAsState()
     var testRunning by remember { mutableStateOf(false) }
+    var testJob by remember { mutableStateOf<Job?>(null) }
+    var testStopping by remember { mutableStateOf(false) }
     var testDone by remember { mutableStateOf(0) }
     var testTotal by remember { mutableStateOf(0) }
     var testNote by remember { mutableStateOf("") }
+    var testNetworkEpoch by remember { mutableStateOf<String?>(null) }
+    val network by NodeTestNetworkMonitor.state.collectAsState()
+    var clockSeconds by remember { mutableStateOf(System.currentTimeMillis() / 1000) }
     val testedTags = remember { mutableSetOf<String>() }
     val listState = rememberLazyListState()
     val context = LocalContext.current
 
+    LaunchedEffect(Unit) { NodeTestNetworkMonitor.observe() }
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(30_000)
+            clockSeconds = System.currentTimeMillis() / 1000
+        }
+    }
+
+    fun startTest(requested: List<String>, automatic: Boolean = false) {
+        val tags = requested.distinct()
+        if (testRunning || tags.isEmpty()) return
+        val currentNetwork = NodeTestNetworkMonitor.state.value
+        val capturedEpoch = currentNetwork.epoch
+        if (!currentNetwork.known || !currentNetwork.available || capturedEpoch == null) {
+            if (!automatic) Toast.makeText(context, "网络尚未就绪，请稍后测速", Toast.LENGTH_SHORT).show()
+            return
+        }
+        val captured = NodeDelayCache.capture(configContent)
+        if (captured == null) {
+            if (!automatic) Toast.makeText(context, "节点配置已变化，请稍后重试", Toast.LENGTH_SHORT).show()
+            return
+        }
+        testRunning = true
+        testStopping = false
+        testDone = 0
+        testTotal = tags.size
+        testNote = "准备测速"
+        testNetworkEpoch = capturedEpoch
+        testedTags.clear()
+        testJob = scope.launch {
+            suspend fun publish(tag: String, delay: Int) {
+                // A result cannot be reported as current after a physical-network transition.
+                if (NodeTestNetworkMonitor.state.value.epoch != capturedEpoch) return
+                NodeDelayCache.record(captured, tag, delay, capturedEpoch)
+                if (testedTags.add(tag)) testDone++
+                clockSeconds = System.currentTimeMillis() / 1000
+                cacheVersion++
+            }
+            val onPhase: (NodeTester.Phase) -> Unit = { phase ->
+                testNote = when (phase) {
+                    NodeTester.Phase.Waiting -> "等待其他检测完成"
+                    NodeTester.Phase.Preparing -> "准备测速"
+                    NodeTester.Phase.Measuring -> "正在检测连接"
+                }
+            }
+            try {
+                val started = if (tags.size == 1) {
+                    val result = NodeTester.testOne(captured.configContent, tags.single(), onPhase)
+                    if (result != null) publish(tags.single(), result)
+                    result != null
+                } else {
+                    NodeTester.testBatch(captured.configContent, tags, SpeedTestMode.fromPrefs(context),
+                        onPhase = onPhase,
+                        onProgress = { round, remaining ->
+                            if (round > 0) testNote = "重试 $round/${DelayTestPlanner.MAX_RETRIES} · 剩余 $remaining"
+                        },
+                        onResult = { tag, delay, _ -> publish(tag, delay) })
+                }
+                if (!started) Toast.makeText(context, "测速启动失败，已保留原记录", Toast.LENGTH_SHORT).show()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (_: Exception) {
+                Toast.makeText(context, "测速未完成，请重试", Toast.LENGTH_SHORT).show()
+            } finally {
+                // Preserve completed results even when the user stops or leaves this screen.
+                withContext(NonCancellable) { runCatching { NodeDelayCache.flush() } }
+                testRunning = false
+                testStopping = false
+                testJob = null
+                testNetworkEpoch = null
+            }
+        }
+    }
+
+    LaunchedEffect(network.epoch) {
+        if (testRunning && testNetworkEpoch != null && network.epoch != testNetworkEpoch) {
+            testStopping = true
+            testNote = "网络已变化，正在停止"
+            testJob?.cancelAndJoin()
+            io.nekohasekai.sfa.bg.DiagLogger.event("node test network changed stopped")
+            Toast.makeText(context, "网络已变化，测速已停止；已完成记录保留", Toast.LENGTH_SHORT).show()
+        }
+    }
+
     LaunchedEffect(serviceStatus, Settings.selectedProfile) {
+        testJob?.cancelAndJoin()
         NodeRegionCache.ensureLoaded()
         NodeDelayCache.ensureLoaded()
         val loaded = withContext(Dispatchers.IO) { loadConfigNodes() }
@@ -137,12 +232,8 @@ fun NodesScreen(
             selectedTag = savedTag
         }
     }
-    LaunchedEffect(uiState.groups) {
-        if (uiState.groups.isNotEmpty()) {
-            NodeDelayCache.harvest(uiState.groups)
-            cacheVersion++
-        }
-    }
+    // Group history may come from airport urltest jobs with a different probe and timing.
+    // Only Neo's own test completion updates this screen's delay cache.
     // 选中态以内核分组的实际 selected 为准；页面重组、切页返回都从这里恢复，不能用配置里的首个节点兜底。
     LaunchedEffect(uiState.groups, mainGroupTag, entries) {
         if (mainGroupTag.isBlank() || entries.isEmpty()) return@LaunchedEffect
@@ -155,49 +246,34 @@ fun NodesScreen(
     val connected = serviceStatus == Status.Started
     val testing = testRunning
 
-    LaunchedEffect(entries, configContent) {
+    LaunchedEffect(entries, configContent, network) {
         val prefs = context.getSharedPreferences("neo_ui", 0)
         if (!prefs.getBoolean("auto_speed_test", false)) return@LaunchedEffect
-        if (testRunning || entries.isEmpty() || configContent.isEmpty()) return@LaunchedEffect
-        val tags = entries.filter { !it.isGroup }.map { it.tag }
+        if (testRunning || entries.isEmpty() || configContent.isEmpty() || !network.known || !network.available) return@LaunchedEffect
+        val tags = entries.filter { !it.isGroup && NodeDelayCache.reading(it.tag)?.isCurrent(network, clockSeconds) != true }.map { it.tag }
         if (tags.isEmpty()) return@LaunchedEffect
-        val alreadyTested = entries.any { nodeTime(it.tag) > 0 }
-        if (alreadyTested) return@LaunchedEffect
-        val speedMode = SpeedTestMode.fromPrefs(context)
-        testRunning = true
-        testDone = 0
-        testTotal = tags.size
-        testedTags.clear()
-        scope.launch {
-            val started =
-                NodeTester.testBatch(
-                    configContent, tags, speedMode,
-                    onProgress = { round, remaining ->
-                        testNote = if (round <= 0) "" else "重试 " + round + "/4 · 剩余 " + remaining
-                    },
-                    onResult = { tag, delay, relaxed ->
-                        NodeDelayCache.record(tag, delay, relaxed)
-                        if (!relaxed && testedTags.add(tag)) testDone++
-                        cacheVersion++
-                    },
-                )
-            NodeDelayCache.flush()
-            testRunning = false
-            if (!started) {
-                Toast.makeText(context, "自动测速启动失败", Toast.LENGTH_SHORT).show()
-            }
-        }
+        startTest(tags, automatic = true)
     }
 
-    val rows = remember(entries, query, sortByDelay, cacheVersion, selectedTag) {
+    val rows = remember(entries, query, sortByDelay, cacheVersion, selectedTag, network, clockSeconds) {
         val filtered = if (query.isBlank()) entries else entries.filter { it.tag.contains(query, ignoreCase = true) }
         val sorted =
             if (!sortByDelay) {
                 filtered.sortedBy { it.tag }
             } else {
-                // 列表已无智能条目：有延迟的按延迟升序，没测过的按名字排在后面
+                // Keep usable current readings ahead of historical ones; selection stays pinned.
                 filtered.sortedWith(
                     compareBy(
+                        {
+                            val reading = NodeDelayCache.reading(it.tag)
+                            when {
+                                reading == null -> 4
+                                reading.delayMs > 0 && reading.isCurrent(network, clockSeconds) -> 0
+                                reading.delayMs > 0 -> 1
+                                reading.isCurrent(network, clockSeconds) -> 2
+                                else -> 3
+                            }
+                        },
                         { if (nodeDelay(it.tag) > 0) nodeDelay(it.tag) else Int.MAX_VALUE },
                         { it.tag },
                     ),
@@ -213,19 +289,23 @@ fun NodesScreen(
         if (selectedTag.isNotBlank() && rows.isNotEmpty()) listState.scrollToItem(0)
     }
 
-    val statsText = remember(entries, cacheVersion, testRunning, testDone, testNote) {
+    val statsText = remember(entries, cacheVersion, testRunning, testDone, testNote, network, clockSeconds) {
         if (testRunning) {
             "测速中 " + testDone + "/" + testTotal +
                 (if (testNote.isNotEmpty()) " · " + testNote else "") + ""
         } else {
+            if (!network.known) return@remember "正在读取网络状态"
+            if (!network.available) return@remember "当前无网络 · 显示历史记录"
+            val current = entries.mapNotNull { NodeDelayCache.reading(it.tag) }.filter { it.isCurrent(network, clockSeconds) }
             val times = entries.map { nodeTime(it.tag) }.filter { it > 0 }
-            if (times.isEmpty()) {
+            if (current.isNotEmpty()) {
+                val fastest = current.filter { it.delayMs > 0 }.minOfOrNull { it.delayMs }
+                "当前网络 ${current.size}/${entries.size}" +
+                    (if (fastest != null) " · 最快 ${fastest}ms" else " · 未取得延迟")
+            } else if (times.isEmpty()) {
                 "共 " + entries.size + " 个节点 · 尚未测速"
             } else {
-                val delays = entries.map { nodeDelay(it.tag) }.filter { it > 0 }
-                val fastest = delays.minOrNull() ?: 0
-                "共 " + entries.size + " 个节点 · 上次测速 " + formatNodeTime(times.max()) +
-                    " · 最快 " + fastest + "ms"
+                "共 ${entries.size} 个节点 · 历史记录 ${formatNodeTime(times.max(), clockSeconds)}"
             }
         }
     }
@@ -276,42 +356,28 @@ fun NodesScreen(
                     )
                     Button(
                         onClick = {
-                            val tags = entries.filter { !it.isGroup }.map { it.tag }
-                            if (!testRunning && configContent.isNotEmpty() && tags.isNotEmpty()) {
-                                testRunning = true
-                                testDone = 0
-                                testTotal = tags.size
-                                testedTags.clear()
-                                scope.launch {
-                                    val started =
-                                        NodeTester.testBatch(
-                                            configContent, tags, SpeedTestMode.fromPrefs(context),
-                                            onProgress = { round, remaining ->
-                                                testNote = if (round <= 0) "" else "重试 " + round + "/4 · 剩余 " + remaining
-                                            },
-                                            onResult = { tag, delay, relaxed ->
-                                                NodeDelayCache.record(tag, delay, relaxed)
-                                                if (!relaxed && testedTags.add(tag)) testDone++
-                                                cacheVersion++
-                                            },
-                                        )
-                                    NodeDelayCache.flush()
-                                    testRunning = false
-                                    if (!started) {
-                                        Toast.makeText(context, "测速会话启动失败", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
+                            if (testRunning) {
+                                testStopping = true
+                                testNote = "正在停止"
+                                testJob?.cancel()
+                            } else {
+                                startTest(entries.filter { !it.isGroup }.map { it.tag })
                             }
                         },
-                        enabled = !testing && entries.isNotEmpty() && configContent.isNotEmpty(),
+                        enabled = !testStopping && entries.isNotEmpty() && configContent.isNotEmpty() &&
+                            (testRunning || network.known && network.available),
                         modifier = Modifier.widthIn(min = 92.dp),
                         contentPadding = PaddingValues(horizontal = 14.dp, vertical = 10.dp),
                         shape = RoundedCornerShape(14.dp),
                     ) {
                         if (testing) {
-                            CircularProgressIndicator(modifier = Modifier.size(14.dp), strokeWidth = 2.dp)
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(14.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimary,
+                            )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text("$testDone/$testTotal")
+                            Text(if (testStopping) "停止中" else "停止 $testDone/$testTotal")
                         } else {
                             Icon(Icons.Default.Speed, contentDescription = null, modifier = Modifier.size(16.dp))
                             Spacer(modifier = Modifier.width(6.dp))
@@ -338,14 +404,13 @@ fun NodesScreen(
                         },
                     )
                 }
-                if (!connected) {
-                    Text(
-                        text = "离线可用 · 测速与选节点无需连接，连接后自动生效 · 内核 sing-box",
-                        modifier = Modifier.padding(start = 16.dp, bottom = 2.dp),
-                        fontSize = 11.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
-                }
+                Text(
+                    text = if (NativeProbe.available()) "测速为网页响应延迟，不含首次握手，不代表游戏延迟"
+                        else "测速为内核连接延迟，不代表游戏延迟",
+                    modifier = Modifier.padding(start = 16.dp, end = 16.dp, bottom = 2.dp),
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
                 LazyColumn(
                     state = listState,
                     modifier = Modifier.fillMaxSize(),
@@ -355,8 +420,14 @@ fun NodesScreen(
                     items(rows, key = { it.tag }) { entry ->
                         NodeRow(
                             item = entry,
+                            delay = nodeDelay(entry.tag),
+                            testedAt = nodeTime(entry.tag),
+                            historical = NodeDelayCache.reading(entry.tag)?.isCurrent(network, clockSeconds) == false,
+                            timeLabel = nodeTime(entry.tag).takeIf { it > 0 }?.let { formatNodeTime(it, clockSeconds) }.orEmpty(),
+                            insecure = NodeDelayCache.isInsecure(entry.tag),
                             selected = entry.tag == selectedTag,
-                            region = regions[entry.tag],
+                            region = regions[entry.tag]?.label(clockSeconds),
+                            regionCode = regions[entry.tag]?.countryCode,
                             palette = palette,
                             onClick = {
                                 selectedTag = entry.tag
@@ -373,15 +444,7 @@ fun NodesScreen(
                                 }
                             },
                             onLongClick = {
-                                val tag = entry.tag
-                                if (!entry.isGroup && !testRunning && configContent.isNotEmpty()) {
-                                    scope.launch {
-                                        val delay = NodeTester.testOne(configContent, tag)
-                                        NodeDelayCache.record(tag, delay)
-                                        NodeDelayCache.flush()
-                                        cacheVersion++
-                                    }
-                                }
+                                if (!entry.isGroup && configContent.isNotEmpty()) startTest(listOf(entry.tag))
                             },
                         )
                     }
@@ -448,6 +511,7 @@ private suspend fun loadConfigNodes(): ConfigLoadResult {
                 if (file.exists()) {
                     val configText = io.nekohasekai.sfa.bg.RoutingConfigApplier.apply(ProfileManager.snapshot(profile).readActive())
                     NodeDelayCache.bind(profileId, configText)
+                    NodeRegionCache.bind(profileId, configText)
                     val outbounds = JSONObject(configText).optJSONArray("outbounds") ?: return@runCatching
                     val result = mutableListOf<NodeEntry>()
                     var mainTag = ""
@@ -477,24 +541,33 @@ private fun nodeDelay(tag: String): Int = NodeDelayCache.get(tag)?.get(0)?.toInt
 
 private fun nodeTime(tag: String): Long = NodeDelayCache.get(tag)?.get(1) ?: 0L
 
-private fun formatNodeTime(time: Long): String {
+private fun formatNodeTime(time: Long, nowSeconds: Long): String {
+    if (time > nowSeconds) return "时间待确认"
     val millis = if (time > 1_000_000_000_000L) time else time * 1000
-    return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(millis))
+    val day = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+    val pattern = if (day.format(Date(millis)) == day.format(Date(nowSeconds * 1000))) "HH:mm" else "MM-dd HH:mm"
+    return SimpleDateFormat(pattern, Locale.getDefault()).format(Date(millis))
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 private fun NodeRow(
     item: NodeEntry,
+    delay: Int,
+    testedAt: Long,
+    historical: Boolean,
+    timeLabel: String,
+    insecure: Boolean,
     selected: Boolean,
     region: String?,
+    regionCode: String?,
     palette: DelayPalette,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     onLongClick: () -> Unit,
 ) {
-    val delay = nodeDelay(item.tag)
-    val timedOut = delay <= 0 && nodeTime(item.tag) > 0
+    // Pass cache values as Compose inputs; a parent cacheVersion change alone can skip this row.
+    val timedOut = delay <= 0 && testedAt > 0
     NeoPanel(
         modifier = modifier.fillMaxWidth(),
         onClick = onClick,
@@ -508,7 +581,7 @@ private fun NodeRow(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            NeoFlagBadge(code = countryOf(item.tag))
+            NeoFlagBadge(code = regionCode ?: countryOf(item.tag))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = item.tag,
@@ -524,7 +597,7 @@ private fun NodeRow(
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
-                    text = item.displayType + " · " + (region ?: "地区未测"),
+                    text = item.displayType + " · " + (region ?: "出口未确认"),
                     style = MaterialTheme.typography.labelSmall,
                     color =
                     if (selected) {
@@ -533,17 +606,25 @@ private fun NodeRow(
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
                 )
-                val relaxedBadge = NodeDelayCache.isInsecure(item.tag)
-                val udpBlocked = timedOut && (item.type.lowercase() == "tuic" || item.type.lowercase() == "hysteria2")
-                if (relaxedBadge || udpBlocked) {
+                val relaxedBadge = insecure
+                if (relaxedBadge) {
                     Text(
-                        text = if (relaxedBadge) "未验证服务器证书" else "连接超时",
+                        text = "未验证服务器证书",
                         style = MaterialTheme.typography.labelSmall,
-                        color = if (relaxedBadge) MaterialTheme.colorScheme.tertiary else MaterialTheme.colorScheme.error,
+                        color = MaterialTheme.colorScheme.tertiary,
                     )
                 }
             }
-            LatencyPill(delay = delay, timedOut = timedOut, palette = palette)
+            Column(horizontalAlignment = Alignment.End, modifier = Modifier.widthIn(max = 128.dp)) {
+                LatencyPill(delay = delay, timedOut = timedOut, historical = historical, palette = palette)
+                if (timeLabel.isNotEmpty()) Text(
+                    text = (if (historical) "历史 " else "") + timeLabel,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
             if (selected) {
                 Icon(
                     Icons.Default.Check,
@@ -557,9 +638,10 @@ private fun NodeRow(
 }
 
 @Composable
-private fun LatencyPill(delay: Int, timedOut: Boolean, palette: DelayPalette) {
+private fun LatencyPill(delay: Int, timedOut: Boolean, historical: Boolean, palette: DelayPalette) {
     val color =
         when {
+            historical -> palette.neutral
             delay > 0 -> palette.forDelay(delay)
             timedOut -> palette.bad
             else -> palette.neutral
@@ -572,7 +654,7 @@ private fun LatencyPill(delay: Int, timedOut: Boolean, palette: DelayPalette) {
             text =
             when {
                 delay > 0 -> "${delay}ms"
-                timedOut -> "超时"
+                timedOut -> if (historical) "上次失败" else "失败"
                 else -> "—"
             },
             modifier = Modifier.padding(horizontal = 8.dp),
@@ -622,8 +704,9 @@ private fun rememberDelayPalette(): DelayPalette {
 
 @Composable
 private fun NeoFlagBadge(code: String) {
+    val flagCode = code.lowercase(Locale.ROOT)
     Box(modifier = Modifier.size(30.dp), contentAlignment = Alignment.Center) {
-        if (code == "other") {
+        if (flagCode == "other") {
             Surface(
                 shape = RoundedCornerShape(50),
                 color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -641,7 +724,7 @@ private fun NeoFlagBadge(code: String) {
         } else {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val circle = Path().apply { addOval(Rect(Offset.Zero, size)) }
-                clipPath(circle) { drawFlag(code) }
+                clipPath(circle) { drawFlag(flagCode) }
                 drawCircle(
                     color = Color.White.copy(alpha = 0.10f),
                     style = Stroke(width = 1.dp.toPx()),

@@ -197,6 +197,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     private var runningConfig: String? = null
     private var startupSnapshot: io.nekohasekai.sfa.database.ProfileSnapshotStore? = null
     private var policyActivated = false
+    private var ruleSetsActivated = false
 
     private fun nativeOptions() = OverrideOptions().apply {
         autoRedirect = Settings.autoRedirect
@@ -215,11 +216,23 @@ class BoxService(private val service: Service, private val platformInterface: Pl
         RoutingConfigApplier.policies.migrate(snapshot.readActive())
         if (promote) {
             RoutingConfigApplier.policies.recoverUnconfirmed()
+            runCatching { RuleSetAssets.recoverUnconfirmed() }
+                .onFailure { Log.w(TAG, "Rule set recovery unavailable; using compiled fallback") }
+            if (io.nekohasekai.sfa.constant.RoutingMode.normalize(Settings.routingMode) ==
+                io.nekohasekai.sfa.constant.RoutingMode.RULE && Settings.presetRulesEnabled) {
+                ruleSetsActivated = runCatching {
+                    RuleSetAssets.activateCandidate { resources ->
+                        Libbox.checkConfig(RoutingConfigApplier.compile(snapshot.readActive(),
+                            RoutingConfigApplier.policies.active(), healthPorts, resources))
+                    }
+                }.onFailure { Log.w(TAG, "Rule set candidate rejected; retaining previous resources") }
+                    .getOrDefault(false)
+            }
             policyActivated = runCatching {
                 RoutingConfigApplier.policies.activateCandidate { bundle ->
                     Libbox.checkConfig(RoutingConfigApplier.compile(snapshot.readActive(), bundle, healthPorts))
                 }
-            }.getOrDefault(false)
+            }.onFailure { Log.w(TAG, "Policy candidate rejected; retaining previous policy") }.getOrDefault(false)
         }
         val source = if (promote) snapshot.prepare(ProfileManager.identity(profile)) { candidate ->
             Libbox.checkConfig(RoutingConfigApplier.apply(candidate, healthPorts))
@@ -228,6 +241,10 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     }
 
     private fun rollbackStartup(): String? {
+        if (ruleSetsActivated) {
+            RuleSetAssets.rollback()
+            ruleSetsActivated = false
+        }
         if (policyActivated) {
             RoutingConfigApplier.policies.rollback()
             policyActivated = false
@@ -240,6 +257,8 @@ class BoxService(private val service: Service, private val platformInterface: Pl
     private fun confirmStartup() {
         startupSnapshot?.started(); startupSnapshot = null
         RoutingConfigApplier.policies.confirmStarted(); policyActivated = false
+        if (ruleSetsActivated) RuleSetAssets.confirmStarted()
+        ruleSetsActivated = false
     }
 
 
@@ -273,7 +292,7 @@ class BoxService(private val service: Service, private val platformInterface: Pl
                 commandServer.startOrReloadService(content, nativeOptions())
             } catch (e: Exception) {
                 if (e is CancellationException) throw e
-                val hadCandidate = startupSnapshot != null || policyActivated
+                val hadCandidate = startupSnapshot != null || policyActivated || ruleSetsActivated
                 val oldSource = rollbackStartup()
                 if (!hadCandidate) throw e
                 closeService()

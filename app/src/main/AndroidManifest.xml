@@ -44,10 +44,16 @@
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
-        android:label="@string/app_name"
+        android:label="${neoAppLabel}"
         android:supportsRtl="true"
         android:theme="@style/AppTheme"
         tools:targetApi="31">
+
+        <service
+            android:name=".probe.CompatProbeService"
+            android:exported="false"
+            android:process=":nodeprobe"
+            android:stopWithTask="true" />
 
         <activity
             android:name=".compose.MainActivity"

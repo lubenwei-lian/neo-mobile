@@ -14,6 +14,7 @@ import io.nekohasekai.sfa.update.UpdateCheckException
 import io.nekohasekai.sfa.update.UpdateInfo
 import io.nekohasekai.sfa.update.UpdateState
 import io.nekohasekai.sfa.update.UpdateTrack
+import io.nekohasekai.sfa.update.RoutingRefreshBudget
 
 object Vendor : VendorInterface {
     private const val TAG = "Vendor"
@@ -95,6 +96,23 @@ object Vendor : VendorInterface {
     override val hasCustomUpdate = true
 
     override fun checkUpdateAsync(): UpdateInfo? = kotlinx.coroutines.runBlocking(kotlinx.coroutines.Dispatchers.IO) { NeoUpdateChecker().check() }
+
+    override suspend fun checkUpdateAndRefreshRoutingData(): UpdateInfo? = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) {
+        runCatching {
+            val (info, manifest) = NeoUpdateChecker().checkWithManifest()
+            if (manifest != null) {
+            val completed = RoutingRefreshBudget.run(
+                rules = { val result = RuleSetUpdater.update(manifest); Log.i(TAG, "routing rules=${result.javaClass.simpleName}") },
+                policy = { val result = PolicyUpdater.update(manifest); Log.i(TAG, "routing policy=${result.javaClass.simpleName}") },
+            )
+            if (!completed) Log.i(TAG, "Routing refresh budget exhausted; keeping staged and active data")
+            }
+            info
+        }.onFailure {
+            if (it is kotlinx.coroutines.CancellationException) throw it
+            Log.w(TAG, "checkUpdateAndRefreshRoutingData failed", it)
+        }.getOrNull()
+    }
 
     override fun scheduleAutoUpdate() {
         UpdateWorker.schedule(io.nekohasekai.sfa.Application.application)

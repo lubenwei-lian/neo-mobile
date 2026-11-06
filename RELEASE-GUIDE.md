@@ -1,6 +1,6 @@
 # Android 发版与验证
 
-当前维护版本为 Neo 0.0.4，内部 versionCode=13。只使用 APK 内置 sing-box。
+当前维护版本为 Neo 0.0.5，内部 versionCode=14。只使用 APK 内置 sing-box。
 
 ## 本地生成可审阅发布包
 

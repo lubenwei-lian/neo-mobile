@@ -28,9 +28,23 @@ object NeoConfigCompiler {
         source: String, mode: String, selectedTag: String, userRules: List<UserRouteRule>,
         policies: PolicyBundle, domestic: DomesticResources, presetEnabled: Boolean = true,
         health: HealthPorts? = null,
+        dnsPolicyMode: DnsPolicyMode = DnsPolicyMode.CURRENT,
+        allowCandidatePolicies: Boolean = false,
     ): CompiledConfig {
         require(mode in setOf("rule", "global", "direct")) { "Unsupported routing mode" }
         val root = JSONObject(source)
+        val inbounds = root.optJSONArray("inbounds")
+        if (inbounds != null) for (index in 0 until inbounds.length()) {
+            val inbound = inbounds.getJSONObject(index)
+            if (inbound.optString("type") != "tun") continue
+            // Endpoint-independent mapping reuses the first remote's route for every later
+            // destination on an app's UDP socket. That can send overseas traffic directly or
+            // domestic traffic through a proxy despite correct destination rules. Keep a NAT
+            // session per remote address+port so each destination receives its own route.
+            // Do not change filtering, stack, MTU, socket timeouts or game-specific rules here.
+            inbound.put("udp_mapping", "address_and_port_dependent")
+            inbound.remove("endpoint_independent_nat")
+        }
         val outbounds = root.getJSONArray("outbounds")
         val byTag = linkedMapOf<String, JSONObject>()
         for (i in 0 until outbounds.length()) {
@@ -65,17 +79,21 @@ object NeoConfigCompiler {
                     outbounds.put(o); byTag[o.getString("tag")] = o
                 }
         val proxy = main.getString("tag")
-        root.put("outbounds", JSONArray(listOf(main) + byTag.values.filter { it !== main }))
-        if (selectedTag.isNotBlank() && selectedTag in main.strings("outbounds")) main.put("default", selectedTag)
-        if (main.optString("default").isNotBlank() && main.optString("default") !in main.strings("outbounds")) main.remove("default")
-        fun checkDependencies(tag: String, stack: Set<String>) {
-            require(stack.size < 32) { "Outbound dependency chain is too deep" }
-            require(tag !in stack) { "Circular outbound dependency" }
-            val o = byTag[tag] ?: error("Missing outbound dependency")
-            (o.strings("outbounds") + listOfNotNull(o.optString("detour").ifBlank { null }))
-                .forEach { checkDependencies(it, stack + tag) }
+        // Airport groups can contain DIRECT, rejects or changing urltest groups. Neo owns the final
+        // selector, and every node shown in the UI must be selectable from that same group.
+        val physicalNodes = byTag.values.filter { it.optString("type") in proxyTypes }.map { it.getString("tag") }
+        require(physicalNodes.isNotEmpty()) { "Subscription has no supported proxy node" }
+        fun physicalDefault(tag: String, seen: Set<String> = emptySet()): String? {
+            if (tag in physicalNodes) return tag
+            if (tag in seen) return null
+            val group = byTag[tag] ?: return null
+            if (group.optString("type") !in setOf("selector", "urltest")) return null
+            val candidates = listOf(group.optString("default")) + group.strings("outbounds")
+            return candidates.firstNotNullOfOrNull { physicalDefault(it, seen + tag) }
         }
-        byTag.keys.forEach { checkDependencies(it, emptySet()) }
+        val defaultNode = selectedTag.takeIf { it in physicalNodes }
+            ?: physicalDefault(proxy) ?: physicalNodes.first()
+        main.put("outbounds", JSONArray(physicalNodes)).put("default", defaultNode)
 
         val dnsSource = root.optJSONObject("dns")?.optJSONArray("servers") ?: JSONArray()
         val dnsByTag = (0 until dnsSource.length()).associate { i ->
@@ -94,21 +112,38 @@ object NeoConfigCompiler {
             is JSONObject -> r.optString("server").takeIf { it.isNotBlank() }
             else -> null
         }
+        // Unused airport urltest groups still perform startup probes. Import only the graph
+        // reachable from Neo's fixed selector and direct path, including DNS-only detours.
+        val retainedOutbounds = mutableSetOf<String>()
         val retainedDns = mutableSetOf<String>()
-        fun retainDns(tag: String, stack: Set<String>) {
-            require(tag !in stack) { "Circular DNS dependency" }
-            if (tag in retainedDns) return
-            val server = dnsByTag[tag] ?: error("Missing node DNS dependency")
-            val detour = server.optString("detour")
-            require(detour.isBlank() || detour in byTag) { "Missing DNS outbound dependency" }
-            resolverRef(server)?.let { retainDns(it, stack + tag) }
-            servers.put(JSONObject(server.toString())); retainedDns += tag
+        fun retain(kind: String, tag: String, stack: Set<String>) {
+            val key = "$kind:$tag"
+            require(key !in stack) { "Circular connection dependency" }
+            val retained = if (kind == "out") retainedOutbounds else retainedDns
+            if (tag in retained) return
+            require(stack.size < 32) { "Connection dependency chain is too deep" }
+            val item = if (kind == "out") byTag[tag] ?: error("Missing outbound dependency")
+                else dnsByTag[tag] ?: error("Missing node DNS dependency")
+            val next = stack + key
+            if (kind == "out") item.strings("outbounds").forEach { retain("out", it, next) }
+            item.optString("detour").takeIf { it.isNotBlank() }?.let { retain("out", it, next) }
+            resolverRef(item)?.let { retain("dns", it, next) }
+            if (kind == "dns") {
+                item.optString("address_resolver").takeIf { it.isNotBlank() }?.let { retain("dns", it, next) }
+                servers.put(JSONObject(item.toString()))
+            }
+            retained += tag
         }
-        byTag.values.forEach { resolverRef(it)?.let { tag -> retainDns(tag, emptySet()) } }
+        retain("out", proxy, emptySet())
+        retain("out", direct, emptySet())
+        root.put("outbounds", JSONArray(listOf(main) + byTag.values.filter {
+            it !== main && it.getString("tag") in retainedOutbounds
+        }))
 
         val rules = JSONArray().put(JSONObject().put("action", "sniff"))
             .put(JSONObject().put("protocol", "dns").put("action", "hijack-dns"))
         val dnsRules = JSONArray()
+        val gameDnsFallbacks = JSONArray()
         if (health != null) {
             val inbounds = root.optJSONArray("inbounds") ?: JSONArray().also { root.put("inbounds", it) }
             val tags = (0 until inbounds.length()).map { inbounds.getJSONObject(it).optString("tag") }
@@ -151,7 +186,7 @@ object NeoConfigCompiler {
         }
         rules.put(route(PolicyAction.DIRECT).put("ip_is_private", true))
         if (mode == "rule") {
-            policies.games.filter { it.verification != "candidate" }.forEach { game ->
+            policies.games.filter { allowCandidatePolicies || it.verification != "candidate" }.forEach { game ->
                 game.matches.forEach { match ->
                     val rule = route(match.action).put("package_name", JSONArray(game.packages))
                     match.network?.let { rule.put("network", it) }
@@ -160,11 +195,33 @@ object NeoConfigCompiler {
                     if (match.ports.isNotEmpty()) rule.put("port", JSONArray(match.ports))
                     if (match.portRanges.isNotEmpty()) rule.put("port_range", JSONArray(match.portRanges))
                     rules.put(rule)
-                    if (match.domains.isNotEmpty()) dnsRules.put(dnsRoute(match.action)
-                        .put("package_name", JSONArray(game.packages)).put("domain_suffix", JSONArray(match.domains)))
+                    // A DNS question cannot identify the later TCP/UDP flow or destination port.
+                    // Dropping those predicates would broaden a battle exception to login traffic,
+                    // or turn a blocked UDP endpoint into a domain-wide DNS rejection.
+                    // Domain/IP are address alternatives in sing-box, so a CIDR alongside a domain
+                    // does not itself narrow the domain branch. Transport/port restrictions do.
+                    if (match.domains.isNotEmpty() && match.network == null &&
+                        match.ports.isEmpty() && match.portRanges.isEmpty()) {
+                        dnsRules.put(dnsRoute(match.action).put("package_name", JSONArray(game.packages))
+                            .put("domain_suffix", JSONArray(match.domains)))
+                    }
                 }
                 rules.put(route(game.fallback).put("package_name", JSONArray(game.packages)))
-                dnsRules.put(dnsRoute(game.dns).put("package_name", JSONArray(game.packages)))
+                val fallback = dnsRoute(game.dns).put("package_name", JSONArray(game.packages))
+                if (dnsPolicyMode == DnsPolicyMode.CLASSIFIED && presetEnabled) gameDnsFallbacks.put(fallback)
+                else dnsRules.put(fallback)
+            }
+            policies.apps.filter { allowCandidatePolicies || it.verification != "candidate" }.forEach { app ->
+                val action = when (app.mode) {
+                    AppPolicyMode.GLOBAL_PROXY -> PolicyAction.PROXY
+                    AppPolicyMode.DIRECT_ONLY -> PolicyAction.DIRECT
+                    // Domestic split is the normal rule-mode behavior and needs no package override.
+                    AppPolicyMode.DOMESTIC_SPLIT -> null
+                }
+                if (action != null) {
+                    rules.put(route(action).put("package_name", JSONArray(app.packages)))
+                    dnsRules.put(dnsRoute(action).put("package_name", JSONArray(app.packages)))
+                }
             }
             if (presetEnabled) {
                 if (domestic.proxyDomains.isNotEmpty()) {
@@ -190,6 +247,11 @@ object NeoConfigCompiler {
             } else if (domestic.cidrs.isNotEmpty()) rules.put(route(PolicyAction.DIRECT).put("ip_cidr", JSONArray(domestic.cidrs)))
         }
         if (ruleSets.length() > 0) routeConfig.put("rule_set", ruleSets)
+        for (i in 0 until gameDnsFallbacks.length()) dnsRules.put(gameDnsFallbacks.getJSONObject(i))
+        if (dnsPolicyMode == DnsPolicyMode.CLASSIFIED && mode == "rule" && presetEnabled) {
+            ClassifiedDnsPolicy.appendUnknown(dnsRules, dnsDirect, dnsProxy,
+                if (ruleSets.length() > 0) IP_SET else null, domestic.cidrs)
+        }
         val dns = JSONObject().put("servers", servers).put("rules", dnsRules)
             .put("final", if (mode == "direct") dnsDirect else dnsProxy)
         root.put("route", routeConfig).put("dns", dns)

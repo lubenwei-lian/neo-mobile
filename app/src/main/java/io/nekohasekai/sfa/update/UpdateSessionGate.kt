@@ -17,11 +17,12 @@ class UpdateSessionGate {
         return generation
     }
 
-    @Synchronized fun close(token: Long? = null) {
-        if (token != null && token != generation) return
+    @Synchronized fun close(token: Long? = null): Boolean {
+        if (token != null && token != generation) return false
         generation++
         taskId = null
         attempted = false
+        return true
     }
 
     @Synchronized fun claim(running: Boolean, usable: Boolean, checkedAt: Long): Long? {

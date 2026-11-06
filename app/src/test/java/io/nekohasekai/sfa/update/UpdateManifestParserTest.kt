@@ -87,4 +87,20 @@ class UpdateManifestParserTest {
         val m = UpdateManifestParser.parse("""{"versionCode":4}""")!!
         assertTrue(m.rulesets.isEmpty())
     }
+
+    @Test
+    fun parsesOptionalPolicyUpdate() {
+        val m = UpdateManifestParser.parse(
+            """{"versionCode":4,"policy":{"url":"https://x/policy.json","size":200,"sha256":"cd","version":"2026.11.04.1"}}""",
+        )!!
+        assertEquals("https://x/policy.json", m.policy?.url)
+        assertEquals(200L, m.policy?.size)
+        assertEquals("2026.11.04.1", m.policy?.version)
+    }
+
+    @Test
+    fun missingPolicyIsCompatibleWithOldManifest() {
+        val m = UpdateManifestParser.parse("""{"versionCode":4}""")!!
+        assertNull(m.policy)
+    }
 }

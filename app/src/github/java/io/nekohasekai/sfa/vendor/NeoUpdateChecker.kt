@@ -7,8 +7,13 @@ import io.nekohasekai.sfa.update.UpdateInfo
 import io.nekohasekai.sfa.update.UpdateManifest
 import io.nekohasekai.sfa.update.UpdateManifestParser
 import io.nekohasekai.sfa.update.UpdateState
+import io.nekohasekai.sfa.update.CancellableUpdateRequest
+import io.nekohasekai.sfa.update.RoutingAssetTransfer
 import io.nekohasekai.sfa.utils.HTTPClient
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 import java.net.HttpURLConnection
 import java.net.URL
@@ -26,28 +31,42 @@ class NeoUpdateChecker {
         toInfo(manifest)
     }
 
+    /** 一次读取清单，同时返回 APK 更新信息和原始清单供规则/策略更新复用。 */
+    suspend fun checkWithManifest(): Pair<UpdateInfo?, UpdateManifest?> = withContext(Dispatchers.IO) {
+        val manifest = fetchManifestBlocking(requireProxy = true)
+        manifest?.let { toInfo(it) to it } ?: (null to null)
+    }
+
     /** 只取清单，不做版本比较（规则集热更新复用）。 */
     suspend fun fetchManifest(): UpdateManifest? = withContext(Dispatchers.IO) {
         fetchManifestBlocking()
     }
 
     /** 阻塞版取清单：逐源降级、预算控制、失败原因写进 lastCheckError。 */
-    private fun fetchManifestBlocking(requireProxy: Boolean = false): UpdateManifest? {
-        val started = System.currentTimeMillis()
+    private suspend fun fetchManifestBlocking(requireProxy: Boolean = false): UpdateManifest? {
+        currentCoroutineContext().ensureActive()
+        val started = System.nanoTime()
         var tried = 0
         var gotManifest = false
         UpdateState.lastCheckError.value = null
         for (source in UpdateEndpoints.manifestSources) {
-            val remaining = UpdateEndpoints.TOTAL_BUDGET_MS - (System.currentTimeMillis() - started)
+            currentCoroutineContext().ensureActive()
+            val elapsed = (System.nanoTime() - started) / 1_000_000L
+            val remaining = UpdateEndpoints.TOTAL_BUDGET_MS - elapsed
             if (remaining <= 0) {
-                Log.w(TAG, "总预算耗尽（${System.currentTimeMillis() - started}ms），放弃剩余源")
+                Log.w(TAG, "总预算耗尽（${elapsed}ms），放弃剩余源")
                 break
             }
             // 本次请求的超时取「剩余预算」与「单源上限」的较小值，
             // 否则最后一个源仍可能按完整超时跑，整体超支。
             val text = runCatching { fetch(source, remaining, requireProxy) }
-                .onFailure { Log.d(TAG, "源失败 $source -> ${it.javaClass.simpleName}: ${it.message}") }
+                .onFailure {
+                    if (it is CancellationException) throw it
+                    currentCoroutineContext().ensureActive()
+                    Log.d(TAG, "源失败 $source -> ${it.javaClass.simpleName}: ${it.message}")
+                }
                 .getOrNull()
+            currentCoroutineContext().ensureActive()
             tried++
             if (text.isNullOrBlank()) continue
 
@@ -60,6 +79,7 @@ class NeoUpdateChecker {
             Log.d(TAG, "清单命中 $source v${manifest.versionName}/${manifest.versionCode}")
             return manifest
         }
+        currentCoroutineContext().ensureActive()
         if (!gotManifest) {
             // 一个源都没拿到：这是网络/渠道问题，不是「已是最新」。
             UpdateState.lastCheckError.value = "无法连接更新服务器（已尝试 $tried 个源）"
@@ -68,7 +88,7 @@ class NeoUpdateChecker {
         return null
     }
 
-    private fun fetch(url: String, budgetMs: Long, requireProxy: Boolean): String? {
+    private suspend fun fetch(url: String, budgetMs: Long, requireProxy: Boolean): String? {
         val connect = budgetMs.coerceAtMost(UpdateEndpoints.CONNECT_TIMEOUT_MS.toLong()).toInt()
         val read = budgetMs.coerceAtMost(UpdateEndpoints.READ_TIMEOUT_MS.toLong()).toInt()
         val conn = UpdateNetwork.open(url, requireProxy).apply {
@@ -81,28 +101,14 @@ class NeoUpdateChecker {
             // 清单要求最新：镜像和 CDN 都可能缓存旧版本
             setRequestProperty("Cache-Control", "no-cache")
         }
-        try {
+        return CancellableUpdateRequest.run(conn, budgetMs) {
             val code = conn.responseCode
             if (code != HttpURLConnection.HTTP_OK) {
                 Log.d(TAG, "HTTP $code <- $url")
-                return null
+                return@run null
             }
-            val body = conn.inputStream.bufferedReader().use { reader ->
-                val builder = StringBuilder()
-                var total = 0
-                val buffer = CharArray(4096)
-                while (true) {
-                    val read = reader.read(buffer)
-                    if (read <= 0) break
-                    total += read
-                    if (total > MAX_MANIFEST_BYTES) throw IllegalStateException("清单过大")
-                    builder.append(buffer, 0, read)
-                }
-                builder.toString()
-            }
-            return body
-        } finally {
-            conn.disconnect()
+            check(conn.url.protocol == "https") { "Insecure manifest redirect" }
+            conn.inputStream.use { input -> RoutingAssetTransfer.readManifest(input, MAX_MANIFEST_BYTES) }
         }
     }
 

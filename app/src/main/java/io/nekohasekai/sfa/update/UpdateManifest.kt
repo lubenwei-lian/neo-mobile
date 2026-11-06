@@ -21,6 +21,8 @@ data class UpdateManifest(
     @SerialName("mirrors") val mirrors: List<String> = emptyList(),
     /** 分流规则集（geosite-cn / geoip-cn）。 */
     @SerialName("rulesets") val rulesets: Map<String, ManifestRuleSet> = emptyMap(),
+    /** Neo 自有应用/游戏策略，下载后只进入候选区，下一次连接时验证并激活。 */
+    @SerialName("policy") val policy: ManifestPolicy? = null,
 ) {
     fun toJson(): String = Json.encodeToString(this)
 }
@@ -34,9 +36,17 @@ data class UpdateManifest(
 data class ManifestRuleSet(
     @SerialName("url") val url: String = "",
     @SerialName("size") val size: Long = 0,
-    /** 小写十六进制；非空则下载后必须校验通过 */
+    /** 64 位十六进制；规则更新必须声明并通过校验 */
     @SerialName("sha256") val sha256: String = "",
     /** 规则集自身的日期/版本标识，仅用于展示与比较 */
+    @SerialName("version") val version: String = "",
+)
+
+@Serializable
+data class ManifestPolicy(
+    @SerialName("url") val url: String = "",
+    @SerialName("size") val size: Long = 0,
+    @SerialName("sha256") val sha256: String = "",
     @SerialName("version") val version: String = "",
 )
 

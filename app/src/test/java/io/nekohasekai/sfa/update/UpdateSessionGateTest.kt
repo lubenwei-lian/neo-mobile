@@ -60,7 +60,7 @@ class UpdateSessionGateTest {
         val gate = UpdateSessionGate()
         val old = gate.open(7, 100)
         val next = gate.open(8, 200)
-        gate.close(old)
+        assertFalse(gate.close(old))
         assertTrue(gate.isCurrent(next))
         assertEquals(next, gate.claim(true, true, 201))
     }

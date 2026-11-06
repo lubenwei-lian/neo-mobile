@@ -1,7 +1,6 @@
 package io.nekohasekai.sfa.compose.screen.nodes
 
 import io.nekohasekai.sfa.Application
-import io.nekohasekai.sfa.compose.model.Group
 import io.nekohasekai.sfa.database.Settings
 import io.nekohasekai.sfa.utils.AtomicTextFile
 import kotlinx.coroutines.Dispatchers
@@ -13,61 +12,49 @@ import org.json.JSONObject
 import java.io.File
 
 object NodeDelayCache {
-    private val entries = HashMap<String, LongArray>()
+    private val entries = HashMap<String, NodeDelayReading>()
     private val lock = Any()
     private val saveLock = Mutex()
     private var loaded = false
     private var lastSave = 0L
-    private var profileId = -1L
-    private var identities = emptyMap<String, String>()
+    private var snapshot: NodeTestSnapshot? = null
     private var insecureTags = emptySet<String>()
-    private fun file() = AtomicTextFile(File(Application.application.filesDir, "node_delays_v2.json"))
+    // Response latency excludes setup. Never relabel old full-connection or core readings.
+    private val cacheName by lazy {
+        if (NativeProbe.available()) "node_delays_response_v1.json" else "node_delays_compat_v1.json"
+    }
+    private fun file() = AtomicTextFile(File(Application.application.filesDir, cacheName))
 
     fun ensureLoaded() = synchronized(lock) {
         if (loaded) return@synchronized
-        // Deliberately do not migrate legacy tag-only delays or their relaxed trust flags.
+        // Do not migrate legacy delay definitions, tag-only keys or relaxed trust flags.
         runCatching {
             val root = file().readOrNull()?.let { JSONObject(it) } ?: return@runCatching
             root.keys().forEach { key -> root.optJSONArray(key)?.let { a ->
-                entries[key] = longArrayOf(a.optLong(0), seconds(a.optLong(1)))
+                NodeDelayReading.fromJson(a)?.let { entries[key] = it }
             } }
         }
         loaded = true
     }
 
     fun bind(id: Long, content: String) = synchronized(lock) {
-        val outs = JSONObject(content).getJSONArray("outbounds")
-        profileId = id
-        identities = (0 until outs.length()).associate { i -> outs.getJSONObject(i).let {
-            it.getString("tag") to NodeIdentity.key(id, it)
-        } }
+        snapshot = NodeTestSnapshot.capture(id, content)
         insecureTags = ConfigTlsPatcher.explicitInsecureTags(content)
     }
 
-    private fun identity(tag: String): String? = if (profileId == Settings.selectedProfile) identities[tag] else null
-    private fun seconds(value: Long) = if (value > 1_000_000_000_000L) value / 1000 else value
-    fun get(tag: String): LongArray? = synchronized(lock) { identity(tag)?.let { entries[it]?.copyOf() } }
-    fun isInsecure(tag: String): Boolean = synchronized(lock) { profileId == Settings.selectedProfile && tag in insecureTags }
-
-    suspend fun harvest(groups: List<Group>) {
-        synchronized(lock) {
-            for (group in groups) for (item in group.items) {
-                val key = identity(item.tag) ?: continue
-                if (item.urlTestTime <= 0) continue
-                val existing = entries[key]
-                val time = seconds(item.urlTestTime)
-                if (existing != null && existing[1] >= time) continue
-                entries[key] = longArrayOf(item.urlTestDelay.toLong(), time)
-            }
-        }
-        saveThrottled()
+    internal fun capture(content: String): NodeTestSnapshot? = synchronized(lock) {
+        snapshot?.takeIf { it.profileId == Settings.selectedProfile && it.configContent == content }
     }
 
-    @Suppress("UNUSED_PARAMETER")
-    suspend fun record(tag: String, delayMs: Int, relaxed: Boolean = false) {
+    private fun identity(tag: String): String? = snapshot?.takeIf { it.profileId == Settings.selectedProfile }?.identity(tag)
+    internal fun reading(tag: String): NodeDelayReading? = synchronized(lock) { identity(tag)?.let { entries[it] } }
+    fun get(tag: String): LongArray? = reading(tag)?.let { longArrayOf(it.delayMs.toLong(), it.testedAt) }
+    fun isInsecure(tag: String): Boolean = synchronized(lock) { snapshot?.profileId == Settings.selectedProfile && tag in insecureTags }
+
+    internal suspend fun record(test: NodeTestSnapshot, tag: String, delayMs: Int, networkEpoch: String) {
         synchronized(lock) {
-            val key = identity(tag) ?: return
-            entries[key] = longArrayOf(delayMs.coerceAtLeast(0).toLong(), System.currentTimeMillis() / 1000)
+            val key = test.identity(tag) ?: return
+            entries[key] = NodeDelayReading(delayMs.coerceAtLeast(0), System.currentTimeMillis() / 1000, networkEpoch)
         }
         saveThrottled()
     }
@@ -76,7 +63,7 @@ object NodeDelayCache {
         saveLock.withLock {
             val json = synchronized(lock) {
                 lastSave = System.currentTimeMillis()
-                JSONObject().apply { entries.forEach { (k, v) -> put(k, JSONArray(v.toList())) } }.toString()
+                JSONObject().apply { entries.forEach { (k, v) -> put(k, v.asJson()) } }.toString()
             }
             file().write(json)
         }

@@ -42,6 +42,8 @@ class Application : Application() {
 
     override fun onCreate() {
         super.onCreate()
+        // The bound probe process owns only its temporary core, not app updates or databases.
+        if (io.nekohasekai.sfa.probe.ProbeProcessIdentity.isProbeProcess(this)) return
         AppLifecycleObserver.register(this)
 
 //        Seq.setContext(this)

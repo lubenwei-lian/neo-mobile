@@ -8,6 +8,12 @@ const {execFileSync} = require('node:child_process');
 const REPO = 'lubenwei-lian/neo-mobile';
 const SOURCE = path.resolve(__dirname, '..');
 const pin = require('./release-signing.json');
+const REQUIRED_SUITES = ['NetworkHealthStateTest', 'ConnectionRecoveryTest', 'RoutingRegressionTest',
+    'UpdatePackagePolicyTest', 'UpdateSessionGateTest', 'UpdateSessionRunnerTest', 'CancellableUpdateRequestTest', 'NeoPolicyTest', 'PolicyRepositoryTest',
+    'RuleSetRepositoryTest', 'RuleResourceValidationTest', 'UpdateManifestParserTest', 'PolicyPreviewTest', 'ProbeConfigBuilderTest',
+    'RegionLookupResponseTest', 'ConnectionLatencySamplerTest', 'NativeProbeSessionTest', 'TunUdpRoutingTest', 'RoutingUpdateBackoffTest',
+    'PolicyAssetStagerTest', 'NodeTestSnapshotTest', 'CancellableSocketProbeTest', 'NodeProbePlanTest', 'ProbeProcessSlotTest',
+    'NodeDelayReadingTest', 'ProbeNetworkTrackerTest', 'ProbeRequestBookTest', 'CompatProbeConfigTest', 'ProbeDnsQuestionTest', 'ProbeHttpResponseTest', 'RegionCacheStoreTest', 'RegionLookupRequestTest', 'ProbeConcurrencyTest', 'RoutingRefreshBudgetTest', 'ProbeSchedulerTest', 'RegionDetectionControllerTest'];
 function run(file, args, options = {}) {
     try { return execFileSync(file, args, {encoding: 'utf8', windowsHide: true, timeout: 120000,
         stdio: ['ignore', 'pipe', 'pipe'], ...options}); }
@@ -48,7 +54,7 @@ function testReport(dir) {
             throw Error(`Tests did not fully pass: ${file}`);
         tests += count('tests'); suites.push(file);
     }
-    for (const required of ['NetworkHealthStateTest', 'ConnectionRecoveryTest', 'RoutingRegressionTest', 'UpdatePackagePolicyTest', 'UpdateSessionGateTest']) {
+    for (const required of REQUIRED_SUITES) {
         if (!suites.some(name => name.endsWith(`.${required}.xml`))) throw Error(`Missing required suite ${required}`);
     }
     return {tests, failures: 0, suites: suites.length};

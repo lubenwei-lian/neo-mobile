@@ -35,6 +35,9 @@ object UpdateEndpoints {
     /** 整次检测的总预算（毫秒）：超了就放弃，交给下次。 */
     const val TOTAL_BUDGET_MS = 25000L
 
+    /** One routing-asset source attempt includes redirects, headers and the entire body. */
+    const val RESOURCE_REQUEST_BUDGET_MS = 30000L
+
     /** 主 ABI（与系统加载 .so 的优先级一致）。 */
     fun primaryAbi(): String? =
         runCatching { android.os.Build.SUPPORTED_ABIS.firstOrNull()?.lowercase() }.getOrNull()

@@ -1,6 +1,6 @@
 package io.nekohasekai.sfa.compose.screen.nodes
 
-/** 测速参数：TCP 9s/3 次、UDP 15s/2 次；并发 TCP 6 / UDP 4。 */
+/** 完整连接采样：TCP 9s/3 次、UDP 15s/2 次；常规并发 TCP 3 / UDP 2。 */
 enum class DelayTransport { Tcp, Udp }
 
 data class DelayPlan(
@@ -18,9 +18,9 @@ object DelayTestPlanner {
 
     fun planFor(outboundType: String): DelayPlan =
         if (transportOf(outboundType) == DelayTransport.Udp) {
-            DelayPlan(DelayTransport.Udp, timeoutMs = 15000, attempts = 2, concurrency = 4)
+            DelayPlan(DelayTransport.Udp, timeoutMs = 15000, attempts = 2, concurrency = 2)
         } else {
-            DelayPlan(DelayTransport.Tcp, timeoutMs = 9000, attempts = 3, concurrency = 6)
+            DelayPlan(DelayTransport.Tcp, timeoutMs = 9000, attempts = 3, concurrency = 3)
         }
 
     const val MAX_RETRIES = 4

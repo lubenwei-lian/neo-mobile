@@ -1,9 +1,9 @@
 package io.nekohasekai.sfa.update
 
-/** 规则集热更新结果。 */
+/** 规则集下载结果。连接中的资源不变，下一次连接时验证并启用候选。 */
 sealed class RuleSetUpdateResult {
-    /** 有规则集被更新，names 为更新成功的规则集名。 */
-    data class Updated(val names: List<String>) : RuleSetUpdateResult()
+    /** 已完整暂存，尚未激活。 */
+    data class Staged(val names: List<String>) : RuleSetUpdateResult()
 
     /** 清单里的规则集与本地一致，无需下载。 */
     data object AlreadyLatest : RuleSetUpdateResult()
